@@ -1,0 +1,318 @@
+
+# config parameters for Nextseq_run_69 AIV unbiased.
+
+# These are read by snakemake as a list 
+samples:
+  24-02048-0003-01:
+    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02048-0003-01_S1_R1_001.fastq.gz
+    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02048-0003-01_S1_R2_001.fastq.gz
+  24-02048-0004-02:
+    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02048-0004-02_S2_R1_001.fastq.gz
+    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02048-0004-02_S2_R2_001.fastq.gz
+  24-02070-0006-03:
+    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02070-0006-03_S3_R1_001.fastq.gz
+    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02070-0006-03_S3_R2_001.fastq.gz
+  24-02070-0007:
+    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02070-0007-01_S4_R1_001.fastq.gz
+    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02070-0007-01_S4_R2_001.fastq.gz
+  24-02178-0001-07:
+    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02178-0001-07_S5_R1_001.fastq.gz
+    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02178-0001-07_S5_R2_001.fastq.gz
+  24-02202-0001-05:
+    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02202-0001-05_S6_R1_001.fastq.gz
+    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02202-0001-05_S6_R2_001.fastq.gz
+  24-02203-0001-04:
+    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02203-0001-04_S7_R1_001.fastq.gz
+    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02203-0001-04_S7_R2_001.fastq.gz
+
+# Program directory (working directory to output results and where the rules/scripts folders are along with the snakefiles and config files)
+program_dir: "/scratch3/odw014/analysis/Nextseq_run_69_AIV/"
+
+
+
+# This section onwards will define key variables that influence the analysis pipeline directions and rules called
+
+# Sensitivity setting. Acts as a proxy for how much memory avaliable for the analysis. This is the amount of memory passed to snakemake in the run_snakemake script
+# Recommended memory ranges per settings are as described as belw:
+# VHigh = 180GB or more 
+# High = 130-180GB  
+# Medium = 90-130GB 
+# Medium-Low = 60-90GB
+# Low = 40-60 GB # Note this pipeline currently has had limited testing at such low memory, large read datasets e.g., Nextseq/novaseq require far more memory than this to analyse. Many programs used in metagenomics require more than 40GB to run for just one sample. Running with so little may cause progams within the pipeline to crash
+# Ultra_low = <40GB   # Note this pipeline currently isn't tested at such low memory. Many individual programs used in metagenomics require more than 40GB to run for just one sample. Running with so little memory may cause progams within the pipeline to crash
+
+Sensitivity: 'Medium'
+
+# Fastp filtering and trimming
+minimum_length_filter_fastp: 45
+complexity_threshold: 5
+front_window_cutsize: 4
+# base quality score min (phred score)
+min_qual_filter: 15
+# required minimum running average quality score for the 4 base window
+min_qual_window: 18
+
+# Not currently implemented in scripts ## TODO: Add in parameter for NCBI API key to downloadgenome.sh and download_variety_genomes_high_completion_viruses.sh
+NCBI_API_KEY: 'b81d4cea18edf2ff96dd6aeb096d6eb56009'
+
+
+# Assembly choices
+# options at the moment. Trinity, or Megahit
+# If running Low/medium low sensitivity. It is recommended to run Megahit only.
+Assembly_choice: 'Trinity'
+
+# Assembly contig minimum size: This is the minimum size in base pairs for assembled genome fragments created from the paired end reads (smaller size allows for more reads to be assembled
+# but smaller size requires significantly more memory and extends analysis time. Lastly very small sized contigs can lead to increased false positives).
+Assembly_size: '400'
+
+
+
+# Is more than 1 species expected in the host reduction?
+# Set as categorical variable with values either "Single" or "Multiple".
+# Single is used when only the host species is of interest.
+# Multiple is used in a number of settings where there is other relevant data from other species in the sample. e.g., 
+# When diet based metagenomics alongside this pathway (detect prey), detect vector host activity (e.g., mosquitos and blood meals). 
+# Or detect parasitic interactions.
+# Multiple will return up to 10 different species from different genera.
+# Note, Taxonomy id steps are currently written to detect animals not other kingdoms. 
+# Inspect host as yes or any other value
+
+#'yes'/'no'
+inspecthost: 'yes'
+#Single/Multiple
+Hostdetect: 'Single'
+
+# Whether to filter out host reads. 
+#'yes'/'no'
+Host_filter: 'yes'
+# Does the analysis require a rapid host identification. Will subset LSU and SSU hits for rapid classification of host to then allow for all further analyses to be run
+# without host DNA yes/no
+Rapid_host_id: 'no'
+
+# Weights given to host assignments. This allows for scaling of the results for host identification taking into account a specific marker may not be as resolving for
+# one species as it is for another (requires a general understanding of the expected species/genus/family that the host might be to use most effectively). I have 
+# set to 3 for CO1 and 1 for LSU and SSU here so CO1 is weighted twice as much as it is a very resolving marker for Eukaryotes (better than 16s, usually, and most commonly for mammals).
+# The weighting is relative and so the ratio of the numbers between the markers is how the markers are scaled.
+CO1weight: 3
+LSUweight: 1
+SSUweight: 2
+
+# Whether or not to try and analyse non coding related DNA. yes/no
+# This adds a very large time increase into the pipeline and adds a comparatively small benefit. at 36 cores, decently sequenced samples on a p2 nextseq cartridge took
+# an additional 1-24 hours to run through (depending on cpu cores) (A goal of a sample every 6-12 hours start to complete is unlikely with this setting on).
+#'yes'/'no'
+
+DNA_assign_blastn: 'yes'
+
+
+# Whether or not to run a false positive check on the contigs assigned to viruses using BLASTn 
+Blastn_viral_contig_false_positive_check: 'yes'
+
+# testing advanced microbiome analysis for rRNA. 
+#'yes/no'.
+Microbiome_classification: 'yes'
+
+
+# Whether or not to build viral genomes (consensus with reference) from returned assigned viral genes
+# Need to have genome build on for tree building to work
+# 'yes'/'no'
+Viral_genome_build: 'no'
+Viral_genome_tree_building: 'no'
+
+# Whether or not to run genomad viral detection pathways 
+# 'yes/no'
+Genomad_detect: 'no'
+
+
+# Whether to run analyses on the raws reads that were not aligned to a contig (requires a long time)
+# Turn both this and diamond blast to no or to yes together (legacy setting from when multiple raws analysis methods were used, will remove over time)
+# 'yes/no'
+run_raws: 'yes'
+
+# Whether to do diamond blast on the raws (very long, probably around 15-25% of the whole pipeline)
+#'yes/no'
+dodiamond_blast_raws: 'yes'
+
+# whether summary results files should be generated. This is required for all additional modules to generate their final results files.
+# 'yes/no'
+generate_results_summary: 'yes'
+
+
+
+# Databases and other filepaths (once updated during the first time, these will remain static). All have been tarred and compressed in the github except the Diamond and blastn databases, all that needs to be done is update paths to where
+# You save the databases
+# Diamond and blastn databases were not included as these are very large databases (>100GB each usually) and it is recommended these are installed on an HPC (high performance computer cluster) in a location everyone can access. They are also very common so will likely be present somewhere if routine bioinformatics work
+# has been done on your HPC before. 
+# Have a look around the HPC and potentially contact your HPC admin to see where they are before downloading them yourself. Otherwise, run Diamond_download.sh, and Diamond_download.sh
+
+
+# Trinity temp path.
+# This is incredibly important because even a single Trinity run can hit a disk file number quota maximum. Trinity produces large numbers of near empty files during analysis (from 10k-500k per sample depending on reads analysed)
+# Choose a spot which allows for lots of files to be written (you can usually see how much space you have on a shared HPC system with the command `quota -s` ) 
+
+Trinitytemppath: "/scratch3/odw014/accessory_files/trinity"
+
+# all below datasets are saved in the databases tar. Update once file is untarred in new location. TODO: If I make a script to untar and unpack at the required destination I could try and auto update here.
+# by using the set variable from the unpack script and a generic sed replacement.
+
+# Illumina generic adapters for adapter removal.
+Illumina_adapters: "/scratch3/odw014/analysis/databases/adapters/trueseq_PE_adaptors_shortlist.fa"
+
+#PhiX filter. Saved into databases tar. 
+PhiX_genome_index: "/scratch3/odw014/analysis/databases/PhiXgenome/bowtie2/genome"
+
+# CO1 genomes Bowtie indexed
+CO1_genome_index: "/scratch3/odw014/analysis/databases/CO1_database/bowtie2/CO1_reference_genomes_idx"
+#CO1_genome_base: "/scratch3/odw014/analysis/databases/CO1_database/bowtie2/dna-sequences.fasta"
+#CO1_genome_tax: "/scratch3/odw014/analysis/databases/CO1_database/bowtie2/taxonomy.tsv"
+
+# CO1 genomes mmseqs2 indexed
+CO1_genome_index_mmseq: "/scratch3/odw014/analysis/databases/MMseqs/CO1/CO1_ref_DB"
+
+
+#LSU genomes Bowtie indexed.
+LSU_genome_index: "/scratch3/odw014/analysis/databases/LSU_database/Combined_SILVA_GENBANK/Bowtie/Combined_LSU_idx"
+LSU_genome_base: "/scratch3/odw014/analysis/databases/LSU_database/Combined_SILVA_GENBANK/Bowtie/Combined_LSU_database.fasta"
+LSU_genome_tax: "/scratch3/odw014/analysis/databases/taxmaps/Combined_databases/LSU/combined_taxmap_LSU.txt"
+
+# LSU taxonomy map mmseq2 indexed
+LSU_genome_index_mmseq: "/scratch3/odw014/analysis/databases/MMseqs/LSU/Combined_LSU_MMseqstaxdb"
+
+# Silva LSU taxonomy map
+SSU_genome_index: "/scratch3/odw014/analysis/databases/SSU_database/Combined_SSU/Bowtie/Combined_SSU_idx"
+
+# SSU taxonomy map mmseq2
+SSU_genome_index_mmseq: "/scratch3/odw014/analysis/databases/MMseqs/SSU/Combined_SSU_MMseqstaxdb"
+
+
+# Diamond nr database Currently set to general DB on Petrichor HPC CSIRO
+diamond_database: "/data/bioref/diamond_db/nr.dmnd"
+
+# Blast nucleotide base. Currently set to general DB on Petrichor HPC CSIRO
+blast_nucleotide_database: "/data/bioref/blast/ncbi/nt"
+
+
+#MMseq database Currently set to general DB on Petrichor HPC CSIRO (Also I think this is redundant now, double check if this is needed after mmseqs2 was removed from nucleotide blast step. 
+MMSeq_nucleotide_database: "/data/bioref/mmseqs2_db/nt.mmdb"
+
+# Accessiontaxa file
+Accession_allnamenode: "/scratch3/odw014/analysis/databases/Accessiontaxa/2023_December/nameNode.sqlite"
+NCBI_reference_dir: "/scratch3/odw014/analysis/databases/Accessiontaxa"
+
+Genomaddb: "/scratch3/odw014/analysis/databases/genomad/genomad_db"
+
+############################################################################################
+############################################################################################
+############################################################################################
+
+
+
+# File paths. Do not need to be changed. If you want, you can change the right side names in talking marks without crashing the pipeline e.g., "01_FASTP". If you do this and it creates an error
+# let me know which you changed and I will fix in the next iteration of the pipeline.
+
+sub_dirs:
+  trim_dir: "01_FASTP"
+  failed_trim_dir: "01_1_FASTP_FAILED"
+  trim_report_dir: "01_2_FASTP_REPORTS"
+  PhiX_dir: "02_PHIX_FILTER"
+  CO1_dir: "03_CO1_FILTER"
+  LSU_dir: "04_LSU_FILTER"
+  SSU_dir: "05_SSU_FILTER"
+  host_remove_dir: "05B_HOSTREMOVAL_FILTER"
+  contig_dir_megahit: "06_CONTIG_ASSEMBLY_MEGAHIT"
+  contig_dir_either: "06_CONTIG_ASSEMBLY"
+  contig_dir_host_rem: "06B_CONTIG_ASSEMBLY_HOST_REMOVED"
+  contig_dir_trinity: "06_CONTIG_ASSEMBLY_TRINITY"
+  diamond_dir: "07_DIAMOND_BLAST"
+  contigs_assigned: "08_DIAMOND_BLAST_SUMMARY"
+  contigs_assigned_nucl: "09_BLASTN_SUMMARY"
+  contigs_assigned_nucl_abundances: "09_BLASTN_SUMMARY/abundances"
+  contigs_assigned: "08_CONTIGS_ASSIGNED"
+  contig_compiled_assignments: "08_CONTIGS_ASSIGNED/DNA_RNA_combined_assignments" # Potential remove
+  raws_to_contigs: "10_RAW_ALIGNMENTS_CONTIGS"
+  raws_to_host_contigs: "10B_RAW_ALIGNMENTS_HOST_CONTIGS"
+  temp_genome_path: "00_TEMP_GENOME_INDEXES"
+  diamond_raws: "11_DIAMOND_BLAST_RAWS"
+  contigs_assigned_raw: "11B_DIAMOND_ASSIGNED_RAWS"
+  raws_blastn_check: "12_BLASTN_RAW_READS_CHECK"
+  raws_blastn_r: "12B_BLASTN_RAW_READS_STATISTICS"
+  raws_results: "13_RAW_READS_SUMMARY"
+  contigs_nucl_false_pos_check: "14_BLASTN_FALSE_POSITIVE_CHECK"
+  contigs_nucl_false_pos_check_counts: "15_BLASTN_FALSE_POSITIVE_CHECK_SUMMARY"
+  Viral_genomes_present: "16_REFERENCE_VIRAL_GENOMES"
+  Viral_genomes_present_summary: "17_REFERENCE_VIRAL_GENOMES_SUMMARY"
+  Viral_genomes_present_significant: "18_REFERENCE_VIRAL_GENOMES_SIGNIFICANT_ASSEMBLY"
+  Viral_genomes_present_refined_genomes: "18B_COMPLETE_VIRAL_GENOMES_GUIDED_ASSEMBLY"
+  Viral_genomes_present_mafft: "18C_MAFFT_ALIGNMENTS_GENERATED_VIRAL_GENOMES"
+  Viral_genomes_present_trimal: "18D_TRIMAL_ALIGNMENTS_GENERATED_VIRAL_GENOMES"
+  Viral_genomes_present_iqtree: "18E_IQTREE_GENERATED_VIRAL_GENOMES"
+  Genomad_viral_ids: "19_GENOMAD_VIRAL_LIKE_CONTIGS"
+  Genomad_viral_ids_prep: "19B_SUBSET_CONTIGS_FILES"
+  Genomad_viral_diamond: "20_GENOMAD_VIRAL_DIAMOND_HITS"
+  Genomad_viral_blastn: "20B_GENOMAD_VIRAL_BLASTN_HITS"
+  Genomad_viral_host_rem: "21_GENOMAD_VIRAL_NO_HOST"
+  Genomad_viral_blastp: "22_GENOMAD_VIRAL_NO_HOST_BLASTP"
+  Genomad_viral_categorise_species: "23_GENOMAD_VIRAL_GENE_CLUSTERS"
+  Genomad_viral_binning_prep: "24_METABAT_BINNING_PREP"
+  Genomad_viral_binning_metabat: "25_METABAT_BINNING_RESULTS"
+  Genomad_metabat_sorted: "26_METABAT_BINS_SORTED"
+  host_detect_CO1: "03_CO1_FILTER/HOSTREMOVAL/01_STRONG_ALIGN"
+  host_detect_LSU: "04_LSU_FILTER/HOSTREMOVAL/01_STRONG_ALIGN"
+  host_detect_SSU: "05_SSU_FILTER/HOSTREMOVAL/01_STRONG_ALIGN"
+  host_contigs_CO1: "03_CO1_FILTER/HOSTREMOVAL/01a_STRONG_ALIGN_CONTIGS"
+  host_contigs_LSU: "04_LSU_FILTER/HOSTREMOVAL/01a_STRONG_ALIGN_CONTIGS"
+  host_contigs_SSU: "05_SSU_FILTER/HOSTREMOVAL/01a_STRONG_ALIGN_CONTIGS"
+  host_assignLCA_CO1_contigs: "03_CO1_FILTER/HOSTREMOVAL/02A_TAX_ASSIGN_LCA_CONTIGS"
+  host_assignLCA_LSU_contigs: "04_LSU_FILTER/HOSTREMOVAL/02A_TAX_ASSIGN_LCA_CONTIGS"
+  host_assignLCA_SSU_contigs: "05_SSU_FILTER/HOSTREMOVAL/02A_TAX_ASSIGN_LCA_CONTIGS"
+  host_assignLCA_CO1: "03_CO1_FILTER/HOSTREMOVAL/02_TAX_ASSIGN_LCA"
+  host_assignLCA_LSU: "04_LSU_FILTER/HOSTREMOVAL/02_TAX_ASSIGN_LCA"
+  host_assignLCA_SSU: "05_SSU_FILTER/HOSTREMOVAL/02_TAX_ASSIGN_LCA"
+  host_LCA_plots_CO1_contigs: "03_CO1_FILTER/HOSTREMOVAL/03A_LCA_RESULTS_CONTIGS"
+  host_LCA_plots_LSU_contigs: "04_LSU_FILTER/HOSTREMOVAL/03A_LCA_RESULTS_CONTIGS"
+  host_LCA_plots_SSU_contigs: "05_SSU_FILTER/HOSTREMOVAL/03A_LCA_RESULTS_CONTIGS"
+  host_LCA_plots_CO1: "03_CO1_FILTER/HOSTREMOVAL/03_LCA_RESULTS"
+  host_LCA_plots_LSU: "04_LSU_FILTER/HOSTREMOVAL/03_LCA_RESULTS"
+  host_LCA_plots_SSU: "05_SSU_FILTER/HOSTREMOVAL/03_LCA_RESULTS"
+  CO1_contig_blast_dir: "03_CO1_FILTER/HOSTREMOVAL/04_CONTIG_BLASTN_RESULTS"
+  LSU_contig_blast_dir: "04_LSU_FILTER/HOSTREMOVAL/04_CONTIG_BLASTN_RESULTS"
+  SSU_contig_blast_dir: "05_SSU_FILTER/HOSTREMOVAL/04_CONTIG_BLASTN_RESULTS"
+  host_detect_LSU_rapid: "04_LSU_FILTER/HOSTREMOVAL/01_STRONG_ALIGN_RAPID"
+  host_detect_SSU_rapid: "05_SSU_FILTER/HOSTREMOVAL/01_STRONG_ALIGN_RAPID"
+  host_contigs_LSU_rapid: "04_LSU_FILTER/HOSTREMOVAL/01a_STRONG_ALIGN_CONTIGS_RAPID"
+  host_contigs_SSU_rapid: "05_SSU_FILTER/HOSTREMOVAL/01a_STRONG_ALIGN_CONTIGS_RAPID"
+  host_assignLCA_rapid_LSU: "04_LSU_FILTER/HOSTREMOVAL/02_TAX_ASSIGN_LCA_RAPID"
+  host_assignLCA_rapid_SSU: "05_SSU_FILTER/HOSTREMOVAL/02_TAX_ASSIGN_LCA_RAPID"
+  host_LCA_rapid_plots_LSU: "04_LSU_FILTER/HOSTREMOVAL/03_LCA_RESULTS_RAPID"
+  host_LCA_rapid_plots_SSU: "05_SSU_FILTER/HOSTREMOVAL/03_LCA_RESULTS_RAPID"
+  Summary_results: "99_SUMMARY_RESULTS_INDIVIDUAL_SAMPLES"
+  Summary_results2: "99_SUMMARY_RESULTS_COMBINED_SAMPLES_GRAPHS"
+  compiled_summary: "99_SUMMARY_RESULTS_INDIVIDUAL_SAMPLES_RETURNED_INDIVIDUAL_READS"
+  host_species_genomes: "00A_TOP_HOST_SPECIES_PER_SAMPLE"
+  meal_species_id: "00B_TOP_MEAL_SPECIES_PER_SAMPLE"
+  progress_all: "PROGRESS_STATUS"
+  progress_main_pipeline_host: "PROGRESS_STATUS/HOST_ID_CONTIGS"
+  progress_barcodes: "PROGRESS_STATUS/BARCODE_MARKERS_LONG"
+  finished: "samples_finished"
+
+
+#Unchangable settings
+
+# Blast method to use for blastn. Initially had MMseqs2 as well but the memory requirement was 2-5X blastn so dropped given the other high memory steps. 
+
+Blast_method: 'blast'
+
+
+
+
+#  host_species_genomes_idx: "00A_TOP_HOST_SPECIES_PER_SAMPLE/bowtieindex"
+
+
+# Superflous code to remove after streamlined module selections
+# Whether to do KRaken viral classification on the raw sequences 
+doviral_raws_classification: 'no' # REMOVE as will be removing Kraken from the pipeline so only one raws analysis is available # need to remove from summary R script first.
+kraken_database: "/scratch3/odw014/analysis/databases/Kraken/" # REMOVE
+virus_protein_database: "/scratch3/odw014/analysis/databases/Complete_viral/Viral_proteinsdb" # REMOVE
+
+
+

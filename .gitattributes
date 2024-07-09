@@ -1,0 +1,2 @@
+databases/CO1_reference_sequences_Metazoa.fasta.gz filter=lfs diff=lfs merge=lfs -text
+databases/nameNode.sqlite.gz filter=lfs diff=lfs merge=lfs -text

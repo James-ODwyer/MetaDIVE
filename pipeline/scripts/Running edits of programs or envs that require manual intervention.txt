@@ -1,0 +1,62 @@
+
+
+R scripts are largely self contained but
+
+1. Need updated sankeyD3
+
+do 
+"""
+conda activate Rdataplotting
+R
+devtools::install_github("fbreitwieser/sankeyD3")\
+update no other packages
+q()
+"""
+# Note, I have placed an if else in each of the R scripts to search for the package and download it locally if not present. error is automated again.
+
+
+4. error in snakemake conda env calling 
+
+Error looks like "  File "/scratch2/odw014/Conda/envs/snakemake7/lib/python3.10/subprocess.py", line 524, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command 'conda env export --name '/scratch2/odw014/Conda/envs/Virsorter2'' returned non-zero exit status 1.
+"
+The error is caused by a problem in the snakemake python code. The following fixes it. 
+# Updated for scratch3 
+at location (dependent of where the environment is saved, snamekame is currently in 2 different envs, snakemake7 and diamondS1) 
+/scratch3/odw014/accessory_files/miniconda/envs/snakemake7S3/lib/python3.10/site-packages/snakemake/deployment/conda.py 
+/scratch3/odw014/accessory_files/miniconda/envs/diamondS3/lib/python3.9/site-packages/snakemake/deployment/conda.py
+
+
+
+
+
+replace lines 254-259 with 
+"""
+
+
+    def address_argument(self):
+        if self.is_named:
+            return "--prefix '{}'".format(self.address)
+        else:
+            return "--name '{}'".format(self.address)
+
+
+
+
+"""
+
+
+5. Dram is using a mix of the very large databases on the HPC and the smaller more updated ones locally. Every now and then the module for the HPC databases may be updated
+ when this happens need to potentially update the data info and reimport the dram config file after editing (
+
+A. check what the files are called
+ls /scratch3/projects/datasets_bioref/DRAM_data
+
+B. updated dram file with newest file names. Will only need to do this for the viral hits, the proteins and possibly the uniref sections. All others have non dataed names
+/scratch3/odw014/analysis/databases/dram_HPC_databases.txt
+
+C. updated the dram configs in the conda environment. 
+DRAM-setup.py import_config --config_loc /scratch3/odw014/analysis/databases/dram_HPC_databases.txt
+
+D. (for me) Figure out how to automatically check if its been updated and then update it

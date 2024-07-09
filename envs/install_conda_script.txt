@@ -1,0 +1,17 @@
+# To install conda run the following
+# You will need internet access
+
+
+# Step 1. Navigate to where you would like to install conda
+# Step 2. Run the below lines of code (copy and paste into terminal) 
+# Step 3. close down your terminal and open a new one (Conda is now installed) 
+
+
+mkdir miniconda
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda/miniconda.sh
+bash miniconda/miniconda.sh -b -u -p miniconda/
+
+miniconda/bin/conda init bash
+
+miniconda/bin/conda init zsh
+
