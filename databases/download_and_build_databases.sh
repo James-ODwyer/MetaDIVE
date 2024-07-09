@@ -18,6 +18,7 @@ mkdir -p bowtie2/SSU
 
 mkdir LSU/
 
+
 mv output_completed_taxonomyLSU.tsv.gz LSU/output_completed_taxonomyLSU.tsv.gz
 mv LSU_combined.fasta.gz LSU/LSU_combined.fasta.gz
 
@@ -43,6 +44,7 @@ mmseqs createindex SILVA_DB tmp --search-type 3 --split 4
 cd ..
 
 mkdir SSU/
+
 
 mv output_completed_taxonomySSU.tsv.gz SSU/output_completed_taxonomySSU.tsv.gz
 mv SSU_combined.fasta.gz SSU/SSU_combined.fasta.gz
@@ -92,6 +94,7 @@ conda activate snakemake7
 
 cd bowtie2/LSU 
 
+
 gunzip LSU_combined.fasta.gz
 
 
@@ -101,6 +104,7 @@ bowtie2-build "LSU_combined.fasta" LSU_reference_idx --threads ${SLURM_CPUS_PER_
 
 cd ..
 cd SSU
+
 
 gunzip SSU_combined.fasta.gz
 
@@ -186,11 +190,10 @@ cd ..
 # add taxonomy to CO1_DB
 mmseqs createtaxdb CO1_DB tmp --ncbi-tax-dump taxonomy/ --tax-mapping-file output_completed_taxonomyCO1.tsv
 
+
 mmseqs createindex CO1_DB tmp --search-type 3 --split 4
 
 cd ..
-
-
 
 
 

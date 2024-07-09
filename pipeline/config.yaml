@@ -44,6 +44,7 @@ program_dir: "/scratch3/odw014/analysis/Nextseq_run_69_AIV/"
 Sensitivity: 'Medium'
 
 # Fastp filtering and trimming
+
 minimum_length_filter_fastp: 85
 complexity_threshold: 10
 front_window_cutsize: 4
@@ -59,6 +60,7 @@ NCBI_API_KEY: 'b81d4cea18edf2ff96dd6aeb096d6eb56009'
 # Assembly choices
 # options at the moment. Trinity, or Megahit
 # If running Low/medium low sensitivity. It is recommended to run Megahit only.
+
 Assembly_choice: 'Megahit'
 
 # Assembly contig minimum size: This is the minimum size in base pairs for assembled genome fragments created from the paired end reads (smaller size allows for more reads to be assembled
@@ -150,12 +152,14 @@ generate_results_summary: 'yes'
 # This is incredibly important because even a single Trinity run can hit a disk file number quota maximum. Trinity produces large numbers of near empty files during analysis (from 10k-500k per sample depending on reads analysed)
 # Choose a spot which allows for lots of files to be written (you can usually see how much space you have on a shared HPC system with the command `quota -s` ) 
 
+
 Trinitytemppath: "/Filepath/MetaDIVE/Trinity_temp/"
 
 # all below datasets are saved in the databases tar. Update once file is untarred in new location. TODO: If I make a script to untar and unpack at the required destination I could try and auto update here.
 # by using the set variable from the unpack script and a generic sed replacement.
 
 # Illumina generic adapters for adapter removal.
+
 Illumina_adapters: "/scratch3/odw014/analysis/MetaDIVE_off_github/MetaDIVE/databases/adapters/trueseq_PE_adaptors_shortlist.fa"
 
 #PhiX filter. Saved into databases tar. 
@@ -177,7 +181,6 @@ LSU_genome_index: "/FILEPATH/MetaDIVE/databases/bowtie2/LSU/LSU_reference_idx"
 
 # LSU taxonomy map mmseq2 indexed
 LSU_genome_index_mmseq: "/FILEPATH/MetaDIVE/databases/LSU/LSU_DB"
-
 
 # Silva LSU taxonomy map
 SSU_genome_index: "/FILEPATH/MetaDIVE/databases/bowtie2/SSU/SSU_reference_idx"
