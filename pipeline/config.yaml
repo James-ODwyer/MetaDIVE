@@ -44,13 +44,13 @@ program_dir: "/scratch3/odw014/analysis/Nextseq_run_69_AIV/"
 Sensitivity: 'Medium'
 
 # Fastp filtering and trimming
-minimum_length_filter_fastp: 45
-complexity_threshold: 5
+minimum_length_filter_fastp: 85
+complexity_threshold: 10
 front_window_cutsize: 4
 # base quality score min (phred score)
-min_qual_filter: 15
+min_qual_filter: 16
 # required minimum running average quality score for the 4 base window
-min_qual_window: 18
+min_qual_window: 20
 
 # Not currently implemented in scripts ## TODO: Add in parameter for NCBI API key to downloadgenome.sh and download_variety_genomes_high_completion_viruses.sh
 NCBI_API_KEY: 'b81d4cea18edf2ff96dd6aeb096d6eb56009'
@@ -59,7 +59,7 @@ NCBI_API_KEY: 'b81d4cea18edf2ff96dd6aeb096d6eb56009'
 # Assembly choices
 # options at the moment. Trinity, or Megahit
 # If running Low/medium low sensitivity. It is recommended to run Megahit only.
-Assembly_choice: 'Trinity'
+Assembly_choice: 'Megahit'
 
 # Assembly contig minimum size: This is the minimum size in base pairs for assembled genome fragments created from the paired end reads (smaller size allows for more reads to be assembled
 # but smaller size requires significantly more memory and extends analysis time. Lastly very small sized contigs can lead to increased false positives).
@@ -150,39 +150,41 @@ generate_results_summary: 'yes'
 # This is incredibly important because even a single Trinity run can hit a disk file number quota maximum. Trinity produces large numbers of near empty files during analysis (from 10k-500k per sample depending on reads analysed)
 # Choose a spot which allows for lots of files to be written (you can usually see how much space you have on a shared HPC system with the command `quota -s` ) 
 
-Trinitytemppath: "/scratch3/odw014/accessory_files/trinity"
+Trinitytemppath: "/Filepath/MetaDIVE/Trinity_temp/"
 
 # all below datasets are saved in the databases tar. Update once file is untarred in new location. TODO: If I make a script to untar and unpack at the required destination I could try and auto update here.
 # by using the set variable from the unpack script and a generic sed replacement.
 
 # Illumina generic adapters for adapter removal.
-Illumina_adapters: "/scratch3/odw014/analysis/databases/adapters/trueseq_PE_adaptors_shortlist.fa"
+Illumina_adapters: "/scratch3/odw014/analysis/MetaDIVE_off_github/MetaDIVE/databases/adapters/trueseq_PE_adaptors_shortlist.fa"
 
 #PhiX filter. Saved into databases tar. 
-PhiX_genome_index: "/scratch3/odw014/analysis/databases/PhiXgenome/bowtie2/genome"
+PhiX_genome_index: "/scratch3/odw014/analysis/MetaDIVE_off_github/MetaDIVE/databases/Phix_reference/Phix_reference_idx"
 
 # CO1 genomes Bowtie indexed
-CO1_genome_index: "/scratch3/odw014/analysis/databases/CO1_database/bowtie2/CO1_reference_genomes_idx"
-#CO1_genome_base: "/scratch3/odw014/analysis/databases/CO1_database/bowtie2/dna-sequences.fasta"
+CO1_genome_index: "/FILEPATH/MetaDIVE/databases/bowtie2/CO1/CO1_reference_idx"
+#CO1_genome_base: "/FILEPATH/MetaDIVE/databases/CO1_database/bowtie2/dna-sequences.fasta"
 #CO1_genome_tax: "/scratch3/odw014/analysis/databases/CO1_database/bowtie2/taxonomy.tsv"
 
 # CO1 genomes mmseqs2 indexed
-CO1_genome_index_mmseq: "/scratch3/odw014/analysis/databases/MMseqs/CO1/CO1_ref_DB"
+CO1_genome_index_mmseq: "/FILEPATH/MetaDIVE/databases/CO1/CO1_DB"
 
 
 #LSU genomes Bowtie indexed.
-LSU_genome_index: "/scratch3/odw014/analysis/databases/LSU_database/Combined_SILVA_GENBANK/Bowtie/Combined_LSU_idx"
-LSU_genome_base: "/scratch3/odw014/analysis/databases/LSU_database/Combined_SILVA_GENBANK/Bowtie/Combined_LSU_database.fasta"
-LSU_genome_tax: "/scratch3/odw014/analysis/databases/taxmaps/Combined_databases/LSU/combined_taxmap_LSU.txt"
+LSU_genome_index: "/FILEPATH/MetaDIVE/databases/bowtie2/LSU/LSU_reference_idx"
+#LSU_genome_base: "/scratch3/odw014/analysis/databases/LSU_database/Combined_SILVA_GENBANK/Bowtie/Combined_LSU_database.fasta"
+#LSU_genome_tax: "/scratch3/odw014/analysis/databases/taxmaps/Combined_databases/LSU/combined_taxmap_LSU.txt"
 
 # LSU taxonomy map mmseq2 indexed
-LSU_genome_index_mmseq: "/scratch3/odw014/analysis/databases/MMseqs/LSU/Combined_LSU_MMseqstaxdb"
+LSU_genome_index_mmseq: "/FILEPATH/MetaDIVE/databases/LSU/LSU_DB"
+
 
 # Silva LSU taxonomy map
-SSU_genome_index: "/scratch3/odw014/analysis/databases/SSU_database/Combined_SSU/Bowtie/Combined_SSU_idx"
+SSU_genome_index: "/FILEPATH/MetaDIVE/databases/bowtie2/SSU/SSU_reference_idx"
+
 
 # SSU taxonomy map mmseq2
-SSU_genome_index_mmseq: "/scratch3/odw014/analysis/databases/MMseqs/SSU/Combined_SSU_MMseqstaxdb"
+SSU_genome_index_mmseq: "/FILEPATH/MetaDIVE/databases/SSU/SSU_DB"
 
 
 # Diamond nr database Currently set to general DB on Petrichor HPC CSIRO
@@ -193,13 +195,18 @@ blast_nucleotide_database: "/data/bioref/blast/ncbi/nt"
 
 
 #MMseq database Currently set to general DB on Petrichor HPC CSIRO (Also I think this is redundant now, double check if this is needed after mmseqs2 was removed from nucleotide blast step. 
-MMSeq_nucleotide_database: "/data/bioref/mmseqs2_db/nt.mmdb"
+MMSeq_nucleotide_database: "/path/Irrelevant"
 
 # Accessiontaxa file
-Accession_allnamenode: "/scratch3/odw014/analysis/databases/Accessiontaxa/2023_December/nameNode.sqlite"
-NCBI_reference_dir: "/scratch3/odw014/analysis/databases/Accessiontaxa"
+# Points to the sql file containing names and Nodes information for use in rapid Taxonomy assignments in R
+Accession_allnamenode: "/scratch3/odw014/analysis/MetaDIVE_off_github/MetaDIVE/databases/taxonomy/nameNode.sqlite"
 
-Genomaddb: "/scratch3/odw014/analysis/databases/genomad/genomad_db"
+# Points to the names and nodes dmp files for use in taxonomizr to insert missing taxids in BLASTs before importing into R
+NCBI_reference_dir: "/scratch3/odw014/analysis/MetaDIVE_off_github/MetaDIVE/databases/taxonomy"
+
+
+
+Genomaddb: "/scratch3/odw014/analysis/MetaDIVE_off_github/MetaDIVE/databases/genomad/genomad_db"
 
 ############################################################################################
 ############################################################################################
