@@ -1,2 +1,8 @@
 databases/CO1_reference_sequences_Metazoa.fasta.gz filter=lfs diff=lfs merge=lfs -text
 databases/nameNode.sqlite.gz filter=lfs diff=lfs merge=lfs -text
+databases/LSU_combined.fasta.gz filter=lfs diff=lfs merge=lfs -text
+databases/SSU_combined.fasta.gz filter=lfs diff=lfs merge=lfs -text
+databases/CO1_all_references.fasta.gz filter=lfs diff=lfs merge=lfs -text
+databases/output_completed_taxonomyLSU.tsv.gz filter=lfs diff=lfs merge=lfs -text
+databases/output_completed_taxonomySSU.tsv.gz filter=lfs diff=lfs merge=lfs -text
+databases/output_completed_taxonomyCO1.tsv.gz filter=lfs diff=lfs merge=lfs -text
