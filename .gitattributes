@@ -5,3 +5,4 @@ databases/output_completed_taxonomyLSU.tsv.gz filter=lfs diff=lfs merge=lfs -tex
 databases/output_completed_taxonomySSU.tsv.gz filter=lfs diff=lfs merge=lfs -text
 databases/output_completed_taxonomyCO1.tsv.gz filter=lfs diff=lfs merge=lfs -text
 databases/nameNode.sqlite.gz filter=lfs diff=lfs merge=lfs -text
+databases/databases/nameNode.sqlite.gz filter=lfs diff=lfs merge=lfs -text
