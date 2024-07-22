@@ -5,13 +5,17 @@
 #SBATCH --ntasks-per-node 1              # ntasks per node 
 #SBATCH --cpus-per-task 4               # total number of CPUs to allocate.   
 #SBATCH --mem 16G                       # Total memory. 
-#SBATCH --time 3:00:00                 # Time requirements hh/mm/ss would recommend around 100 hours for large datasets. if it doesn't complete you can always launch the script again
+#SBATCH --time 6:00:00                 # Time requirements hh/mm/ss would recommend around 100 hours for large datasets. if it doesn't complete you can always launch the script again
 #SBATCH --partition io
 
 
 eval "$(conda shell.bash hook)"
 
 conda activate snakemake7
+
+
+databasedir=$(pwd)
+
 
 mkdir -p bowtie2/LSU
 mkdir -p bowtie2/SSU
@@ -37,9 +41,9 @@ tar xzvf taxdump.tar.gz
 cd ..
 
 # add taxonomy to LSU_DB
-mmseqs createtaxdb LSU_DB tmp --ncbi-tax-dump taxonomy/ --tax-mapping-file output_completed_taxonomyLSU.tsv
+mmseqs createtaxdb LSU_DB tmp --ncbi-tax-dump ./ncbi-taxdump --tax-mapping-file output_completed_taxonomyLSU.tsv
 
-mmseqs createindex SILVA_DB tmp --search-type 3 --split 4
+mmseqs createindex LSU_DB tmp --search-type 3 --split 4
 
 cd ..
 
@@ -63,11 +67,11 @@ mmseqs createdb SSU_combined.fasta SSU_DB
 
 mkdir ncbi-taxdump && cd ncbi-taxdump
 
-cp ../..LSU/taxonomy/* .
+cp "$databasedir"/LSU/ncbi-taxdump/* .
 
 cd ..
 
-mmseqs createtaxdb SSU_DB tmp --ncbi-tax-dump taxonomy/ --tax-mapping-file output_completed_taxonomySSU.tsv
+mmseqs createtaxdb SSU_DB tmp --ncbi-tax-dump ./ncbi-taxdump --tax-mapping-file output_completed_taxonomySSU.tsv
 
 
 mmseqs createindex SSU_DB tmp --search-type 3 --split 6
@@ -183,12 +187,12 @@ mmseqs createdb CO1_all_references.fasta CO1_DB
 # Download taxdump for creating taxonomy
 mkdir ncbi-taxdump && cd ncbi-taxdump
 
-cp ../..LSU/taxonomy/* .
+cp "$databasedir"/LSU/ncbi-taxdump/* .
 
 cd ..
 
 # add taxonomy to CO1_DB
-mmseqs createtaxdb CO1_DB tmp --ncbi-tax-dump taxonomy/ --tax-mapping-file output_completed_taxonomyCO1.tsv
+mmseqs createtaxdb CO1_DB tmp --ncbi-tax-dump ./ncbi-taxdump --tax-mapping-file output_completed_taxonomyCO1.tsv
 
 
 mmseqs createindex CO1_DB tmp --search-type 3 --split 4

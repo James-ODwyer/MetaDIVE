@@ -37,7 +37,6 @@ parser$add_argument('--output', '-o', help= 'Output file for summary of genomad 
 parser$add_argument('--programdir ', '-p', help= 'working program directory')
 parser$add_argument('--savdir ', '-s', help= 'working directory for saving contig matches')
 parser$add_argument('--name', '-n', help= 'Name of sample')
-parser$add_argument('--Acc', '-A', help= 'Accessiontaxa filepath')
 parser$add_argument('--Accnode', '-N', help= 'Accessiontaxa name_node filepath')
 parser$add_argument('--Log', '-l', help= 'Log of data')
 parser$add_argument('--FDRrates', '-F', help= 'Estimated False discovery rates for genomad hits')
@@ -57,7 +56,6 @@ FDRrates <- read.table(xargs$FDRrates, header = FALSE, sep = "\t",fill=TRUE)
 
 
 NAMES <- xargs$name
-Accessionfile <- xargs$Acc
 AccessionNamenode <- xargs$Accnode
 assigned_contigs1 <- xargs$programdir
 assigned_contigs2 <- xargs$output
@@ -88,12 +86,6 @@ contigsassigned <- Diamond_output
 
 contigsassigned[,14] <- NA
 
-# rd 1 generate tax id's from accessions
-
-contigsassigned[,14] <- foreach(i = 1:nrow(contigsassigned), .combine = 'rbind') %dopar% {
-  
-  contigsassigned[,14] <- taxonomizr::accessionToTaxa(contigsassigned$sseqid[i], sqlFile=Accessionfile, version = "version")
-}
 
 # rd 2. Many accessions don't work (old, outdated? maybe something else)
 # generate taxids from name in the stitle
@@ -124,10 +116,6 @@ for ( i in c (1:nrow(contigsassigned))) {
 }
 
 
-contigsassigned[,14] <- foreach(i = 1:nrow(contigsassigned), .combine = 'rbind') %dopar% {
-  
-  contigsassigned[,14] <- taxonomizr::accessionToTaxa(contigsassigned$sseqid[i], sqlFile=Accessionfile, version = "version")
-}
 
 
 

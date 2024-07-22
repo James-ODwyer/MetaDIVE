@@ -174,7 +174,7 @@ rule genomad_contigs:
         "logs/" + config["sub_dirs"]["Genomad_viral_ids"] + "/{sample}.log"
     threads: 8
     priority: 1
-    conda: "Genomad"
+    conda: "genomad"
     benchmark:
         "benchmarks/" + config["sub_dirs"]["Genomad_viral_ids"] + "/{sample}.txt"
     resources:
@@ -236,7 +236,6 @@ rule remove_host_hits_blastn:
         hostcontigs = config["sub_dirs"]["Genomad_viral_host_rem"] + "/{sample}_host_aligned_contigs.txt"
     params:
         samplename = "{sample}",
-        Accdatabase = config["Accession_all"],
         namenodedatabase = config["Accession_allnamenode"],
         basedir = config["program_dir"],
         wrkdir = config["sub_dirs"]["Genomad_viral_host_rem"]
@@ -251,7 +250,7 @@ rule remove_host_hits_blastn:
         if [ "$num_rows" -gt 1 ]; then
         Rscript {config[program_dir]}scripts/Identify_host_contigs_genomad_HPC.R \
             --inputdiamond {input.blastfile} --name {params.samplename} --programdir {params.basedir} \
-            --Acc {params.Accdatabase} --Accnode {params.namenodedatabase} --output {output.hostcontigs} --Log {log} \
+            --Accnode {params.namenodedatabase} --output {output.hostcontigs} --Log {log} \
             --savdir {params.wrkdir} --hostsp {input.hostsp} --contighostsp {input.full_prot_host_id}
         fi && \
         touch {output.hostcontigs}
@@ -409,7 +408,6 @@ rule remove_host_hits:
         nonhostcontigs = config["sub_dirs"]["Genomad_viral_host_rem"] + "/{sample}_non_host_aligned_contigs.tsv"
     params:
         samplename = "{sample}",
-        Accdatabase = config["Accession_all"],
         namenodedatabase = config["Accession_allnamenode"],
         basedir = config["program_dir"],
         wrkdir = config["sub_dirs"]["Genomad_viral_host_rem"]
@@ -422,7 +420,7 @@ rule remove_host_hits:
         """
         Rscript {config[program_dir]}scripts/Identify_host_contigs_genomad_HPC.R \
             --inputdiamond {input.diamondfile} --name {params.samplename} --programdir {params.basedir} \
-            --Acc {params.Accdatabase} --Accnode {params.namenodedatabase} --output {output.nonhostcontigs} --Log {log} \
+            --Accnode {params.namenodedatabase} --output {output.nonhostcontigs} --Log {log} \
             --savdir {params.wrkdir} --hostsp {input.hostsp}
         """
 
@@ -440,7 +438,6 @@ rule generate_top_viral_lists:
         summary_viral_hits = config["sub_dirs"]["Genomad_viral_categorise_species"] + "/{sample}_summary_all_viral_species.tsv"
     params:
         samplename = "{sample}",
-        Accdatabase = config["Accession_all"],
         basedir = config["program_dir"],
         namenodedatabase = config["Accession_allnamenode"],
         wrkdir = config["sub_dirs"]["Genomad_viral_categorise_species"]
@@ -456,7 +453,7 @@ rule generate_top_viral_lists:
         then
         Rscript {config[program_dir]}scripts/extract_viral_species_multi_genes_genomad.R \
             --inputdiamond {input.diamondfile} --name {params.samplename} --programdir {params.basedir} \
-            --Acc {params.Accdatabase} --output {output.summary_viral_hits} --Log {log} \
+            --output {output.summary_viral_hits} --Log {log} \
             --savdir {params.wrkdir} --FDRrates {input.FDRrates} --Accnode {params.namenodedatabase}
         fi && \
         if [ ${{length}} -eq 0 ]

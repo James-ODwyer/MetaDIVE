@@ -23,7 +23,6 @@ parser$add_argument('--output', '-o', help= 'Output file for host contigs')
 parser$add_argument('--programdir ', '-p', help= 'working program directory')
 parser$add_argument('--savdir ', '-s', help= 'working directory for saving contig matches')
 parser$add_argument('--name', '-n', help= 'Name of sample')
-parser$add_argument('--Acc', '-A', help= 'Accessiontaxa filepath')
 parser$add_argument('--Accnode', '-N', help= 'Accessiontaxa name_node filepath')
 parser$add_argument('--Log', '-l', help= 'Log of data')
 parser$add_argument('--hostsp', '-C', help= 'host species if determined')
@@ -64,7 +63,6 @@ hostspeciescontigspth <- xargs$contighostsp
 
 
 NAMES <- xargs$name
-Accessionfile <- xargs$Acc
 AccessionNamenode <- xargs$Accnode
 assigned_contigs1 <- xargs$programdir
 assigned_contigs2 <- xargs$output
