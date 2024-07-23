@@ -93,6 +93,8 @@ echo "Conda environment genomad fully installed"
 
 echo " Now installing final missing R package"
 
+conda init
+
 conda activate Rdataplotting
 
 Rscript install_d3Tree.R
