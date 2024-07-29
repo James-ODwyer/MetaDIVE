@@ -30,7 +30,7 @@ do
 done
 
 
-export NCBI_API_KEY='$API_KEY'
+export NCBI_API_KEY="$API_KEY"
 
 
 # Input 2 is the taxid file. Need to update rule still with the argpass call.

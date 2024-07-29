@@ -35,19 +35,19 @@ echo "output directory : $outdir"
 echo "Program directory   : $programdir"
 
 # api key here, but should make it a variable in the config file and feed it in in future.
-export NCBI_API_KEY='$API_KEY'
+export NCBI_API_KEY="$API_KEY"
 
 
 
-
+input2="$programdir""$input"
 # Now the actual code to download the genomeS
 # 8/4/24 Update to download 1 WGS assembly genome and if present 1 Master TSA transcriptome. 
 # (This should hopefully address the huge number of transcript variants making it through from host) 
 
         sleep $[ ( $RANDOM % 2 )  + 1 ]s
 
-        genus=(`awk '{print $1}' ${input}`)
-        species=(`awk '{print $2}' ${input}`)
+        genus=(`awk '{print $1}' ${input2}`)
+        species=(`awk '{print $2}' ${input2}`)
         cd $outdir
         echo " getting genome for: "${genus}" "${species}" "
         echo " Identifying any complete genomes "

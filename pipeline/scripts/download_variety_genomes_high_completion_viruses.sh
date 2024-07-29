@@ -36,7 +36,7 @@ echo " sample name: $samplename "
 echo " program dir: $programdir "
 
 
-export NCBI_API_KEY='$API_KEY'
+export NCBI_API_KEY="$API_KEY"
 
 
 # Edited version. New pathway takes taxid's from identified genomes with minimum 100 hits to the genome. 

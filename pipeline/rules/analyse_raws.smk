@@ -23,43 +23,43 @@ def raws_after_hostR2(wildcards):
 def Diamond_memraw(wildcards):
     if config["Sensitivity"] == "VHigh":
         return([
-            "36"
+            "48"
         ])
     if config["Sensitivity"] == "High":
         return([
-            "34"
+            "44"
         ])
     if config["Sensitivity"] == "Medium":
         return([
-            "28"
+            "38"
         ])
     if config["Sensitivity"] == "Medium-Low":
         return([
-            "24"
+            "32"
         ])
     if config["Sensitivity"] == "Low":
         return([
-            "20"
+            "28"
         ])
     if config["Sensitivity"] == "Ultra_low":
         return([
-            "16"
+            "24"
         ])
 
 
 def Diamond_memrawMB(wildcards):
     if config["Sensitivity"] == "VHigh":
-        return "36000"
+        return "48000"
     if config["Sensitivity"] == "High":
-        return "34000"
+        return "44000"
     if config["Sensitivity"] == "Medium":
-        return "28000"
+        return "38000"
     if config["Sensitivity"] == "Medium-Low":
-        return "24000"
+        return "32000"
     if config["Sensitivity"] == "Low":
-        return "20000"
+        return "28000"
     if config["Sensitivity"] == "Ultra_low":
-        return "16000"
+        return "24000"
 
 rule unmapped_reads_diamond:
     message:
