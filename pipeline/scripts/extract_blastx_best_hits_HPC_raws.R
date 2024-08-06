@@ -131,7 +131,6 @@ Diamond_output$bitscore <- as.numeric(Diamond_output$bitscore)
 Diamond_output$pident<- as.numeric(Diamond_output$pident)
 Diamond_output$length<- as.numeric(Diamond_output$length)
 
-save.image("test1.Rdata")
 
 c <- Sys.time()
 
@@ -166,7 +165,6 @@ if ( nrow(uniquespmissing) >=1 ) {
   taxids[,1] <-Diamond_outputmissingonly$sp
   taxidsunique[,1] <-uniquespmissing$sp
   
-  save.image("test2.Rdata")
   
   for ( i in c(1:nrow(taxidsunique))) {
     
@@ -204,7 +202,7 @@ if ( nrow(uniquespmissing) >=1 ) {
   taxids$V1 <- gsub(pattern = ":",replacement = "",x = taxids$V1,fixed = TRUE)
   taxidsunique$V1 <- gsub(pattern = ":",replacement = "",x = taxidsunique$V1,fixed = TRUE)
   
-  save.image("test3.Rdata")
+
   for (i in c(1:nrow(taxids))) {
     
     grep(paste0("^",taxids[i,1],"$"),taxidsunique$V1) -> idxval
@@ -244,7 +242,7 @@ if ( nrow(uniquespmissing) >=1 ) {
   contigsassignedindexes$V1 <- contigsassignedunique$staxidreduced
   contigsassignedindexes$V2 <- row.names(contigsassignedunique)
   
-  save.image("test4.Rdata")
+
   for ( i in c(1:nrow(contigsassignedindexes))) {
     
     if ( i < nrow(contigsassignedindexes)) {
@@ -281,7 +279,7 @@ taxids$V1 <- Diamond_output$staxidreduced
 taxidsunique$V1 <- contigsassignedunique$staxidreduced
 taxids$V2 <- Diamond_output$sseqid
 taxidsunique$V2 <- contigsassignedunique$sseqid
-save.image("test5.Rdata")
+
 cat(paste0(" Starting taxonomizr getTaxonomy known taxids ", "\n"))
 
 for (i in c(1:nrow(contigsassignedunique))) {
@@ -326,7 +324,7 @@ cat(paste0(Sys.time(), "\n"))
 
 taxidsunique<- as.data.frame(taxidsunique, ncol=8)
 colnames(taxidsunique) =c("staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species") 
-save.image("test6.Rdata")
+
 
 taxidsunique$startrow <- as.numeric(contigsassignedindexes$startingrow)
 taxidsunique$endrow <- as.numeric(contigsassignedindexes$endingrow)

@@ -135,7 +135,7 @@ rule build_host_genome_idx:
             -p {threads} \
             --al-conc-gz {params.alignedreads} \
             -S {output.samoutput} \
-            --fast \
+            --fast-local\
             2> {log} && \
         samtools view -@ {threads} -F 4 -h {output.samoutput} > {output.samoutputhits} && \
         samtools view -@ {threads} -f 4 -h {output.samoutput} > {output.samoutputunaligned} && \

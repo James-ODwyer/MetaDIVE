@@ -54,7 +54,6 @@ xargs<- parser$parse_args()
 
 
 Diamond_lines<- readLines(xargs$inputdiamond)
-save.image("test_diamondx.Rdata")
 
 
 # Function to replace '\n' with an actual newline character
@@ -82,7 +81,6 @@ Diamond_output[] <- lapply(Diamond_output, function(col) gsub("###NEWLINE###", "
 
 rm(modified_lines,Diamond_lines)
 
-save.image("test_blastx_arean_missing.Rdata")
 
 Megahitcontigs <- seqinr::read.fasta(file = xargs$inputcontig, seqtype = "DNA", as.string = TRUE, forceDNAtolower = TRUE, set.attributes = TRUE, whole.header=TRUE)
 

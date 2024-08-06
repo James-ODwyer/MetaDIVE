@@ -212,7 +212,8 @@ bowtie2-build "CO1_all_references.fasta" CO1_reference_idx --threads ${SLURM_CPU
             --large-index
 
 cd ..
-cd ../envs
+cd ..
+
 
 conda activate Rdataplotting
 
@@ -220,10 +221,6 @@ Rscript install_d3Tree.R
 
 conda deactivate
 
-
-conda activate Rdataplotting
-cd ..
-Rscript install_d3Tree.R
 
 
 

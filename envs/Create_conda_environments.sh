@@ -13,6 +13,7 @@
 
 conda_path=$(conda info --base)
 
+conda config --set channel_priority flexible
 
 mkdir -p "$conda_path"/envs/snakemake7
 
@@ -90,13 +91,3 @@ conda env create --file genomad.yaml --prefix $env_path
 echo "Conda environment created at: $env_path"
 echo "Conda environment genomad fully installed"
 
-
-echo " Now installing final missing R package"
-
-conda init
-
-conda activate Rdataplotting
-
-Rscript install_d3Tree.R
-
-conda deactivate

@@ -530,7 +530,7 @@ if (dohostdetect =="yes") {
       percentage <- as.numeric(str_extract(hostrawsalign[X], "[0-9]+\\.[0-9]+"))
       percentage_unassigned <- (100-percentage)
       unassignedrawhost <- ((percentage_unassigned*total)/100)
-
+      
       # Put inside first because if the sample doesn't get any raw read hits to a host genome its nor
       # going to get contig hits later
       if (length(readstohostcontigsalign) >=1) {
@@ -550,8 +550,8 @@ if (dohostdetect =="yes") {
         percentage <- as.numeric(str_extract(hostrawsalign[X], "[0-9]+\\.[0-9]+"))
         percentage_unassigned <- (100-percentage)
         unassignedhostcont <- unassignedrawhost
-
-      
+        
+        
       }
       
       
@@ -577,7 +577,7 @@ if (dohostdetect =="yes") {
       hostcontigsassignedreads <- 0
     }
     
-
+    
     
   }
   
@@ -776,35 +776,35 @@ write.table(Viraltop100,file=(paste0(outtablespath,NAMES,"_top100Viralhits_conti
 # Generate output_taxids for results
 # Note it is currently pulling top 20 despite the name top10
 
-  
+
+Viraltop10 <- Viraltop20[1:20,]
+
+Viraltop10 <- subset(Viraltop10,Viraltop10$average_percent_ident >=40 & Viraltop10$Frequency >=50)
+
+
+if (nrow(Viraltop10) ==0) {
   Viraltop10 <- Viraltop20[1:20,]
   
-  Viraltop10 <- subset(Viraltop10,Viraltop10$average_percent_ident >=40 & Viraltop10$Frequency >=50)
-  
-  
-  if (nrow(Viraltop10) ==0) {
-  Viraltop10 <- Viraltop20[1:20,]
-    
   Viraltop10 <- subset(Viraltop10,Viraltop10$average_percent_ident >=30 & Viraltop10$Frequency >=20)
-    
-    
-  }
- 
   
-   
- 
+  
+}
+
+
+
+
 Viraltoptaxids <- as.data.frame(matrix(nrow=nrow(Viraltop10),ncol=1))
 if (nrow(Viraltop10) !=0) {
   
-for ( i in c(1:nrow(Viraltop10))) {
+  for ( i in c(1:nrow(Viraltop10))) {
+    
+    grep(Viraltop10$species[i],Combined_assigned_contigs$species) -> idx
+    value <- Combined_assigned_contigs[idx[1],]
+    
+    Viraltoptaxids[i,1] <- value$staxidreduced
+    
+  }
   
-  grep(Viraltop10$species[i],Combined_assigned_contigs$species) -> idx
-  value <- Combined_assigned_contigs[idx[1],]
-       
-  Viraltoptaxids[i,1] <- value$staxidreduced
-       
-}
-
 }
 
 
@@ -837,16 +837,16 @@ if ( nrow(Viraltop_identstaxids) >=1) {
 
 
 if (nrow(Viraltop10) >=1) {
-if (!is.na(Viraltop10[1,1])) {
-
-write.table(Viraltoptaxids,file=(paste0(outtablespath,NAMES,"_top10_Taxids_Viral_contigs.txt")),sep="\t",row.names=FALSE, col.names=FALSE,quote=FALSE)
-}
+  if (!is.na(Viraltop10[1,1])) {
+    
+    write.table(Viraltoptaxids,file=(paste0(outtablespath,NAMES,"_top10_Taxids_Viral_contigs.txt")),sep="\t",row.names=FALSE, col.names=FALSE,quote=FALSE)
+  }
 }
 
 if (is.na(Viraltop10[1,1])) {
-Viraltoptaxids <- as.data.frame(matrix(nrow=1,ncol=1))
-
-write.table(Viraltoptaxids,file=(paste0(outtablespath,NAMES,"_top10_Taxids_Viral_contigs.txt")),sep="\t",row.names=FALSE,col.names=FALSE,quote=FALSE)
+  Viraltoptaxids <- as.data.frame(matrix(nrow=1,ncol=1))
+  
+  write.table(Viraltoptaxids,file=(paste0(outtablespath,NAMES,"_top10_Taxids_Viral_contigs.txt")),sep="\t",row.names=FALSE,col.names=FALSE,quote=FALSE)
 }
 
 if (nrow(Viraltop10) ==0) {
@@ -893,11 +893,11 @@ if (dodiamondraws == 'yes') {
     
     Diamondrawshits <- read.table(file=xargs$diamondrawskingdoms, sep="\t",header=TRUE,row.names=NULL, fill=TRUE)
     paste0(NAMES," dim Diamondrawshits ", dim(Diamondrawshits))
-
-
-  colnames(Diamondrawshits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species")
- 
-
+    
+    
+    colnames(Diamondrawshits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species")
+    
+    
   }
   else if (length(Diamondrawpresence) ==0) {
     Diamondrawshits <- as.data.frame(matrix(nrow=0,ncol=17))
@@ -906,13 +906,13 @@ if (dodiamondraws == 'yes') {
   
   colnames(Diamondrawshits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species")
   
-# Diamond returns length alignments as aa length, convert to nucleotide length
-
-Diamondrawshits<- Diamondrawshits%>% 
-  mutate(length = length * 3)
-
-
-
+  # Diamond returns length alignments as aa length, convert to nucleotide length
+  
+  Diamondrawshits<- Diamondrawshits%>% 
+    mutate(length = length * 3)
+  
+  
+  
   # 
   #Diamondrawslog <- readLines(xargs$diamondrawslog)
   
@@ -932,149 +932,149 @@ Diamondrawshits<- Diamondrawshits%>%
   # I can 1. double the remaining reads after all removals instead of Diamond or I can subtract the uniques of Diamond 
   # under the assumption that if one of the pair was subtracted the other should probably have been subtracted to. 
   # Doing the latter here because I don't like having everything in paired ends except the very last stat
-
+  
   length(unique(Diamondrawshits$qseqid)) -> rawdiamondassignedreads
   
   summary_contigs_table$Raw_reads_assigned_raw_diamond <- rawdiamondassignedreads
   
   paste0(" No species level information for raw Diamond blast will be returned for low identity reads here, for details of assignments see directory /11_Diamond_ASSIGNED_RAWS/abundances")
-
+  
   summary_contigs_table$raw_reads_not_assigned <- (summary_reads_table$remaining_reads-(summary_contigs_table$Non_host_reads_assigned_via_protein_search + summary_contigs_table$Non_host_reads_assigned_via_nucleotide_search + summary_contigs_table$Raw_reads_assigned_to_host_genome + summary_contigs_table$Raw_reads_assigned_to_host_aligned_contigs + summary_contigs_table$Raw_reads_assigned_to_host_blastn_diamondx + summary_contigs_table$Raw_reads_assigned_raw_diamond))
-
+  
   summary_contigs_table$raw_reads_not_assigned <- round(summary_contigs_table$raw_reads_not_assigned)
-
-Diamondrawshitshighacc <- subset(Diamondrawshits,Diamondrawshits$pident >=75 & Diamondrawshits$length>=90)
-
-Diamondrawshitshighaccfreqs <- Diamondrawshitshighacc %>%
-  group_by(species) %>%
-  summarize(count = n())
-
-
-
-Diamondrawshitshighaccfreqs<- subset(Diamondrawshitshighaccfreqs,!(is.na(Diamondrawshitshighaccfreqs$species)))
-
-Diamondrawshitshighaccfreqs$superkingdom <- NA 
-Diamondrawshitshighaccfreqs$family <- NA 
-Diamondrawshitshighaccfreqs$taxid <- NA
-Diamondrawshitshighaccfreqs$min_aligned_length <- NA 
-Diamondrawshitshighaccfreqs$max_aligned_length <- NA 
-Diamondrawshitshighaccfreqs$mean_aligned_length <- NA 
-Diamondrawshitshighaccfreqs$min_identity <- NA 
-Diamondrawshitshighaccfreqs$max_identity <- NA 
-Diamondrawshitshighaccfreqs$mean_identity <- NA 
-
-if(nrow(Diamondrawshitshighaccfreqs) >=1) {
-for (l in c(1:nrow(Diamondrawshitshighaccfreqs) )) {
   
-  Diamondrawshitshighaccspeciessubset <- Diamondrawshitshighacc %>%
-   filter(grepl(Diamondrawshitshighaccfreqs[l,1], Diamondrawshitshighacc$species))
+  Diamondrawshitshighacc <- subset(Diamondrawshits,Diamondrawshits$pident >=75 & Diamondrawshits$length>=90)
+  
+  Diamondrawshitshighaccfreqs <- Diamondrawshitshighacc %>%
+    group_by(species) %>%
+    summarize(count = n())
   
   
   
-  Diamondrawshitshighaccfreqs$superkingdom[l] <- Diamondrawshitshighaccspeciessubset$superkingdom[1]
-  Diamondrawshitshighaccfreqs$family[l] <- Diamondrawshitshighaccspeciessubset$family[1]
-  Diamondrawshitshighaccfreqs$taxid[l] <- Diamondrawshitshighaccspeciessubset$staxids[1]
-  Diamondrawshitshighaccfreqs$min_aligned_length[l] <- min(Diamondrawshitshighaccspeciessubset$length)
-  Diamondrawshitshighaccfreqs$max_aligned_length[l] <- max(Diamondrawshitshighaccspeciessubset$length)
-  Diamondrawshitshighaccfreqs$mean_aligned_length[l] <- mean(Diamondrawshitshighaccspeciessubset$length)
-  Diamondrawshitshighaccfreqs$min_identity[l] <- min(Diamondrawshitshighaccspeciessubset$pident)
-  Diamondrawshitshighaccfreqs$max_identity[l] <- max(Diamondrawshitshighaccspeciessubset$pident)
-  Diamondrawshitshighaccfreqs$mean_identity[l] <- mean(Diamondrawshitshighaccspeciessubset$pident)
+  Diamondrawshitshighaccfreqs<- subset(Diamondrawshitshighaccfreqs,!(is.na(Diamondrawshitshighaccfreqs$species)))
   
-}
-
-# This should become a variable to play around with! But I will set it to 20 here because I don't want to mess with the rules scripts yet
-# Read number cout off!!! 
-# set to 5 here 
-
-Diamondrawshitshighaccfreqssignificant <- subset(Diamondrawshitshighaccfreqs,Diamondrawshitshighaccfreqs$count>=5)
-
-# Now need to fill in the taxids and then split into raw files and add viruses on
-
-
-for (i in c(1:nrow(Diamondrawshitshighaccfreqssignificant))) {
-
-if (is.na(Diamondrawshitshighaccfreqssignificant$taxid[i])) {
+  Diamondrawshitshighaccfreqs$superkingdom <- NA 
+  Diamondrawshitshighaccfreqs$family <- NA 
+  Diamondrawshitshighaccfreqs$taxid <- NA
+  Diamondrawshitshighaccfreqs$min_aligned_length <- NA 
+  Diamondrawshitshighaccfreqs$max_aligned_length <- NA 
+  Diamondrawshitshighaccfreqs$mean_aligned_length <- NA 
+  Diamondrawshitshighaccfreqs$min_identity <- NA 
+  Diamondrawshitshighaccfreqs$max_identity <- NA 
+  Diamondrawshitshighaccfreqs$mean_identity <- NA 
   
-  Diamondrawshitshighaccfreqssignificant$taxid[i] <- taxonomizr::getId(Diamondrawshitshighaccfreqssignificant$species[i], sqlFile=AccessionNamenode)
-  
-}
-
-
-}
-
-DiamondrawshitshighaccfreqssignificantEukaryotes <- subset(Diamondrawshitshighaccfreqssignificant,Diamondrawshitshighaccfreqssignificant$superkingdom=="Eukaryota")
-DiamondrawshitshighaccfreqssignificantBacteria <- subset(Diamondrawshitshighaccfreqssignificant,Diamondrawshitshighaccfreqssignificant$superkingdom=="Bacteria")
-DiamondrawshitshighaccfreqssignificantVirus<- subset(Diamondrawshitshighaccfreqssignificant,Diamondrawshitshighaccfreqssignificant$superkingdom=="Viruses")
-
-
-write.table(DiamondrawshitshighaccfreqssignificantBacteria,file=(paste0(outtablespath,NAMES,"bacterialhits_raw_reads.txt")),sep="\t",row.names=FALSE)
-write.table(DiamondrawshitshighaccfreqssignificantEukaryotes,file=(paste0(outtablespath,NAMES,"Eukaryotehits_raw_reads.txt")),sep="\t",row.names=FALSE)
-write.table(DiamondrawshitshighaccfreqssignificantVirus,file=(paste0(outtablespath,NAMES,"Viralhits_raw_reads.txt")),sep="\t",row.names=FALSE)
-
-
-}
-
-
-if (nrow(Diamondrawshitshighaccfreqs) <1) {
-
-# Create empty files to have as outputs
-file_bact_empty <- paste0(outtablespath,NAMES,"bacterialhits_raw_reads.txt")
-file.create(file_bact_empty)
-file_euk_empty <- paste0(outtablespath,NAMES,"Eukaryotehits_raw_reads.txt")
-file.create(file_euk_empty)
-file_vir_empty <- paste0(outtablespath,NAMES,"Viralhits_raw_reads.txt")
-file.create(file_vir_empty )
-
-}
-
-if (nrow(Diamondrawshitshighaccfreqs) >=1) {
-Viralraw_reads <- Diamondrawshitshighacc[Diamondrawshitshighacc$species %in% DiamondrawshitshighaccfreqssignificantVirus$species, ]
-
-Viralraw_reads <- subset(Viralraw_reads,Viralraw_reads$length>100 & Viralraw_reads$pident>70)
-
-Viralraw_readsnames <- Viralraw_reads$qseqid
-
-
-write.table(Viralraw_reads,file=(paste0(outtablespath,NAMES,"_virus_hits_all_details_results_table.txt")),sep="\t",row.names=FALSE,col.names = FALSE,quote=FALSE)
-
-
-write.table(Viralraw_readsnames,file=(paste0(outtablespath,NAMES,"_raw_read_names_to_virus.txt")),sep="\t",row.names=FALSE,col.names = FALSE,quote=FALSE)
-
-            
-
-DiamondrawshitshighaccfreqssignificantVirusforlocalallignments <- subset(DiamondrawshitshighaccfreqssignificantVirus,DiamondrawshitshighaccfreqssignificantVirus$mean_identity >=80)
-DiamondrawshitshighaccfreqssignificantVirusforlocalallignments <- subset(DiamondrawshitshighaccfreqssignificantVirus,DiamondrawshitshighaccfreqssignificantVirus$count>=100)
-
-Viraltoptaxids <- subset(Viraltoptaxids,!(is.na(Viraltoptaxids[,1])))
-viral_rawstaxids <- DiamondrawshitshighaccfreqssignificantVirusforlocalallignments$taxid
-viral_rawstaxids <- as.numeric(viral_rawstaxids)
-viral_rawstaxids <- as.matrix(viral_rawstaxids,ncol=1)
-
-Viraltoptaxids <- rbind(Viraltoptaxids,viral_rawstaxids)
-
-Viraltoptaxids  <- unique(Viraltoptaxids[, 1])
-
-
-
+  if(nrow(Diamondrawshitshighaccfreqs) >=1) {
+    for (l in c(1:nrow(Diamondrawshitshighaccfreqs) )) {
+      
+      Diamondrawshitshighaccspeciessubset <- Diamondrawshitshighacc %>%
+        filter(grepl(Diamondrawshitshighaccfreqs[l,1], Diamondrawshitshighacc$species))
+      
+      
+      
+      Diamondrawshitshighaccfreqs$superkingdom[l] <- Diamondrawshitshighaccspeciessubset$superkingdom[1]
+      Diamondrawshitshighaccfreqs$family[l] <- Diamondrawshitshighaccspeciessubset$family[1]
+      Diamondrawshitshighaccfreqs$taxid[l] <- Diamondrawshitshighaccspeciessubset$staxids[1]
+      Diamondrawshitshighaccfreqs$min_aligned_length[l] <- min(Diamondrawshitshighaccspeciessubset$length)
+      Diamondrawshitshighaccfreqs$max_aligned_length[l] <- max(Diamondrawshitshighaccspeciessubset$length)
+      Diamondrawshitshighaccfreqs$mean_aligned_length[l] <- mean(Diamondrawshitshighaccspeciessubset$length)
+      Diamondrawshitshighaccfreqs$min_identity[l] <- min(Diamondrawshitshighaccspeciessubset$pident)
+      Diamondrawshitshighaccfreqs$max_identity[l] <- max(Diamondrawshitshighaccspeciessubset$pident)
+      Diamondrawshitshighaccfreqs$mean_identity[l] <- mean(Diamondrawshitshighaccspeciessubset$pident)
+      
+    }
     
-}
-
+    # This should become a variable to play around with! But I will set it to 20 here because I don't want to mess with the rules scripts yet
+    # Read number cout off!!! 
+    # set to 5 here 
+    
+    Diamondrawshitshighaccfreqssignificant <- subset(Diamondrawshitshighaccfreqs,Diamondrawshitshighaccfreqs$count>=5)
+    
+    # Now need to fill in the taxids and then split into raw files and add viruses on
+    
+    
+    for (i in c(1:nrow(Diamondrawshitshighaccfreqssignificant))) {
+      
+      if (is.na(Diamondrawshitshighaccfreqssignificant$taxid[i])) {
+        
+        Diamondrawshitshighaccfreqssignificant$taxid[i] <- taxonomizr::getId(Diamondrawshitshighaccfreqssignificant$species[i], sqlFile=AccessionNamenode)
+        
+      }
+      
+      
+    }
+    
+    DiamondrawshitshighaccfreqssignificantEukaryotes <- subset(Diamondrawshitshighaccfreqssignificant,Diamondrawshitshighaccfreqssignificant$superkingdom=="Eukaryota")
+    DiamondrawshitshighaccfreqssignificantBacteria <- subset(Diamondrawshitshighaccfreqssignificant,Diamondrawshitshighaccfreqssignificant$superkingdom=="Bacteria")
+    DiamondrawshitshighaccfreqssignificantVirus<- subset(Diamondrawshitshighaccfreqssignificant,Diamondrawshitshighaccfreqssignificant$superkingdom=="Viruses")
+    
+    
+    write.table(DiamondrawshitshighaccfreqssignificantBacteria,file=(paste0(outtablespath,NAMES,"bacterialhits_raw_reads.txt")),sep="\t",row.names=FALSE)
+    write.table(DiamondrawshitshighaccfreqssignificantEukaryotes,file=(paste0(outtablespath,NAMES,"Eukaryotehits_raw_reads.txt")),sep="\t",row.names=FALSE)
+    write.table(DiamondrawshitshighaccfreqssignificantVirus,file=(paste0(outtablespath,NAMES,"Viralhits_raw_reads.txt")),sep="\t",row.names=FALSE)
+    
+    
+  }
+  
+  
+  if (nrow(Diamondrawshitshighaccfreqs) <1) {
+    
+    # Create empty files to have as outputs
+    file_bact_empty <- paste0(outtablespath,NAMES,"bacterialhits_raw_reads.txt")
+    file.create(file_bact_empty)
+    file_euk_empty <- paste0(outtablespath,NAMES,"Eukaryotehits_raw_reads.txt")
+    file.create(file_euk_empty)
+    file_vir_empty <- paste0(outtablespath,NAMES,"Viralhits_raw_reads.txt")
+    file.create(file_vir_empty )
+    
+  }
+  
+  if (nrow(Diamondrawshitshighaccfreqs) >=1) {
+    Viralraw_reads <- Diamondrawshitshighacc[Diamondrawshitshighacc$species %in% DiamondrawshitshighaccfreqssignificantVirus$species, ]
+    
+    Viralraw_reads <- subset(Viralraw_reads,Viralraw_reads$length>100 & Viralraw_reads$pident>70)
+    
+    Viralraw_readsnames <- Viralraw_reads$qseqid
+    
+    
+    write.table(Viralraw_reads,file=(paste0(outtablespath,NAMES,"_virus_hits_all_details_results_table.txt")),sep="\t",row.names=FALSE,col.names = FALSE,quote=FALSE)
+    
+    
+    write.table(Viralraw_readsnames,file=(paste0(outtablespath,NAMES,"_raw_read_names_to_virus.txt")),sep="\t",row.names=FALSE,col.names = FALSE,quote=FALSE)
+    
+    
+    
+    DiamondrawshitshighaccfreqssignificantVirusforlocalallignments <- subset(DiamondrawshitshighaccfreqssignificantVirus,DiamondrawshitshighaccfreqssignificantVirus$mean_identity >=80)
+    DiamondrawshitshighaccfreqssignificantVirusforlocalallignments <- subset(DiamondrawshitshighaccfreqssignificantVirus,DiamondrawshitshighaccfreqssignificantVirus$count>=100)
+    
+    Viraltoptaxids <- subset(Viraltoptaxids,!(is.na(Viraltoptaxids[,1])))
+    viral_rawstaxids <- DiamondrawshitshighaccfreqssignificantVirusforlocalallignments$taxid
+    viral_rawstaxids <- as.numeric(viral_rawstaxids)
+    viral_rawstaxids <- as.matrix(viral_rawstaxids,ncol=1)
+    
+    Viraltoptaxids <- rbind(Viraltoptaxids,viral_rawstaxids)
+    
+    Viraltoptaxids  <- unique(Viraltoptaxids[, 1])
+    
+    
+    
+    
+  }
+  
 }
 
 if (nrow(Diamondrawshitshighaccfreqs) <1) {
-file_virreads_empty <- paste0(outtablespath,NAMES,"_virus_hits_all_details_results_table.txt")
-file.create(file_virreads_empty)
-file_virnames_empty <- paste0(outtablespath,NAMES,"_raw_read_names_to_virus.txt")
-file.create(file_virnames_empty)
-
-
-Viraltoptaxids <- subset(Viraltoptaxids,!(is.na(Viraltoptaxids[,1])))
-
+  file_virreads_empty <- paste0(outtablespath,NAMES,"_virus_hits_all_details_results_table.txt")
+  file.create(file_virreads_empty)
+  file_virnames_empty <- paste0(outtablespath,NAMES,"_raw_read_names_to_virus.txt")
+  file.create(file_virnames_empty)
+  
+  
+  Viraltoptaxids <- subset(Viraltoptaxids,!(is.na(Viraltoptaxids[,1])))
+  
 }
 
 if (dodiamondraws == 'no') {
-summary_contigs_table$raw_reads_not_assigned <- (summary_reads_table$remaining_reads-(summary_contigs_table$Non_host_reads_assigned_via_protein_search + summary_contigs_table$Non_host_reads_assigned_via_nucleotide_search + summary_contigs_table$Raw_reads_assigned_to_host_genome + summary_contigs_table$Raw_reads_assigned_to_host_aligned_contigs + summary_contigs_table$Raw_reads_assigned_to_host_blastn_diamondx))
+  summary_contigs_table$raw_reads_not_assigned <- (summary_reads_table$remaining_reads-(summary_contigs_table$Non_host_reads_assigned_via_protein_search + summary_contigs_table$Non_host_reads_assigned_via_nucleotide_search + summary_contigs_table$Raw_reads_assigned_to_host_genome + summary_contigs_table$Raw_reads_assigned_to_host_aligned_contigs + summary_contigs_table$Raw_reads_assigned_to_host_blastn_diamondx))
 }
 
 
@@ -1082,16 +1082,16 @@ summary_contigs_table$raw_reads_not_assigned <- (summary_reads_table$remaining_r
 
 
 if (!is.na(Viraltop10[1,1])) {
-
-write.table(Viraltoptaxids,file=(paste0(outtablespath,NAMES,"_top10_Taxids_Viral_contigs.txt")),sep="\t",row.names=FALSE, col.names=FALSE,quote=FALSE)
+  
+  write.table(Viraltoptaxids,file=(paste0(outtablespath,NAMES,"_top10_Taxids_Viral_contigs.txt")),sep="\t",row.names=FALSE, col.names=FALSE,quote=FALSE)
 }
 
 if (is.na(Viraltop10[1,1])) {
-Viraltoptaxids <- as.data.frame(matrix(nrow=1,ncol=1))
-
-Viraltoptaxids <- subset(Viraltoptaxids,!(is.na(Viraltoptaxids[,1])))
-
-write.table(Viraltoptaxids,file=(paste0(outtablespath,NAMES,"_top10_Taxids_Viral_contigs.txt")),sep="\t",row.names=FALSE,col.names=FALSE,quote=FALSE)
+  Viraltoptaxids <- as.data.frame(matrix(nrow=1,ncol=1))
+  
+  Viraltoptaxids <- subset(Viraltoptaxids,!(is.na(Viraltoptaxids[,1])))
+  
+  write.table(Viraltoptaxids,file=(paste0(outtablespath,NAMES,"_top10_Taxids_Viral_contigs.txt")),sep="\t",row.names=FALSE,col.names=FALSE,quote=FALSE)
 }
 
 
@@ -1432,7 +1432,15 @@ if (dodiamondraws == 'yes') {
     if( hostspecies[1] !="NA" ) { 
       
       rows <- grep(hostspecies,Diamondrawshitsident50$species)
-      Diamondrawshitsident50nohost <- Diamondrawshitsident50[-rows,]
+      
+      if (length(rows)>=1) {
+      
+        Diamondrawshitsident50nohost <- Diamondrawshitsident50[-rows,]
+      }
+      if (length(rows)<1) {
+        
+        Diamondrawshitsident50nohost <- Diamondrawshitsident50
+      }
     }
   }
   
@@ -1519,7 +1527,14 @@ if (dodiamondraws == 'yes') {
   Bacteriaraws <- subset(allassignedorderedshort,allassignedorderedshort$superkingdom=="Bacteria")
   
   Virusesraws <- subset(allassignedorderedshort,allassignedorderedshort$superkingdom=="Viruses")
+ 
+  Eukaryotesraws[1,2] <- nrow(subset(Diamondrawshitsident50nohost,Diamondrawshitsident50nohost$superkingdom=="Eukaryota"))
   
+  Bacteriaraws[1,2] <- nrow(subset(Diamondrawshitsident50nohost,Diamondrawshitsident50nohost$superkingdom=="Bacteria"))
+  
+  Virusesraws[1,2] <- nrow(subset(Diamondrawshitsident50nohost,Diamondrawshitsident50nohost$superkingdom=="Viruses"))
+  
+   
 }
 
 
@@ -1584,6 +1599,7 @@ barplotdf$Sample <- NAMES
 
 write.table(barplotdf,file=(paste0(outtablespath,NAMES,"Summary_assignment_reads_for_plot_generation.txt")),sep="\t",row.names=FALSE)
 
+rm(Diamondrawshits, reads_contigs_virus, Diamondrawshitshighacc)
 
 save.image(file = paste0(outtablespath,NAMES,"_gather_summary_files_R_environment.Rdata"))
 
