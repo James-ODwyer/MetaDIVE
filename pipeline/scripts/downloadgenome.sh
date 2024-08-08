@@ -51,68 +51,11 @@ input2="$programdir""$input"
         cd $outdir
         echo " getting genome for: "${genus}" "${species}" "
         echo " Identifying any complete genomes "
-        GENOME=(`esearch -db assembly -query ""${genus}" "${species}""[orgn] | efetch -format docsum -stop 2 | tee ""${genus}" "${species}".genome.esearch.docsum"`)
-        GENOMEPATHS=(`esearch -db assembly -query ""${genus}" "${species}""[orgn] | efetch -format docsum -stop 2 | xtract -pattern DocumentSummary -element FtpPath_GenBank | tee ""${genus}" "${species}".genome.esearch.docsum"`)
-
-if [ ! ${#GENOMEPATHS[@]} -eq 0 ]; then
+        GENOME=(`esearch -db assembly -query """${genus}" "${species}""[orgn] AND "latest refseq"[filter] AND "complete genome"[assembly level]" | efetch -format docsum -stop 2 | tee ""${genus}" "${species}".genome.esearch.fulldocsum"`)
+	GENOMEPATHS=(`esearch -db assembly -query """${genus}" "${species}""[orgn] AND "latest refseq"[filter] AND "complete genome"[assembly level]" | efetch -format docsum -stop 2 | xtract -pattern DocumentSummary -element FtpPath_GenBank | tee ""${genus}" "${species}".genome.esearch.docsum"`)
 
 
 
-for element in "${GENOMEPATHS[@]}"; do
-    # Check if the element is not already in the unique array
-    if [[ ! " ${GENOMEPATHSuniq[@]} " =~ " ${element} " ]]; then
-        # Add the unique element to the unique array
-        GENOMEPATHSuniq+=("$element")
-    fi
-done
-
-for element in "${GENOMEPATHSuniq[@]}"; do
-    # Check if the element does not start with a space
-    if [[ "$element" != " "* ]]; then
-        # Add the element to the new array
-        GENOMEPATHSuniq2+=("$element")
-    fi
-done
-
-
-
-
-START=0
-END=$((${#GENOMEPATHSuniq2[@]} - 1))
-
-for (( c=$START; c<=$END; c++ ))
-do
-
-echo "iteration $c"
-
-GENOMEPATH2=("${GENOMEPATHSuniq2[c]}")
-
-GENOMEPATH2=${GENOMEPATH2//ftp:/https:}
-
-genomebase=(`basename $GENOMEPATH2`)
-
-echo "${genomebase[0]}"
-echo "${GENOMEPATH2[0]}"
-
-
-sleep $[ ( $RANDOM % 1 )  + 1 ]s
-
-echo " Now getting genome "${programdir}${outdir}/${output}.${c}" which is found at "${GENOMEPATH2[0]}"/"${genomebase[0]}"_genomic.fna.gz "
-
-wget -O "${programdir}${outdir}/${output}.${c}" "${GENOMEPATH2[0]}"/"${genomebase[0]}"_genomic.fna.gz
-
-zcat "${programdir}${outdir}/${output}.${c}" >> "${programdir}${outdir}/${output}"
-rm "${programdir}${outdir}/${output}.${c}"
-
-done
-
-seqkit rmdup -n "${programdir}${outdir}/${output}_predup" -o "${programdir}${outdir}/${output}"
-
-
-rm "${programdir}${outdir}/${output}_predup"
-
-
-fi
 
 
 if [ ${#GENOMEPATHS[@]} -eq 0 ]; then
@@ -121,9 +64,10 @@ echo " no genomes were found for the target species. Moving to the target genus.
 
 
 
-GENOME=(`esearch -db assembly -query "${genus}"[orgn] | efetch -format docsum -stop 4 | tee ""${genus}" "${species}".genome.esearch.docsum"`)
-GENOMEPATHS=(`esearch -db assembly -query "${genus}"[orgn] | efetch -format docsum -stop 4 | xtract -pattern DocumentSummary -element FtpPath_GenBank | tee ""${genus}" "${species}".genome.esearch.docsum"`)
+GENOME=(`esearch -db assembly -query ""${genus}"[orgn] AND "latest refseq"[filter] AND "complete genome"[assembly level]" | efetch -format docsum -stop 4 | tee ""${genus}" "${species}".genome.esearch.docsumfull"`)
+GENOMEPATHS=(`esearch -db assembly -query ""${genus}"[orgn] AND "latest refseq"[filter] AND "complete genome"[assembly level]" | efetch -format docsum -stop 4 | xtract -pattern DocumentSummary -element FtpPath_GenBank | tee ""${genus}" "${species}".genome.esearch.docsum"`)
 
+fi
 
 if [ ! ${#GENOMEPATHS[@]} -eq 0 ]; then
 
@@ -144,16 +88,12 @@ for element in "${GENOMEPATHSuniq[@]}"; do
 done
 
 
-START=0
-END=$((${#GENOMEPATHSuniq2[@]} - 1))
-
-
 
 
 
 
 START=0
-END=$((${#GENOMEPATHS[@]} - 1))
+END=$((${#GENOMEPATHSuniq[@]} - 1))
 
 for (( c=$START; c<=$END; c++ ))
 do
@@ -180,12 +120,12 @@ zcat "${programdir}${outdir}/${output}.${c}" >> "${programdir}${outdir}/${output
 rm "${programdir}${outdir}/${output}.${c}"
 
 done
-seqkit rmdup -n "${programdir}${outdir}/${output}_predup" -o "${programdir}${outdir}/${output}"
+seqkit rmdup -n "${programdir}${outdir}/${output}_predup" -o "${programdir}${outdir}/${output}_predup2"
 
+seqkit rmdup -s "${programdir}${outdir}/${output}_predup2" -o "${programdir}${outdir}/${output}"
 
 rm "${programdir}${outdir}/${output}_predup"
-fi
-
+rm "${programdir}${outdir}/${output}_predup2"
 fi
 
 # Figure out where this needs to save for while loop to be added! 
