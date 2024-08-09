@@ -814,6 +814,8 @@ if (nrow(Viraltop10) !=0) {
 #first. remove top 10 which will always be present
 # Next subset by pwident 
 Viraltop_idents <- subset(Viraltop100,Viraltop100$average_percent_ident >=80 & Viraltop100$Frequency >=50)
+Viraltop_idents <- Viraltop_idents[order(-Viraltop_idents$Frequency), ]
+
 Viraltop_identstaxids <- as.data.frame(matrix(nrow=nrow(Viraltop_idents),ncol=1))
 
 if ( nrow(Viraltop_identstaxids) >=1) {
@@ -839,8 +841,17 @@ if ( nrow(Viraltop_identstaxids) >=1) {
 if (nrow(Viraltop10) >=1) {
   if (!is.na(Viraltop10[1,1])) {
     
+  if (nrow(Viraltoptaxids) <=20)) {
+
     write.table(Viraltoptaxids,file=(paste0(outtablespath,NAMES,"_top10_Taxids_Viral_contigs.txt")),sep="\t",row.names=FALSE, col.names=FALSE,quote=FALSE)
-  }
+}
+  if (nrow(Viraltoptaxids ) >20)) {
+	Viraltoptaxids <- Viraltoptaxids[1:20,]
+    	write.table(Viraltoptaxids,file=(paste0(outtablespath,NAMES,"_top10_Taxids_Viral_contigs.txt")),sep="\t",row.names=FALSE, col.names=FALSE,quote=FALSE)
+}
+
+  
+}
 }
 
 if (is.na(Viraltop10[1,1])) {

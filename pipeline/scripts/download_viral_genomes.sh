@@ -57,6 +57,8 @@ done < "$input2"
 
 taxid_values=("${taxid_values[@]% }")
 
+taxid_values=("${taxid_values[@]/NA}")
+
 for id in ${taxid_values[@]}; do
 
 sleep $[ ( $RANDOM % 5 ) ]s
@@ -70,8 +72,8 @@ echo "$value"
 
 #break retry loop in case NCBI is busy (for Organism)
 retry_count=0
-max_retries=5
-retry_wait_time=120  # 120 seconds
+max_retries=3
+retry_wait_time=60  # 120 seconds
 while true; do
     # Run the eutilities command
     Id=$(esearch -db taxonomy -query "$value"[TaxId] | elink -target nuccore | efetch -format docsum -start 1 -stop 1 | xtract -pattern DocumentSummary -element Organism)
@@ -101,7 +103,7 @@ while true; do
     fi
 done
 
-sleep $[ ( $RANDOM % 1 ) + 5 ]s
+sleep $[ ( $RANDOM % 1 ) + 3 ]s
     # Run the eutilities command
     Idtax="$value"
 
@@ -212,7 +214,8 @@ for (( c=$START; c<=$END; c++ ))
 do
 
 orgnameid=("${orgname[$c]}")
-orgnameidnospace=$(echo -n "${orgnameid//[[:space:].,:;-&]/}")
+orgnameidnospace1=$(echo -n "${orgnameid//[[:space:].,:;-&]/}")
+orgnameidnospace=$(echo "${orgnameidnospace1}" | sed 's/[\/\\]//g')
 
 
 orgtaxsingle=("${orgtax[$c]}")
@@ -235,16 +238,27 @@ sleep $[ ( $RANDOM % 2 )  + 3 ]s
 
 GENOME=`esearch -db assembly -query "${orgtaxsingle}"[TaxId] | efetch -format docsum -stop 1  | xtract -pattern DocumentSummary -element FtpPath_RefSeq | tee "${orgnameidnospace}.genome.esearch.docsum"`
 
+sleep $[ ( $RANDOM % 2 )  + 2 ]s
+
+esearch -db assembly -query "${orgtaxsingle}"[TaxId] | efetch -format docsum -stop 1  | xtract -pattern DocumentSummary -element FtpPath_RefSeq | tee "${orgnameidnospace}.genome.esearch.docsum"
+
+
 sleep $[ ( $RANDOM % 2 )  + 5 ]s
 
 esearch -db assembly -query "${orgtaxsingle}"[TaxId] | efetch -format docsum -stop 1 | tee "${orgnameidnospace}_wholedocsumdata.docsum"
-sleep $[ ( $RANDOM % 2 )  + 5 ]s
+sleep $[ ( $RANDOM % 2 )  + 3 ]s
 
 
 if [ ! -s "${orgnameidnospace}.genome.esearch.docsum" ]
 then
 
 GENOME=`esearch -db assembly -query "${orgtaxsingle}"[TaxId] | efetch -format docsum -stop 1  | xtract -pattern DocumentSummary -element FtpPath_GenBank | tee "${orgnameidnospace}.genome.esearch.docsum"`
+
+
+sleep $[ ( $RANDOM % 2 )  + 2 ]s
+
+esearch -db assembly -query "${orgtaxsingle}"[TaxId] | efetch -format docsum -stop 1  | xtract -pattern DocumentSummary -element FtpPath_GenBank | tee "${orgnameidnospace}.genome.esearch.docsum"
+
 
 sleep $[ ( $RANDOM % 2 )  + 5 ]s
 
@@ -283,6 +297,13 @@ sleep $[ ( $RANDOM % 2 )  + 5 ]s
 echo "No RefSeq genome identified, now trying genome database "
 
 GENOME=`esearch -db genome -query "${orgtaxsingle}"[TaxId] | efetch -format docsum -stop 1 | xtract -pattern DocumentSummary -element FtpPath_GenBank | tee "${orgnameidnospace}.genome.esearch.docsum"`
+
+
+sleep $[ ( $RANDOM % 2 )  + 2 ]s
+
+esearch -db genome -query "${orgtaxsingle}"[TaxId] | efetch -format docsum -stop 1  | xtract -pattern DocumentSummary -element FtpPath_GenBank | tee "${orgnameidnospace}.genome.esearch.docsum"
+
+
 sleep $[ ( $RANDOM % 2 )  + 5 ]s
 esearch -db genome -query "${orgtaxsingle}"[TaxId] | efetch -format docsum | tee "${orgnameidnospace}_wholedocsumdata.docsum"
 
@@ -325,7 +346,15 @@ sleep $[ ( $RANDOM % 2 )  + 5 ]s
 
 echo "No genome identified in genome database, now trying assembly database for non refseq "
 
-GENOME=`esearch -db genome -query "${orgtaxsingle}"[TaxId] | efetch -format docsum -stop 2 | xtract -pattern DocumentSummary -element FtpPath_GenBank | tee "${orgnameidnospace}.genome.esearch.docsum"`
+GENOME=`esearch -db genome -query "${orgtaxsingle}"[TaxId] | efetch -format docsum -stop 1 | xtract -pattern DocumentSummary -element FtpPath_GenBank | tee "${orgnameidnospace}.genome.esearch.docsum"`
+
+
+sleep $[ ( $RANDOM % 2 )  + 2 ]s
+
+esearch -db genome -query "${orgtaxsingle}"[TaxId] | efetch -format docsum -stop 1  | xtract -pattern DocumentSummary -element FtpPath_GenBank | tee "${orgnameidnospace}.genome.esearch.docsum"
+
+
+
 sleep $[ ( $RANDOM % 2 )  + 5 ]s
 esearch -db genome -query "${orgtaxsingle}"[TaxId] | efetch -format docsum | tee "${orgnameidnospace}_wholedocsumdata.docsum"
 
@@ -366,14 +395,16 @@ if [ ! -s "${orgnameidnospace}.genome.esearch.docsum" ];then
 
 sleep $[ ( $RANDOM % 2 )  + 5 ]s
 
-echo "No complete genomes identified in either the genomes or assembly databases, now trying any genome for                  ${orgnameid}"
+echo "No complete genomes identified in either the genomes or assembly databases, now trying any genome for  ${orgnameid}"
 
-esearch -db nuccore -query "${orgnameid}[All Fields] AND (complete[Text Word] OR genome[All Fields]) AND 2000:9999999[Slen]" | efetch -format docsum | tee "${orgnameidnospace}_wholedocsumdata.docsum"
+esearch -db nuccore -query "${orgnameid}[All Fields] AND (complete[Text Word] OR genome[All Fields]) AND 2000:9999999[Slen]" | efetch -format docsum -stop 4 | tee "${orgnameidnospace}_wholedocsumdata.docsum"
 echo "Running esearch to save top filepath "
+
+
 
 sleep $[ ( $RANDOM % 2 )  + 5 ]s
 
-esearch -db nuccore -query "${orgnameid}[All Fields] AND (complete[Text Word] OR genome[All Fields]) AND 2000:9999999[Slen]" | efetch -format fasta > "${orgnameidnospace}_genome.fna.gz"
+esearch -db nuccore -query "${orgnameid}[All Fields] AND (complete[Text Word] OR genome[All Fields]) AND 2000:9999999[Slen]" | efetch -format fasta -stop 4 > "${orgnameidnospace}_genome.fna.gz"
 
 sleep $[ ( $RANDOM % 2 )  + 5 ]s
 
@@ -385,23 +416,27 @@ echo " ${GENOME[@]} "
 
 echo ${orgtaxsingle} > "${orgnameidnospace}_TaxId.esearch.docsum"
 
+if [ -s "${orgnameidnospace}_genome.fna.gz" ];then
 
+echo "NA nucccore downloaded directly" > "${orgnameidnospace}.genome.esearch.docsum" 
+
+fi
 
 
 fi
 
-if [ ! -s "${orgnameidnospace}.genome.esearch.docsum" ];then
+if [ ! -s "${orgnameidnospace}_genome.fna.gz" ];then
 
 sleep $[ ( $RANDOM % 2 )  + 5 ]s
 
 echo "No RefSeq genome identified, now trying any genome                  ( ${orgnameid} ) "
 
 sleep $[ ( $RANDOM % 2 )  + 5 ]s
-esearch -db nuccore -query "${orgnameid}[All Fields] AND (complete[Text Word] OR partial[All Fields]) AND 2000:9999999[Slen]" | efetch -format fasta > "${orgnameidnospace}_genome.fna.gz"
+esearch -db nuccore -query "${orgnameid}[All Fields] AND (complete[Text Word] OR partial[All Fields]) AND 2000:9999999[Slen]" -stop 4 | efetch -format fasta > "${orgnameidnospace}_genome.fna.gz"
 
 sleep $[ ( $RANDOM % 2 )  + 5 ]s
 
-esearch -db nuccore -query "${orgnameid}[All Fields] AND (complete[Text Word] OR partial[All Fields]) AND 2000:9999999[Slen]" | efetch -format docsum | tee "${orgnameidnospace}_wholedocsumdata.docsum"
+esearch -db nuccore -query "${orgnameid}[All Fields] AND (complete[Text Word] OR partial[All Fields]) AND 2000:9999999[Slen]" | efetch -format docsum stop -4 | tee "${orgnameidnospace}_wholedocsumdata.docsum"
 
 echo " genome document summary $GENOME                  ( ${orgnameid} ) "
 
@@ -409,6 +444,13 @@ echo " ${GENOME[@]} "
 
 
 echo ${orgtaxsingle} > "${orgnameidnospace}_TaxId.esearch.docsum"
+
+if [ -s "${orgnameidnospace}_genome.fna.gz" ];then
+
+echo "NA nucccore downloaded directly" > "${orgnameidnospace}.genome.esearch.docsum" 
+
+fi
+
 
 
 fi
@@ -445,6 +487,8 @@ then
 GENOME=`esearch -db assembly -query "${orgtaxsingle}"[TaxId] | efetch -format docsum -stop 1  | xtract -pattern DocumentSummary -element FtpPath_GenBank | tee "${orgnameidnospace}.genome.esearch.docsum"`
 
 sleep $[ ( $RANDOM % 2 )  + 3 ]s
+esearch -db assembly -query "${orgtaxsingle}"[TaxId] | efetch -format docsum -stop 1  | xtract -pattern DocumentSummary -element FtpPath_GenBank | tee "${orgnameidnospace}.genome.esearch.docsum"
+sleep $[ ( $RANDOM % 2 )  + 3 ]s
 
 esearch -db assembly -query "${orgtaxsingle}"[TaxId] | efetch -format docsum -stop 1 | tee "${orgnameidnospace}_wholedocsumdata.docsum"
 sleep $[ ( $RANDOM % 2 )  + 3 ]s
@@ -479,13 +523,17 @@ fi
 fi
 
 if [ ! -s "${orgnameidnospace}.genome.esearch.docsum" ]; then
-sleep $[ ( $RANDOM % 2 )  + 3 ]s
+sleep $[ ( $RANDOM % 2 )  + 2 ]s
 
 echo "No RefSeq genome identified, now trying genome database "
 
 GENOME=`esearch -db genome -query "${orgtaxsingle}"[TaxId] | efetch -format docsum -stop 1 | xtract -pattern DocumentSummary -element FtpPath_GenBank | tee "${orgnameidnospace}.genome.esearch.docsum"`
+
+sleep $[ ( $RANDOM % 2 )  + 2 ]s
+esearch -db genome -query "${orgtaxsingle}"[TaxId] | efetch -format docsum -stop 1 | xtract -pattern DocumentSummary -element FtpPath_GenBank | tee "${orgnameidnospace}.genome.esearch.docsum"
+
 sleep $[ ( $RANDOM % 2 )  + 3 ]s
-esearch -db genome -query "${orgtaxsingle}"[TaxId] | efetch -format docsum | tee "${orgnameidnospace}_wholedocsumdata.docsum"
+esearch -db genome -query "${orgtaxsingle}"[TaxId] | efetch -format docsum -stop 1 | tee "${orgnameidnospace}_wholedocsumdata.docsum"
 
 echo "Running esearch to save top filepath "
 
@@ -528,12 +576,12 @@ sleep $[ ( $RANDOM % 2 )  + 3 ]s
 
 echo "No complete genomes identified in either the genomes or assembly databases, now trying any genome for                  ${orgnameid}"
 
-esearch -db nuccore -query "${orgnameid}[All Fields] AND (complete[Text Word] OR genome[All Fields]) AND 2000:9999999[Slen]" | efetch -format docsum | tee "${orgnameidnospace}_wholedocsumdata.docsum"
+esearch -db nuccore -query "${orgnameid}[All Fields] AND (complete[Text Word] OR genome[All Fields]) AND 2000:9999999[Slen]" | efetch -format docsum -stop 4 | tee "${orgnameidnospace}_wholedocsumdata.docsum"
 echo "Running esearch to save top filepath "
 
 sleep $[ ( $RANDOM % 2 )  + 3 ]s
 
-esearch -db nuccore -query "${orgnameid}[All Fields] AND (complete[Text Word] OR genome[All Fields]) AND 2000:9999999[Slen]" | efetch -format fasta > "${orgnameidnospace}_genome.fna.gz"
+esearch -db nuccore -query "${orgnameid}[All Fields] AND (complete[Text Word] OR genome[All Fields]) AND 2000:9999999[Slen]" | efetch -format fasta -stop 4 > "${orgnameidnospace}_genome.fna.gz"
 
 sleep $[ ( $RANDOM % 2 )  + 1 ]s
 
@@ -545,23 +593,29 @@ echo " ${GENOME[@]} "
 
 echo ${orgtaxsingle} > "${orgnameidnospace}_TaxId.esearch.docsum"
 
+if [ -s "${orgnameidnospace}_genome.fna.gz" ];then
+
+echo "NA nucccore downloaded directly" > "${orgnameidnospace}.genome.esearch.docsum" 
+
+fi
+
 
 
 
 fi
 
-if [ ! -s "${orgnameidnospace}.genome.esearch.docsum" ];then
+if [ ! -s "${orgnameidnospace}_genome.fna.gz" ];then
 
 sleep $[ ( $RANDOM % 2 )  + 3 ]s
 
 echo "No RefSeq genome identified, now trying any genome                  ( ${orgnameid} ) "
 
 sleep $[ ( $RANDOM % 2 )  + 3 ]s
-esearch -db nuccore -query "${orgnameid}[All Fields] AND (complete[Text Word] OR partial[All Fields]) AND 2000:9999999[Slen]" | efetch -format fasta > "${orgnameidnospace}_genome.fna.gz"
+esearch -db nuccore -query "${orgnameid}[All Fields] AND (complete[Text Word] OR partial[All Fields]) AND 2000:9999999[Slen]" | efetch -format fasta -stop 4 > "${orgnameidnospace}_genome.fna.gz"
 
 sleep $[ ( $RANDOM % 2 )  + 3 ]s
 
-esearch -db nuccore -query "${orgnameid}[All Fields] AND (complete[Text Word] OR partial[All Fields]) AND 2000:9999999[Slen]" | efetch -format docsum | tee "${orgnameidnospace}_wholedocsumdata.docsum"
+esearch -db nuccore -query "${orgnameid}[All Fields] AND (complete[Text Word] OR partial[All Fields]) AND 2000:9999999[Slen]" | efetch -format docsum -stop 4 | tee "${orgnameidnospace}_wholedocsumdata.docsum"
 
 echo " genome document summary $GENOME                  ( ${orgnameid} ) "
 
@@ -569,6 +623,14 @@ echo " ${GENOME[@]} "
 
 
 echo ${orgtaxsingle} > "${orgnameidnospace}_TaxId.esearch.docsum"
+
+
+if [ -s "${orgnameidnospace}_genome.fna.gz" ];then
+
+echo "NA nucccore downloaded directly" > "${orgnameidnospace}.genome.esearch.docsum" 
+
+fi
+
 
 
 fi
