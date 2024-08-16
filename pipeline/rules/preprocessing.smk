@@ -36,6 +36,7 @@ rule filter_fastp:
         complexity_threshold=config["complexity_threshold"],
         cut_front=config["front_window_cutsize"],
         minquality=config["min_qual_filter"],
+        minavgqual=config["min_qual_filter_avg_read"],
         front_window_qual=config["min_qual_window"],
         adapters=config["Illumina_adapters"]
     log:
@@ -52,6 +53,7 @@ rule filter_fastp:
             -j {output.qualreportjson} -h {output.qualreporthtml} \
             --adapter_fasta {params.adapters} \
             -q {params.minquality} \
+            -e {params.minavgqual} \
             -w {threads} \
             -l {params.minlen} \
             --failed_out {output.Readsfailed} \
@@ -59,6 +61,7 @@ rule filter_fastp:
             --complexity_threshold {params.complexity_threshold} \
             --overrepresentation_analysis \
             -5 \
+            -3 \
             --overrepresentation_sampling 100 \
             --cut_front_window_size {params.cut_front} \
             --cut_front_mean_quality {params.front_window_qual} \

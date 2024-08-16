@@ -50,8 +50,11 @@ complexity_threshold: 10
 front_window_cutsize: 4
 # base quality score min (phred score)
 min_qual_filter: 16
+# min average quality read filter. 
+min_qual_filter_avg_read: 19
 # required minimum running average quality score for the 4 base window
 min_qual_window: 20
+
 
 # Not currently implemented in scripts ## TODO: Add in parameter for NCBI API key to downloadgenome.sh and download_variety_genomes_high_completion_viruses.sh
 NCBI_API_KEY: 'b81d4cea18edf2ff96dd6aeb096d6eb56009'
