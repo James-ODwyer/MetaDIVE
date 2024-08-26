@@ -65,7 +65,7 @@ rule download_host_genome:
         programdir = config["program_dir"],
         outputfile = "top_host_species_CO1_genome.fa",
         outdir = config["sub_dirs"]["host_species_genomes"] + "/genomes/{sample}",
-        waittime = "20m",
+        waittime = "10m",
         NCBI_key = config["NCBI_API_KEY"]
     log:
         "logs/" + config["sub_dirs"]["host_species_genomes"] + "/{sample}.txt"

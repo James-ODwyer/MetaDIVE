@@ -33,7 +33,7 @@ program_dir: "/scratch3/odw014/analysis/test_MetaDIVE_2/MetaDIVE/pipeline/"
 # This section onwards will define key variables that influence the analysis pipeline directions and rules called
 
 # Sensitivity setting. Acts as a proxy for how much memory avaliable for the analysis. This is the amount of memory passed to snakemake in the run_snakemake script
-# Recommended memory ranges per settings are as described as belw:
+# Recommended memory ranges per settings are as described as below:
 # VHigh = 180GB or more 
 # High = 130-180GB  
 # Medium = 90-130GB 
@@ -134,9 +134,19 @@ Genomad_detect: 'yes'
 # 'yes/no'
 run_raws: 'yes'
 
+# Maximum number of raw read pairs to analyse as part of the raw read diamond blast - blastn analysis. If there ends up being millions of reads which fail to form contigs, not setting a reasonable
+# maximum can cause the pipeline to take days extra per sample (blastn is not designed for more than a few thousand comparisons and blastx can take a very long time at >1 million comparisons)
+# Recommend not having this above 500k #### (# note to self do some benchmark testing on this to see what is a reasonable maximum while not affecting detection accuracy#)
+# absolute is recommended as the fraction of reads not forming contigs is unknown before you start the pipeline. 
+# prelim benchmarking. 1.5million read pairs took ~7 hours real time. 500k took 3.8 hours real time (8CPUs), tested on samples of cultured viral isolate.
+
+# Write number as either numerical abolute without commas e.g., 100000  or can write it as a fraction of total reads not forming contigs e.g., 0.5 
+Raw_reads_subset: 100000
+
 # Whether to do diamond blast on the raws (very long, probably around 15-25% of the whole pipeline)
 #'yes/no'
 dodiamond_blast_raws: 'yes'
+
 
 # whether summary results files should be generated. This is required for all additional modules to generate their final results files.
 # 'yes/no'

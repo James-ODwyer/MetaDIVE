@@ -1,0 +1,1 @@
+1. Running the full pipeline on a single sample will crash at the combined graphs stage as the R scripts use aggregate functions
