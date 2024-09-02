@@ -1,1 +1,2 @@
 1. Running the full pipeline on a single sample will crash at the combined graphs stage as the R scripts use aggregate functions
+2. Running analyse raws can cause the program to hang indefinitely if there are 10s of millions of reads which are being analysed in blastn (using the Raw reads paramater fixes this)

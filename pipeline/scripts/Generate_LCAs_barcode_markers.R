@@ -188,6 +188,7 @@ Animals <- myfile[Animallist,]
 family <- subset(Animals,Animals$taxRank=="F")
 speciesrank <- subset(Animals,Animals$taxRank=="S")
 
+
 if(nrow(speciesrank>=1)) {
   
   if(nrow(family)>=1) {
@@ -260,7 +261,7 @@ if(nrow(speciesrank>=1)) {
       
     } # quick prep loop for below to just allow for downscale fam to equal no and the below loops to apply for when there is only 1 fam to.
     
-    
+
 if (downscalefam == "no") {
   
   if (nrow(genusordered)>=2) {
@@ -290,7 +291,7 @@ if (downscalefam == "no") {
     
   }
   
-  
+
   
   if (nrow(genusordered)==1) {
     
@@ -348,12 +349,13 @@ if (downscalefam == "no") {
         
       }
       
-      for (i in c(1:nrow(hostspecies))) {
-        hostspecies$V1[i] <- gsub(pattern="s_",x=topspeciesgenera1ordered$name[i],replacement="")
-      }
+ 
       
       if (sum(genusordered$percentage) > 25) {
         
+     	for (i in c(1:nrow(hostspecies))) {
+      	  hostspecies$V1[i] <- gsub(pattern="s_",x=topspeciesgenera1ordered$name[i],replacement="")
+    	  }
         
         hostspeciespercents$species <- hostspecies$V1
         hostspeciespercents$percentage_reads_total_from_marker <- topspeciesgenera1ordered$percentage
@@ -371,11 +373,11 @@ if (downscalefam == "no") {
     
     
     
-    
+
     
   } # returns top soecies for only top genus. No warnings
   
-  
+
   if (nrow(topspeciesgenera2ordered)>=1) {
     
     if (topspeciesgenera1ordered$percentage[1] < 3* topspeciesgenera2ordered$percentage[1])   {
@@ -410,10 +412,33 @@ if (downscalefam == "no") {
   
   
   
+
   
+  if (!exists("downscalegenus")) {
+
+      downscalegenus <- "NA"
+      downscalegenus2 <- "NA"
+
+
+    hostspecies <- as.data.frame(matrix(nrow=1,ncol=1))
+    hostspeciespercents <- as.data.frame(matrix(nrow=1,ncol=3))
+    colnames(hostspeciespercents) <- c("species", "percentage_reads_total_from_marker","percentage_reads_scaled_to_all_returned_top_sp")
+    
+    hostspecies[1] <- "No assignments were relibly inferred potentially due to no ribosomal markers being picked up (note, some may have been found but at such low depth (<10) it is unwise to try and infer anything from this marker" 
+    
+    hostspeciespercents[1,1] <- NA
+    hostspeciespercents[1,2] <- 0
+    hostspeciespercents[1,3] <- 0
+    
+  write.table(hostspecies,file=(paste0(outtablespath,NAMES,"_top_host_species_",marker, ".txt")),sep="\t", quote =FALSE, row.names=FALSE, col.names = FALSE)
+  write.table(hostspeciespercents,file=(paste0(outtablespath,NAMES,"_top_host_species_additional_stats_",marker, ".txt")),sep="\t", quote =FALSE, row.names=FALSE,col.names = TRUE)
   
-  
-  
+
+
+
+
+}
+
   
   
   
@@ -456,7 +481,7 @@ if (downscalefam == "no") {
       
     }
     
-    
+
     write.table(hostspecies,file=(paste0(outtablespath,NAMES,"_top_host_species_",marker, ".txt")),sep="\t", quote =FALSE, row.names=FALSE, col.names = FALSE)
     write.table(hostspeciespercents,file=(paste0(outtablespath,NAMES,"_top_host_species_additional_stats_",marker, ".txt")),sep="\t", quote =FALSE, row.names=FALSE,col.names = TRUE)
     
@@ -468,7 +493,7 @@ if (downscalefam == "no") {
   } # if only 1 genus was present and only one family likely then save top species for top 
   
   # Genus to correct files. Possible second pathway for if a secondary genus had high hits but not to a species within that genus (gives warning)
-  
+
   
   if (downscalegenus=="yes" && downscalegenus2=="no") {
     
@@ -505,7 +530,7 @@ if (downscalefam == "no") {
     
     
   } # returns top species from top family and warning indicating multiple genera were potentially the host genera
-  
+
   
   if (downscalegenus2=="yes") {
     
@@ -542,7 +567,6 @@ if (downscalefam == "no") {
     
   } # returns top species from top family and warning indicating multiple species from different genera were potentially the host species
   
-  
   if (downscalegenus=="no") {
     
     
@@ -574,7 +598,7 @@ if (downscalefam == "no") {
     write.table(hostspecies,file=(paste0(outtablespath,NAMES,"_top_host_species_",marker, ".txt")),sep="\t", quote =FALSE, row.names=FALSE, col.names = FALSE)
     write.table(hostspeciespercents,file=(paste0(outtablespath,NAMES,"_top_host_species_additional_stats_",marker, ".txt")),sep="\t", quote =FALSE, row.names=FALSE,col.names = TRUE)
     }
-    
+
     if (nrow(topspeciesgenera1top5percent) ==0) {
       
       hostspecies <- as.data.frame(matrix(nrow=nrow(topspeciesgenera1ordered),ncol=1))
@@ -605,7 +629,7 @@ if (downscalefam == "no") {
   
 }
     
-    
+ 
     if (downscalefam=="yes") {
       
       
@@ -649,7 +673,7 @@ if (downscalefam == "no") {
     } # Returns top species from top family and warning indicating the host family couldn't be reliably returned.
     
   } 
-  
+
   if(nrow(family)==0) {
     
     hostspecies <- as.data.frame(matrix(nrow=1,ncol=1))
@@ -662,7 +686,10 @@ if (downscalefam == "no") {
     hostspeciespercents[1,2] <- 0
     hostspeciespercents[1,3] <- 0
     
-    
+  write.table(hostspecies,file=(paste0(outtablespath,NAMES,"_top_host_species_",marker, ".txt")),sep="\t", quote =FALSE, row.names=FALSE, col.names = FALSE)
+  write.table(hostspeciespercents,file=(paste0(outtablespath,NAMES,"_top_host_species_additional_stats_",marker, ".txt")),sep="\t", quote =FALSE, row.names=FALSE,col.names = TRUE)
+  
+
   }
   
 }
