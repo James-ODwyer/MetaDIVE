@@ -924,7 +924,7 @@ if (dodiamondraws == 'yes') {
     
     
   }
-  else if (length(Diamondrawpresence) ==0) {
+  if (length(Diamondrawpresence) ==0) {
     Diamondrawshits <- as.data.frame(matrix(nrow=0,ncol=17))
     paste0(NAMES," Diamond raws analysis returned no findings")
   }
@@ -1185,7 +1185,9 @@ if (dodiamondraws == 'yes') {
     if( hostspecies[1] !="NA" ) { 
       
       rows <- grep(hostspecies,Diamondrawshits$species)
-      Diamondrawshits<- Diamondrawshits[-rows,]
+	if ( length(rows) >=1) {
+	    Diamondrawshits<- Diamondrawshits[-rows,]
+	}
     }
   }
   
