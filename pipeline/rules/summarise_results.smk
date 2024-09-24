@@ -143,6 +143,16 @@ def MicrobiomeSSU(wildcards):
             "PROGRESS_STATUS/No_analysis_undertaken_{sample}.txt"
         ])
 
+def Diamondresultscontigsviruscheck(wildcards):
+    if config["Blastn_viral_contig_false_positive_check"] == 'yes':
+        return([
+            config["sub_dirs"]["contigs_nucl_false_pos_check_counts"] + "/abundances/{sample}_Contigsallinformationassignment.txt"
+        ])
+    elif config["Blastn_viral_contig_false_positive_check"] == 'no':
+        return([
+            config["sub_dirs"]["contigs_assigned"] + "/abundances/{sample}_Contigsallinformationassignment.txt"
+        ])
+
 rule summarise_all_results:
     message:
         """
@@ -159,6 +169,7 @@ rule summarise_all_results:
         SSUassignments = MicrobiomeSSU,
         Assembly_log = Assembly_used_log,
         hostsp = hostdetected,
+        Diamondresultscontigsviruscheckfalsepos = Diamondresultscontigsviruscheck,
         diamondresultscontigs = config["sub_dirs"]["contigs_assigned"] + "/abundances/{sample}_Contigsallinformationassignment.txt",
         DNA_contigs_results = DNA_assign_blast_contigs,
         hostalignmentrates = hostremovedreads,
@@ -170,7 +181,7 @@ rule summarise_all_results:
         krakenrawstats = krakenraws,
         raw_log = "logs/" + config["sub_dirs"]["raws_to_contigs"] + "/{sample}.log",
         hostspecieschosen = hostspecies,
-        samrawscontigs = config["sub_dirs"]["raws_to_contigs"] + "/{sample}_hits.sam"
+        samrawscontigs = config["sub_dirs"]["raws_to_contigs"] + "/{sample}_hits_3col.sam"
     output:
         summaryfile = config["sub_dirs"]["Summary_results"] + "/{sample}_summarycontighits_assembly.txt",
         summaryallreadsfiles = config["sub_dirs"]["Summary_results"] + "/{sample}Summary_assignment_reads_for_plot_generation.txt",
@@ -190,6 +201,8 @@ rule summarise_all_results:
         basedir = config["program_dir"],
         namenodedatabase = config["Accession_allnamenode"],
         Assemblychoice = config["Assembly_choice"],
+        contigfalseposchoice = config["Blastn_viral_contig_false_positive_check"],
+        doonlyblastncontigs = config["Final_contigs_returned"],
         nohostgenomemarker = "PROGRESS_STATUS/No_host_genome_was_found_{sample}.txt"
     log:
         "logs/" + config["sub_dirs"]["Summary_results"] + "/{sample}.log"
@@ -212,7 +225,7 @@ rule summarise_all_results:
             --dokrakenraws {params.dokrakenraws} --doblastn {params.doDNAblastn} --domicrobiome {params.domicrobiome} --dohostcontigsrawsalign {input.hostcontigsrawsbowtie} \
             --outputpath {params.outputpth} --Log {log} --programdir {params.basedir} --rawreadssamcontigs {input.samrawscontigs} --hostalignmentreads {input.hostalignmentrates} \
             --Diamondtab {input.diamondresultscontigs} --Blastntab {input.DNA_contigs_results} --rawssam {input.samrawscontigs} --hostremovedcontigsfa {input.host_removed_contigsfa} --hostremovedcontigssam {input.readsassignedhostcontigs} --hostgenomefailed yes \
-            --Accnode {params.namenodedatabase} && \
+            --Accnode {params.namenodedatabase} --dofalseposcontigschoice {params.contigfalseposchoice} --falseposcontigsrem {input.Diamondresultscontigsviruscheckfalsepos} --doblastnassignmentsonly {params.doonlyblastncontigs} && \
         touch {output.summaryfile} && \
         touch {output.summaryallreadsfiles} && \
         touch {output.summaryreadsfilterfiles} && \
@@ -231,7 +244,7 @@ rule summarise_all_results:
             --dokrakenraws {params.dokrakenraws} --doblastn {params.doDNAblastn} --domicrobiome {params.domicrobiome} --dohostcontigsrawsalign {input.hostcontigsrawsbowtie} \
             --outputpath {params.outputpth} --Log {log} --programdir {params.basedir} --rawreadssamcontigs {input.samrawscontigs} --hostalignmentreads {input.hostalignmentrates} \
             --Diamondtab {input.diamondresultscontigs} --Blastntab {input.DNA_contigs_results} --rawssam {input.samrawscontigs} --hostremovedcontigsfa {input.host_removed_contigsfa} --hostremovedcontigssam {input.readsassignedhostcontigs} --hostgenomefailed yes \
-            --Accnode {params.namenodedatabase} && \
+            --Accnode {params.namenodedatabase} --dofalseposcontigschoice {params.contigfalseposchoice} --falseposcontigsrem {input.Diamondresultscontigsviruscheckfalsepos} --doblastnassignmentsonly {params.doonlyblastncontigs} && \
         touch {output.summaryfile} && \
         touch {output.summaryallreadsfiles} && \
         touch {output.summaryreadsfilterfiles} && \

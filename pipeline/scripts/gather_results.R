@@ -62,8 +62,9 @@ parser$add_argument('--identifiedhost', '-G', help= 'The identified most likely 
 parser$add_argument('--Assemblyused', '-H', help= 'The assembly program used')
 parser$add_argument('--hostgenomefailed', '-I', help= 'Was a host genome successfully found yes or no')
 parser$add_argument('--Accnode', '-K', help= 'Accessiontaxa name_node filepath')
-
-
+parser$add_argument('--dofalseposcontigschoice', '-L', help= 'Was a secondary blastn step taken to confirm viral origin')
+parser$add_argument('--falseposcontigsrem', '-M', help= 'Viral contigs confirmed from blastn')
+parser$add_argument('--doblastnassignmentsonly', '-N', help= 'whether to rename viral assignments from protein to nucleotide similarity')
 
 xargs<- parser$parse_args()
 
@@ -77,8 +78,11 @@ dodiamondraws <- xargs$dodiamondraws
 dokrakenraws <- xargs$dokrakenraws
 dodoblastn <- xargs$doblastn
 domicrobiome <- xargs$domicrobiome
+docontigfalsepos <- xargs$dofalseposcontigschoice
+docontigfalseposrenamespecies <- xargs$doblastnassignmentsonly
 Assemblyused <- xargs$Assemblyused
 Hostgenomefound <- xargs$hostgenomefailed
+
 
 AccessionNamenode <- xargs$Accnode
 
@@ -249,7 +253,7 @@ if (length(Diamondpresence) >=1) {
   paste0(NAMES," dim Diamondhits ", dim(Diamondhits))
 }
 if (length(Diamondpresence) ==0) {
-  Diamondhits <- as.data.frame(matrix(nrow=0,ncol=18))
+  Diamondhits <- as.data.frame(matrix(nrow=0,ncol=19))
   paste0(NAMES," Diamondx returned no findings")
 }
 
@@ -259,23 +263,44 @@ if (length(blastnpresence) >=1) {
   paste0(NAMES," dim Blastnhits ", dim(Blastnhits))
 }
 if (length(blastnpresence) ==0) {
-  Blastnhits <- as.data.frame(matrix(nrow=0,ncol=18))
+  Blastnhits <- as.data.frame(matrix(nrow=0,ncol=19))
   paste0(NAMES," Blastnhits returned no findings")
 }
 
-colnames(Blastnhits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp", "multiplesp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species")
-colnames(Diamondhits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp", "multiplesp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species")
+colnames(Blastnhits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp", "multiplesp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species", "subspecies")
+colnames(Diamondhits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp", "multiplesp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species", "subspecies")
 
 # Diamond returns values as aa smiliarity, convert alignment lengths to nt
 Diamondhits<- Diamondhits%>% 
   mutate(length = length * 3)
 
 
+# adding in check for if any viral contigs were returned after false positive check. This will get it to point where it can be read in to summarise all reads and raws. (Combined_assigned_contigsfp)
 
-
+if ( docontigfalsepos == 'yes') {
+  Diamondpresencefp <-readLines(xargs$falseposcontigsrem)
+  if (length(Diamondpresencefp) >=1) {
+    Diamondhitsfp <- read.table(file=xargs$falseposcontigsrem, sep="\t",header=TRUE,row.names=NULL, fill=TRUE,quote="")
+    paste0(NAMES," dim Diamondhits after false positive check ", dim(Diamondhitsfp))
+    
+    colnames(Diamondhitsfp) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp", "multiplesp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species","subspecies")
+    Diamondhitsfp <- Diamondhitsfp%>% 
+      mutate(length = length * 3)
+    
+    
+  }
+  if (length(Diamondpresencefp) ==0) {
+    Diamondhitsfp <- as.data.frame(matrix(nrow=0,ncol=19))
+    paste0(NAMES," Diamondx after false positive check returned no findings")
+    colnames(Diamondhitsfp) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp", "multiplesp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species", "subspecies")
+  }
+  
+  
+  Combined_assigned_contigsfp <- rbind(Diamondhitsfp,Blastnhits)
+  
+}
 
 Combined_assigned_contigs <- rbind(Diamondhits,Blastnhits)
-
 
 summary_contigs_table <- as.data.frame(matrix(nrow=1, ncol=15))
 
@@ -349,7 +374,9 @@ readLines(xargs$rawtocontigsassignlog) -> bowtieraws
 paste0(NAMES,"length rawbowtie ", length(bowtieraws))
 
 
-rawssam <- read.table(xargs$rawssam, colClasses = c(rep("character", 3), rep("NULL", 16)), row.names=NULL, fill=TRUE,sep ="\t", header = FALSE)
+
+rawssam <- read.table(xargs$rawssam, sep = "\t", fill = TRUE, row.names = NULL,header = FALSE)
+
 paste0(NAMES,"dim rawssam ", dim(rawssam))
 
 rawssam <- rawssam[,c(1,3)]
@@ -367,6 +394,7 @@ freqsummary$order<- NA
 freqsummary$family<- NA
 freqsummary$genus<- NA
 freqsummary$species<- NA
+freqsummary$subspecies<- NA
 freqsummary$percentident <- NA
 freqsummary$contigalignlength <- NA
 
@@ -377,9 +405,9 @@ for (i in c(1:nrow(freqsummary))) {
     grep(paste0(freqsummary$contig[i],"$"), Diamondhits$qseqid) -> idxval
     
     freqsummary[i,3] <- "Diamondx"
-    freqsummary[i,11] <- Diamondhits[idxval,3]
-    freqsummary[i,12] <- Diamondhits[idxval,4]
-    freqsummary[i,4:10] <- Diamondhits[idxval,12:18]
+    freqsummary[i,12] <- Diamondhits[idxval,3]
+    freqsummary[i,13] <- Diamondhits[idxval,4]
+    freqsummary[i,4:11] <- Diamondhits[idxval,12:19]
     
     
   }
@@ -389,9 +417,9 @@ for (i in c(1:nrow(freqsummary))) {
     grep(paste0(freqsummary$contig[i],"$"), Blastnhits$qseqid) -> idxval
     
     freqsummary[i,3] <- "Blastn"
-    freqsummary[i,11] <- Blastnhits[idxval,3]
-    freqsummary[i,12] <- Blastnhits[idxval,4]
-    freqsummary[i,4:10] <- Blastnhits[idxval,12:18]
+    freqsummary[i,12] <- Blastnhits[idxval,3]
+    freqsummary[i,13] <- Blastnhits[idxval,4]
+    freqsummary[i,4:11] <- Blastnhits[idxval,12:19]
     
   }
   
@@ -399,21 +427,37 @@ for (i in c(1:nrow(freqsummary))) {
 } 
 
 cat(paste0("freqsummary worked", "\t"))
+#Save the freqsum file of the diamond hits pre editing for blastn false positive (if option is chosen)
+allassignedfreqspreblastnfpcheck <- subset(freqsummary,!is.na(freqsummary$contigassignment))
+
+
+if (docontigfalseposrenamespecies == 'confirmed') {
+  
+  for(i in c(1:nrow(Diamondhitsfp))) {
+    
+    
+    grep(paste0("^",Diamondhitsfp$qseqid[i],"$"),freqsummary$contig) -> idxval2
+    freqsummary[idxval2,4:11] <- Diamondhitsfp[i,12:19]
+    freqsummary[idxval2,12:13] <- Diamondhitsfp[i,3:4]
+    
+  }
+  
+}
 
 
 
 
 
-allassignedfreqs <- subset(freqsummary,!is.na(freqsummary$contigassignment))
+
+
 blastnassignedfreqs <- subset(freqsummary,freqsummary$contigassignment=="Blastn")
 Diamondxassignedfreqs <- subset(freqsummary,freqsummary$contigassignment=="Diamondx")
 
 # Adding in a section to get out only virus contigs to filter the raws sam before removing to extract all known virus reads for the contigs to feed into final viral section.
 
-
+allassignedfreqs <- subset(freqsummary,!is.na(freqsummary$contigassignment))
 allassignedfreqsvirus <- subset(allassignedfreqs,allassignedfreqs$superkingdom=="Viruses")
 reads_contigs_virus <- rawssam[rawssam$contig %in% allassignedfreqsvirus$contig, ]
-
 
 rm(rawssam)
 
@@ -612,8 +656,8 @@ cat(paste0("putting all summary table values together worked", "\t"))
 #generate top hits and average identity for contigs
 species_idvec <- unique(allassignedfreqsnohost$species)
 
-contigsspecies <- as.data.frame(matrix(nrow=length(species_idvec), ncol=12))
-colnames(contigsspecies) <- c("Frequency","superkingdom","phylum","class","order","family","genus","species","average_percent_ident","min_percent_ident","max_percent_ident","length")
+contigsspecies <- as.data.frame(matrix(nrow=length(species_idvec), ncol=13))
+colnames(contigsspecies) <- c("Frequency","superkingdom","phylum","class","order","family","genus","species","subspecies","average_percent_ident","min_percent_ident","max_percent_ident","length")
 
 
 cat(paste0("creating species idvec worked", "\t"))
@@ -624,14 +668,14 @@ for (i in c(1:length(species_idvec))) {
   
   contigssubset<- subset(freqsummarynona,freqsummarynona$species == species_idvec[i])
   
-  contigsspecies[i,2:8] <- contigssubset[1,4:10]
+  contigsspecies[i,2:9] <- contigssubset[1,4:11]
   contigsspecies[i,1] <- sum(contigssubset$freq)
   
   if (!is.na(contigssubset$percentident[1])) {
-    contigsspecies[i,9] <- mean(contigssubset$percentident)
-    contigsspecies[i,10] <- min(contigssubset$percentident)
-    contigsspecies[i,11] <- max(contigssubset$percentident)
-    contigsspecies[i,12] <- mean(contigssubset$contigalignlength)
+    contigsspecies[i,10] <- mean(contigssubset$percentident)
+    contigsspecies[i,11] <- min(contigssubset$percentident)
+    contigsspecies[i,12] <- max(contigssubset$percentident)
+    contigsspecies[i,13] <- mean(contigssubset$contigalignlength)
   }
 }
 
@@ -920,16 +964,16 @@ if (dodiamondraws == 'yes') {
     paste0(NAMES," dim Diamondrawshits ", dim(Diamondrawshits))
     
     
-    colnames(Diamondrawshits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species")
+    colnames(Diamondrawshits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species","subspecies")
     
     
   }
   if (length(Diamondrawpresence) ==0) {
-    Diamondrawshits <- as.data.frame(matrix(nrow=0,ncol=17))
+    Diamondrawshits <- as.data.frame(matrix(nrow=0,ncol=18))
     paste0(NAMES," Diamond raws analysis returned no findings")
   }
   
-  colnames(Diamondrawshits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species")
+  colnames(Diamondrawshits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species","subspecies")
   
   # Diamond returns length alignments as aa length, convert to nucleotide length
   
@@ -968,7 +1012,7 @@ if (dodiamondraws == 'yes') {
   
   summary_contigs_table$raw_reads_not_assigned <- round(summary_contigs_table$raw_reads_not_assigned)
   
-  Diamondrawshitshighacc <- subset(Diamondrawshits,Diamondrawshits$pident >=75 & Diamondrawshits$length>=90)
+  Diamondrawshitshighacc <- subset(Diamondrawshits,Diamondrawshits$pident >=55 & Diamondrawshits$length>=40)
   
   Diamondrawshitshighaccfreqs <- Diamondrawshitshighacc %>%
     group_by(species) %>%
@@ -1008,11 +1052,11 @@ if (dodiamondraws == 'yes') {
       
     }
     
-    # This should become a variable to play around with! But I will set it to 20 here because I don't want to mess with the rules scripts yet
+    # This should become a variable to play around with! But I will set it to 2 here because I don't want to mess with the rules scripts yet
     # Read number cout off!!! 
-    # set to 5 here 
+    # set to 2 here 
     save.image("test_Rdata_gather_error8.Rdata")
-    Diamondrawshitshighaccfreqssignificant <- subset(Diamondrawshitshighaccfreqs,Diamondrawshitshighaccfreqs$count>=5)
+    Diamondrawshitshighaccfreqssignificant <- subset(Diamondrawshitshighaccfreqs,Diamondrawshitshighaccfreqs$count>=2)
     
     # Now need to fill in the taxids and then split into raw files and add viruses on
     
@@ -1055,8 +1099,8 @@ if (dodiamondraws == 'yes') {
   save.image("test_Rdata_gather_error11.Rdata")
   if (nrow(Diamondrawshitshighaccfreqs) >=1) {
     Viralraw_reads <- Diamondrawshitshighacc[Diamondrawshitshighacc$species %in% DiamondrawshitshighaccfreqssignificantVirus$species, ]
-    
-    Viralraw_reads <- subset(Viralraw_reads,Viralraw_reads$length>100 & Viralraw_reads$pident>70)
+    # Can put secondary more stringent filter here for reducing impact of raw reads assignment? 
+    Viralraw_reads <- subset(Viralraw_reads,Viralraw_reads$length>60 & Viralraw_reads$pident>50)
     
     Viralraw_readsnames <- Viralraw_reads$qseqid
     
@@ -1069,7 +1113,7 @@ if (dodiamondraws == 'yes') {
     save.image("test_Rdata_gather_error12.Rdata")   
     
     DiamondrawshitshighaccfreqssignificantVirusforlocalallignments <- subset(DiamondrawshitshighaccfreqssignificantVirus,DiamondrawshitshighaccfreqssignificantVirus$mean_identity >=80)
-    DiamondrawshitshighaccfreqssignificantVirusforlocalallignments <- subset(DiamondrawshitshighaccfreqssignificantVirus,DiamondrawshitshighaccfreqssignificantVirus$count>=100)
+    DiamondrawshitshighaccfreqssignificantVirusforlocalallignments <- subset(DiamondrawshitshighaccfreqssignificantVirus,DiamondrawshitshighaccfreqssignificantVirus$count>=80)
     
     
     
@@ -1185,9 +1229,9 @@ if (dodiamondraws == 'yes') {
     if( hostspecies[1] !="NA" ) { 
       
       rows <- grep(hostspecies,Diamondrawshits$species)
-	if ( length(rows) >=1) {
-	    Diamondrawshits<- Diamondrawshits[-rows,]
-	}
+      if ( length(rows) >=1) {
+        Diamondrawshits<- Diamondrawshits[-rows,]
+      }
     }
   }
   
@@ -1492,8 +1536,8 @@ if (dodiamondraws == 'yes') {
   idvec <- unique(Diamondrawshitsident50nohost$superkingdom)
   
   
-  contigs <- as.data.frame(matrix(nrow=length(idvec), ncol=11))
-  colnames(contigs) <- c("Frequency","superkingdom","phylum","class","order","family","genus","species","average_percent_ident","min_percent_ident","max_percent_ident")
+  contigs <- as.data.frame(matrix(nrow=length(idvec), ncol=12))
+  colnames(contigs) <- c("Frequency","superkingdom","phylum","class","order","family","genus","species","subspecies","average_percent_ident","min_percent_ident","max_percent_ident")
   
   
   
@@ -1501,7 +1545,7 @@ if (dodiamondraws == 'yes') {
     
     contigssubset <- subset(Diamondrawshitsident50nohost,Diamondrawshitsident50nohost$superkingdom == idvec[i])
     
-    contigs[i,2:8] <- contigssubset[1,11:17]
+    contigs[i,2:9] <- contigssubset[1,11:18]
     contigs[i,1] <- nrow(contigssubset)
     
   }
@@ -1516,14 +1560,14 @@ if (dodiamondraws == 'yes') {
   # Repeat for contigs results
   idvec <- unique(allassignedfreqsnohost$superkingdom)
   
-  contigs <- as.data.frame(matrix(nrow=length(idvec), ncol=11))
-  colnames(contigs) <- c("Frequency","superkingdom","phylum","class","order","family","genus","species","average_percent_ident","min_percent_ident","max_percent_ident")
+  contigs <- as.data.frame(matrix(nrow=length(idvec), ncol=12))
+  colnames(contigs) <- c("Frequency","superkingdom","phylum","class","order","family","genus","species","subspecies","average_percent_ident","min_percent_ident","max_percent_ident")
   
   for (i in c(1:length(idvec))) {
     
     contigssubset<- subset(allassignedfreqsnohost,allassignedfreqsnohost$superkingdom == idvec[i])
     
-    contigs[i,2:8] <- contigssubset[1,4:10]
+    contigs[i,2:9] <- contigssubset[1,4:11]
     contigs[i,1] <- sum(contigssubset$freq)
     
   }
@@ -1537,14 +1581,14 @@ if (dodiamondraws == 'yes') {
   
   idvec <- unique(allassigned$superkingdom)
   
-  contigs <- as.data.frame(matrix(nrow=length(idvec), ncol=11))
-  colnames(contigs) <- c("Frequency","superkingdom","phylum","class","order","family","genus","species","average_percent_ident","min_percent_ident","max_percent_ident")
+  contigs <- as.data.frame(matrix(nrow=length(idvec), ncol=12))
+  colnames(contigs) <- c("Frequency","superkingdom","phylum","class","order","family","genus","species","subspecies","average_percent_ident","min_percent_ident","max_percent_ident")
   
   for (i in c(1:length(idvec))) {
     
     contigssubset<- subset(allassigned,allassigned$superkingdom == idvec[i])
     
-    contigs[i,2:11] <- contigssubset[1,2:11]
+    contigs[i,2:12] <- contigssubset[1,2:12]
     contigs[i,1] <- sum(contigssubset$Frequency)
     
   }

@@ -71,13 +71,10 @@ rule unmapped_reads_diamond:
         unalignedreads1 = raws_after_hostR1,
         unalignedreads2 = raws_after_hostR2
     output:
-        output_R1_subset = temp(config["sub_dirs"]["raws_to_contigs"] + "/{sample}_R1_subset.fastq.gz"),
-        output_R2_subset = temp(config["sub_dirs"]["raws_to_contigs"] + "/{sample}_R2_subset.fastq.gz"),
         interleavedfiles = temp(config["sub_dirs"]["raws_to_contigs"] + "/{sample}_interleaved.fastq.gz"),
         diamondfile = config["sub_dirs"]["diamond_raws"] + "/{sample}_matches.m8"
     params:
         databasenr = config["diamond_database"],
-        readsmax = config["Raw_reads_subset"],
         unalignedreads1_prior = config["sub_dirs"]["raws_to_contigs"] + "/{sample}_R1.fastq.gz",
         unalignedreads2_prior = config["sub_dirs"]["raws_to_contigs"] + "/{sample}_R2.fastq.gz",
         diamondmem = Diamond_memraw
@@ -94,10 +91,8 @@ rule unmapped_reads_diamond:
         """
         length=(`wc -l {input.unalignedreads1}`) && \
         if [ ${{length}} -ge 1 ]
-        then
-        seqtk sample -s2468 {input.unalignedreads1} {params.readsmax} > {output.output_R1_subset} && \
-        seqtk sample -s2468 {input.unalignedreads2} {params.readsmax} > {output.output_R2_subset} && \        
-        seqfu ilv -1 {output.output_R1_subset} -2 {output.output_R2_subset} -o {output.interleavedfiles} && \
+        then        
+        seqfu ilv -1 {input.unalignedreads1} -2 {input.unalignedreads2} -o {output.interleavedfiles} && \
         diamond blastx --db {params.databasenr} \
             --query {output.interleavedfiles} \
             --fast \
@@ -112,9 +107,7 @@ rule unmapped_reads_diamond:
         fi  && \
         if [ ${{length}} -eq 0 ]
         then
-        seqtk sample -s2468 {params.unalignedreads1_prior} {params.readsmax} > {output.output_R1_subset} && \
-        seqtk sample -s2468 {params.unalignedreads2_prior} {params.readsmax} > {output.output_R2_subset} && \
-        seqfu ilv -1 {output.output_R1_subset} -2 {output.output_R2_subset} -o {output.interleavedfiles} && \
+        seqfu ilv -1 {params.unalignedreads1_prior} -2 {params.unalignedreads2_prior} -o {output.interleavedfiles} && \
         diamond blastx --db {params.databasenr} \
             --query {output.interleavedfiles} \
             --fast \
@@ -191,7 +184,7 @@ rule check_results_in_blastn:
         "logs/" + config["sub_dirs"]["raws_blastn_check"] + "/{sample}_blastn.log"
     threads: 4
     resources:
-        mem_mb=16000
+        mem_mb=24000
     benchmark:
         "benchmarks/" + config["sub_dirs"]["raws_blastn_check"] + "/{sample}_blastn.txt"
     shell:
@@ -206,7 +199,7 @@ rule check_results_in_blastn:
         zcat {input.R1} | grep --no-group-separator -A 3 -F -f "{input.readslist}" > {output.fastqreads}
         zcat {input.R2} | grep --no-group-separator -A 3 -F -f "{input.readslist}" >> {output.fastqreads}
         seqtk seq -a {output.fastqreads} > {output.fastareads}
-        cd-hit -i {output.fastareads} -o {output.fasta_clust} -c 0.95 -n 5 -T {threads} -d 0 -M 14000
+        cd-hit -i {output.fastareads} -o {output.fasta_clust} -c 0.99 -n 5 -T {threads} -d 0 -M 14000
         blastn -query {output.fasta_clust} \
             -db {params.blastdb} \
             -evalue 0.01 \
@@ -214,7 +207,7 @@ rule check_results_in_blastn:
             -max_hsps 1 \
             -outfmt '6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp' \
             -num_threads {threads} \
-            -word_size 21 \
+            -word_size 20 \
             -out {output.blastfile} \
             2> {log}
         fi && \
@@ -236,6 +229,7 @@ rule analyse_blastn_raws:
         clusterfile = config["sub_dirs"]["raws_blastn_check"] + "/{sample}_reads_clust.fasta.clstr"
     output:
         sampfinished = config["sub_dirs"]["raws_blastn_r"] + "/{sample}_finished.txt",
+        viralassigns = config["sub_dirs"]["raws_blastn_r"] + "/{sample}_all_reads_assignments.txt",
         viralreads = config["sub_dirs"]["raws_blastn_r"] + "/{sample}_readnames_virus_confirmed.txt"
     params:
         samplename = "{sample}",
@@ -261,7 +255,8 @@ rule analyse_blastn_raws:
             --programdir {params.basedir} --savdir {params.wrkdir} --clustfile {input.clusterfile}
         fi && \
         touch {output.sampfinished} && \
-        touch {output.viralreads}
+        touch {output.viralreads} && \
+        touch {output.viralassigns}
         """
 
 rule summarise_raws:
@@ -280,8 +275,9 @@ rule summarise_raws:
     params:
         samplename = "{sample}",
         basedir = config["program_dir"],
+        removefalseposcontigs = config["Final_contigs_returned"],
         wrkdir = config["sub_dirs"]["raws_results"] + "/",
-        Viral_original_contigs = config["sub_dirs"]["Summary_results"] + "/{sample}_virus_hits_all_details_results_table.txt"
+        Viral_original_contigs = config["sub_dirs"]["raws_blastn_r"] + "/{sample}_all_reads_assignments.txt"
     log:
         "logs/" + config["sub_dirs"]["raws_results"] + "/{sample}.log"
     benchmark:
@@ -328,6 +324,7 @@ rule compile_raws_and_contigs:
         samplename = "{sample}",
         basedir = config["program_dir"],
         wrkdir = config["sub_dirs"]["compiled_summary"] + "/{sample}/",
+        docontigsubsetting = config["Final_contigs_returned"],
         Viral_original_contigs = config["sub_dirs"]["Summary_results"] + "/{sample}_virus_hits_all_details_results_table.txt"
     log:
         "logs/" + config["sub_dirs"]["compiled_summary"] + "/{sample}.log"
@@ -342,7 +339,7 @@ rule compile_raws_and_contigs:
         Rscript {config[program_dir]}scripts/Summarise_all_viral_reads_multi_methods.R \
             --inputvirusdetails {input.summarytable} --name {params.samplename} \
             --threads {threads} --contigs {input.contigsfile} --Rdatas {input.summaryRdatafile} \
-            --programdir {params.basedir} --savdir {params.wrkdir} && \
+            --programdir {params.basedir} --savdir {params.wrkdir} --dofalseposcheck {params.docontigsubsetting} && \
         touch {output.output_datatable} && \
         touch {output.output_csv}
         """

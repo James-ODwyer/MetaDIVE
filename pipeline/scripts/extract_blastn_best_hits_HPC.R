@@ -306,8 +306,8 @@ c <- Sys.time()
 
 contigsassignedunique<- dplyr::distinct(contigsassigned, staxidreduced, .keep_all = TRUE)
 
-taxids <- as.data.frame(matrix(nrow=nrow(contigsassigned),ncol=8))
-taxidsunique <- as.data.frame(matrix(nrow=nrow(contigsassignedunique),ncol=8))
+taxids <- as.data.frame(matrix(nrow=nrow(contigsassigned),ncol=9))
+taxidsunique <- as.data.frame(matrix(nrow=nrow(contigsassignedunique),ncol=9))
 taxids[,1] <-contigsassigned$staxidreduced
 taxidsunique[,1] <-contigsassignedunique$staxidreduced
 
@@ -317,9 +317,12 @@ taxidsunique[i,2:8] <- taxonomizr::getTaxonomy(contigsassignedunique$staxidreduc
 
 values <- taxonomizr::getRawTaxonomy(contigsassignedunique$staxidreduced[i], sqlFile=AccessionNamenode)
 
-if (!is.null(values[[1]][1])) {
-values[[1]][1] -> taxidsunique[i,8]
-}
+  if (!is.null(values[[1]][1])) {
+    values[[1]][1] -> taxidsunique[i,9]
+  }
+  if (is.null(values[[1]][1])) {
+    taxidsunique[i,8] -> taxidsunique[i,9]
+  }
 
 
 
@@ -334,7 +337,7 @@ d <- Sys.time()
 
 
 
-taxidsunique<- as.data.frame(taxidsunique, ncol=8)
+taxidsunique<- as.data.frame(taxidsunique, ncol=9)
 
 
 e <- Sys.time()
@@ -346,7 +349,7 @@ taxidsunique$V1 <- gsub(pattern = "(",replacement = "",x = taxidsunique$V1,fixed
 taxids$V1 <- gsub(pattern = ")",replacement = "",x = taxids$V1,fixed = TRUE)
 taxidsunique$V1 <- gsub(pattern = ")",replacement = "",x = taxidsunique$V1,fixed = TRUE)
 
-colnames(taxidsunique) =c("staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species") 
+colnames(taxidsunique) =c("staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species","subspecies") 
 
 for (i in c(1:nrow(taxids))) {
 
@@ -366,7 +369,7 @@ taxids[i,2:8] <- NA
 }
 
 f <- Sys.time()
-colnames(taxids) =c("staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species") 
+colnames(taxids) =c("staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species","subspecies")
 
 contigsassigned$superkingdom <- taxids$superkingdom
 contigsassigned$phylum<- taxids$phylum
@@ -375,6 +378,7 @@ contigsassigned$order<- taxids$order
 contigsassigned$family<- taxids$family
 contigsassigned$genus<- taxids$genus
 contigsassigned$species<- taxids$species
+contigsassigned$subspecies<- taxids$subspecies
 
 contigsassigned$stitle = substr(contigsassigned$stitle,1,50)
 

@@ -79,7 +79,6 @@ for (i in c(1:length(samplereadssummaryfiles))) {
 
 Resultssummaryreadsassignments <-bind_rows(Allreadssummaryresultstable)
 
-
 #Resultssummaryreadsassignments$Filtering_step  <- factor(Resultssummaryreadsassignments$Filtering_step,levels = c("Low.quality.reads", "PhiX.contamination", "CO1.hits", "LSU.hits", "SSU.hits", "Host.species", "Eukaryotes", "Bacteria", "Viruses", "Unassigned.reads"))
 Resultssummaryreadsassignments$Filtering_step  <- factor(Resultssummaryreadsassignments$Filtering_step,levels = c("Unassigned.reads", "Viruses", "Bacteria", "Eukaryotes", "Host.species", "SSU.hits", "LSU.hits", "CO1.hits", "PhiX.contamination", "Low.quality.reads"))
 
@@ -203,21 +202,22 @@ for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
   
   ResultstableEuk <- subset(Resultstable,Resultstable$superkingdom=="Eukaryota")
   
-  uniquespecies <- unique(ResultstableEuk$species)
-  speciescounts <- as.data.frame(matrix(nrow = length(uniquespecies), ncol=6))
-  colnames(speciescounts) <- c("Species", "Reads assigned", "mean percent identity to hit","max percent identity to hit","min percent identity to hit","Sample")
+  uniquespecies <- unique(ResultstableEuk$subspecies)
+  speciescounts <- as.data.frame(matrix(nrow = length(uniquespecies), ncol=7))
+  colnames(speciescounts) <- c("Species", "subspecies", "Reads assigned", "mean percent identity to hit","max percent identity to hit","min percent identity to hit","Sample")
   
   if (nrow(ResultstableEuk)>=1) { 
   for ( j in c(1:length(uniquespecies))) {
     
-    resultstablesubset <- subset(ResultstableEuk,ResultstableEuk$species==uniquespecies[j])
+    resultstablesubset <- subset(ResultstableEuk,ResultstableEuk$subspecies==uniquespecies[j])
     
     speciescounts[j,1] <- resultstablesubset$species[1]
-    speciescounts[j,2] <- sum(resultstablesubset$freq)
-    speciescounts[j,3] <- mean(resultstablesubset$percentident)
-    speciescounts[j,4] <- max(resultstablesubset$percentident)
-    speciescounts[j,5] <- min(resultstablesubset$percentident)
-    speciescounts[j,6] <- resultstablesubset$Sample[1]
+    speciescounts[j,2] <- resultstablesubset$subspecies[1]
+    speciescounts[j,3] <- sum(resultstablesubset$freq)
+    speciescounts[j,4] <- mean(resultstablesubset$percentident)
+    speciescounts[j,5] <- max(resultstablesubset$percentident)
+    speciescounts[j,6] <- min(resultstablesubset$percentident)
+    speciescounts[j,7] <- resultstablesubset$Sample[1]
     
     
   }
@@ -232,36 +232,37 @@ for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
   if (nrow(ResultstableEuk)==0) {
     
     speciescounts[1,1]  <- ""
-    speciescounts[1,2]  <- 0
+    speciescounts[1,2]  <- ""
     speciescounts[1,3]  <- 0
     speciescounts[1,4]  <- 0
     speciescounts[1,5]  <- 0
-    speciescounts[1,6]  <- sampname
+    speciescounts[1,6]  <- 0
+    speciescounts[1,7]  <- sampname
     
     Euklist[[i]] <- speciescounts
-  }
+ 
+ }
   
-  
-  
-  
+    
   Resultstablebacteria <- subset(Resultstable,Resultstable$superkingdom=="Bacteria")
   
   
-  uniquespecies <- unique(Resultstablebacteria$species)
-  speciescounts <- as.data.frame(matrix(nrow = length(uniquespecies), ncol=6))
-  colnames(speciescounts) <- c("Species", "Reads assigned", "mean percent identity to hit","max percent identity to hit","min percent identity to hit","Sample")
+  uniquespecies <- unique(Resultstablebacteria$subspecies)
+  speciescounts <- as.data.frame(matrix(nrow = length(uniquespecies), ncol=7))
+  colnames(speciescounts) <- c("Species", "subspecies", "Reads assigned", "mean percent identity to hit","max percent identity to hit","min percent identity to hit","Sample")
   
   if (nrow(Resultstablebacteria)>=1) { 
   for ( j in c(1:length(uniquespecies))) {
     
-    resultstablesubset <- subset(Resultstablebacteria,Resultstablebacteria$species==uniquespecies[j])
+    resultstablesubset <- subset(Resultstablebacteria,Resultstablebacteria$subspecies==uniquespecies[j])
     
     speciescounts[j,1] <- resultstablesubset$species[1]
-    speciescounts[j,2] <- sum(resultstablesubset$freq)
-    speciescounts[j,3] <- mean(resultstablesubset$percentident)
-    speciescounts[j,4] <- max(resultstablesubset$percentident)
-    speciescounts[j,5] <- min(resultstablesubset$percentident)
-    speciescounts[j,6] <- resultstablesubset$Sample[1]
+    speciescounts[j,2] <- resultstablesubset$subspecies[1]
+    speciescounts[j,3] <- sum(resultstablesubset$freq)
+    speciescounts[j,4] <- mean(resultstablesubset$percentident)
+    speciescounts[j,5] <- max(resultstablesubset$percentident)
+    speciescounts[j,6] <- min(resultstablesubset$percentident)
+    speciescounts[j,7] <- resultstablesubset$Sample[1]
     
   }
     speciescounts <- speciescounts[order(-speciescounts$`Reads assigned`),]
@@ -275,32 +276,34 @@ for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
   if (nrow(Resultstablebacteria)==0) {
     
     speciescounts[1,1]  <- ""
-    speciescounts[1,2]  <- 0
+    speciescounts[1,2]  <- ""
     speciescounts[1,3]  <- 0
     speciescounts[1,4]  <- 0
     speciescounts[1,5]  <- 0
-    speciescounts[1,6]  <- sampname
+    speciescounts[1,6]  <- 0
+    speciescounts[1,7]  <- sampname
     
     bactlist[[i]] <- speciescounts
   }
   
   ResultstableVirus <- subset(Resultstable,Resultstable$superkingdom=="Viruses")
   
-  uniquespecies <- unique(ResultstableVirus$species)
-  speciescounts <- as.data.frame(matrix(nrow = length(uniquespecies), ncol=6))
-  colnames(speciescounts) <- c("Species", "Reads assigned", "mean percent identity to hit","max percent identity to hit","min percent identity to hit","Sample")
+  uniquespecies <- unique(ResultstableVirus$subspecies)
+  speciescounts <- as.data.frame(matrix(nrow = length(uniquespecies), ncol=7))
+  colnames(speciescounts) <- c("Species", "subspecies", "Reads assigned", "mean percent identity to hit","max percent identity to hit","min percent identity to hit","Sample")
   
   if (nrow(ResultstableVirus)>=1) { 
   for ( j in c(1:length(uniquespecies))) {
     
-    resultstablesubset <- subset(ResultstableVirus,ResultstableVirus$species==uniquespecies[j])
+    resultstablesubset <- subset(ResultstableVirus,ResultstableVirus$subspecies==uniquespecies[j])
     
     speciescounts[j,1] <- resultstablesubset$species[1]
-    speciescounts[j,2] <- sum(resultstablesubset$freq)
-    speciescounts[j,3] <- mean(resultstablesubset$percentident)
-    speciescounts[j,4] <- max(resultstablesubset$percentident)
-    speciescounts[j,5] <- min(resultstablesubset$percentident)
-    speciescounts[j,6] <- resultstablesubset$Sample[1]
+    speciescounts[j,2] <- resultstablesubset$subspecies[1]
+    speciescounts[j,3] <- sum(resultstablesubset$freq)
+    speciescounts[j,4] <- mean(resultstablesubset$percentident)
+    speciescounts[j,5] <- max(resultstablesubset$percentident)
+    speciescounts[j,6] <- min(resultstablesubset$percentident)
+    speciescounts[j,7] <- resultstablesubset$Sample[1]
     
   }
     speciescounts <- speciescounts[order(-speciescounts$`Reads assigned`),]
@@ -313,11 +316,12 @@ for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
   if (nrow(ResultstableVirus)==0) {
     
     speciescounts[1,1]  <- ""
-    speciescounts[1,2]  <- 0
+    speciescounts[1,2]  <- ""
     speciescounts[1,3]  <- 0
     speciescounts[1,4]  <- 0
     speciescounts[1,5]  <- 0
-    speciescounts[1,6]  <- sampname
+    speciescounts[1,6]  <- 0
+    speciescounts[1,7]  <- sampname
     
     virlist[[i]] <- speciescounts
   }
@@ -336,7 +340,7 @@ Eukaryotes <- bind_rows(Euklist)
 Viruses_sums <- Viruses[order(-Viruses$`Reads assigned`),]
 
 #Viruses_sums <- aggregate(Viruses,by = Viruses$`Reads assigned`,FUN = sum())
-Viruses_sums <- aggregate((Viruses$`Reads assigned`),by=list(Viruses$Species),sum)
+Viruses_sums <- aggregate((Viruses$`Reads assigned`),by=list(Viruses$subspecies),sum)
 Viruses_sums <- Viruses_sums[order(-Viruses_sums$`x`),]
 
 if (nrow(Viruses_sums)>=10) {
@@ -347,7 +351,7 @@ if (nrow(Viruses_sums)<10) {
 }
 
 Viruses_top10 <- Viruses %>% 
-  filter(Species %in% Viruses_sumstop10$Group.1)
+  filter(subspecies %in% Viruses_sumstop10$Group.1)
 
 Viruses_sumstop10$Group.1
 
@@ -376,7 +380,7 @@ Bacteria_top10$Group.1
 Eukaryotes_sums <- Eukaryotes[order(-Eukaryotes$`Reads assigned`),]
 
 #Viruses_sums <- aggregate(Viruses,by = Viruses$`Reads assigned`,FUN = sum())
-Eukaryotes_sums <- aggregate((Eukaryotes$`Reads assigned`),by=list(Eukaryotes$Species),sum)
+Eukaryotes_sums <- aggregate((Eukaryotes$`Reads assigned`),by=list(Eukaryotes$subspecies),sum)
 Eukaryotes_sums <- Eukaryotes_sums[order(-Eukaryotes_sums$`x`),]
 
 if (nrow(Eukaryotes_sums)>=10) {
@@ -394,8 +398,6 @@ Eukaryotes_top10$Group.1
 
 
 
-
-
 # ggplot graphs 
 
 Viruses_top10$`Reads assigned` <- as.numeric(as.character(Viruses_top10$`Reads assigned`))
@@ -406,7 +408,7 @@ Eukaryotes_top10$`Reads assigned` <- as.numeric(as.character(Eukaryotes_top10$`R
 # ggplot graphs 
 
 
-plot <- ggplot(Viruses_top10, aes(x=Sample, y=`Reads assigned`, fill=Species)) +
+plot <- ggplot(Viruses_top10, aes(x=Sample, y=`Reads assigned`, fill=subspecies)) +
   geom_bar(position="stack", stat="identity") +
   #scale_fill_viridis(discrete = T,name= "Reads assigned as:") +
   #scale_fill_brewer(palette = "Set3") +
@@ -423,7 +425,8 @@ plot <- ggplot(Viruses_top10, aes(x=Sample, y=`Reads assigned`, fill=Species)) +
   coord_flip() +
   guides(fill = guide_legend(nrow = 4)) +
   scale_y_continuous(labels = scales::number_format()) +
-  theme(plot.margin = margin(1,1,1.5,1.2, "cm"))
+  theme(plot.margin = margin(1,1,1.5,1.2, "cm")) +
+  labs(fill = "Virus spp") 
 
 plot
 
@@ -433,7 +436,7 @@ plot
 
 ggsave(paste0(outtablespath,"Summary_barplot_top_virus_species_from_contigs.png"), dpi = 300)
 
-plot <- ggplot(Bacteria_top10, aes(x=Sample, y=`Reads assigned`, fill=Species)) +
+plot <- ggplot(Bacteria_top10, aes(x=Sample, y=`Reads assigned`, fill=subspecies)) +
   geom_bar(position="stack", stat="identity") +
   #scale_fill_viridis(discrete = T,name= "Reads assigned as:") +
   #scale_fill_brewer(palette = "Set3") +
@@ -450,7 +453,8 @@ plot <- ggplot(Bacteria_top10, aes(x=Sample, y=`Reads assigned`, fill=Species)) 
   coord_flip() +
   guides(fill = guide_legend(nrow = 4)) +
   scale_y_continuous(labels = scales::number_format()) +
-  theme(plot.margin = margin(1,1,1.5,1.2, "cm"))
+  theme(plot.margin = margin(1,1,1.5,1.2, "cm")) +
+  labs(fill = "Bacterial spp") 
 
 plot
 
@@ -462,7 +466,7 @@ plot
 ggsave(paste0(outtablespath,"summarybarplot_contigs_bacterial_species.png"), dpi = 300)
 
 
-plot <- ggplot(Eukaryotes_top10, aes(x=Sample, y=`Reads assigned`, fill=Species)) +
+plot <- ggplot(Eukaryotes_top10, aes(x=Sample, y=`Reads assigned`, fill=subspecies)) +
   geom_bar(position="stack", stat="identity") +
   #scale_fill_viridis(discrete = T,name= "Reads assigned as:") +
   #scale_fill_brewer(palette = "Set3") +
@@ -479,7 +483,8 @@ plot <- ggplot(Eukaryotes_top10, aes(x=Sample, y=`Reads assigned`, fill=Species)
   coord_flip() +
   guides(fill = guide_legend(nrow = 4)) +
   scale_y_continuous(labels = scales::number_format()) +
-  theme(plot.margin = margin(1,1,1.5,1.2, "cm"))
+  theme(plot.margin = margin(1,1,1.5,1.2, "cm")) +
+  labs(fill = "Eukaryote spp") 
 
 plot
 
@@ -743,7 +748,7 @@ ggsave(paste0(outtablespath,"Summary_barplot_contigs_virus_Eukaryote_raw_reads_d
 
 }
 
-
+save.image("test_summary_graphs.Rdata")
 
 # Eukaryotes top 20 returned hits sumamry table
 
@@ -767,11 +772,11 @@ AllsampleEukssummaryfilesdf <- bind_rows(AllsampleEukssummaryfiles)
 
 
 AllsampleEukssummaryfilesdf10top <- AllsampleEukssummaryfilesdf %>% 
-  filter(species %in% Eukaryotes_top10$Species)
+  filter(subspecies %in% Eukaryotes_top10$subspecies)
 
-aggtable <- aggregate((AllsampleEukssummaryfilesdf10top$Frequency),by=list(AllsampleEukssummaryfilesdf10top$species,AllsampleEukssummaryfilesdf10top$Sample),sum)
-aggtable2table <- aggregate((AllsampleEukssummaryfilesdf10top$average_percent_ident),by=list(AllsampleEukssummaryfilesdf10top$species),mean)
-aggtable3table <- aggregate((AllsampleEukssummaryfilesdf10top$length),by=list(AllsampleEukssummaryfilesdf10top$species),mean)
+aggtable <- aggregate((AllsampleEukssummaryfilesdf10top$Frequency),by=list(AllsampleEukssummaryfilesdf10top$subspecies,AllsampleEukssummaryfilesdf10top$Sample),sum)
+aggtable2table <- aggregate((AllsampleEukssummaryfilesdf10top$average_percent_ident),by=list(AllsampleEukssummaryfilesdf10top$subspecies),mean)
+aggtable3table <- aggregate((AllsampleEukssummaryfilesdf10top$length),by=list(AllsampleEukssummaryfilesdf10top$subspecies),mean)
 
 
 pairwise_matrixEuk <- acast(aggtable, Group.1 ~ Group.2, value.var = "x", fill = 0)
@@ -809,13 +814,13 @@ AllsampleBacsummaryfilesdf <- bind_rows(AllsampleBacsummaryfiles)
 
 
 AllsampleBacsummaryfilesdf10top <- AllsampleBacsummaryfilesdf %>% 
-  filter(species %in% Bacteria_top10$Species)
+  filter(subspecies %in% Bacteria_top10$subspecies)
 
 
 
-aggtable <- aggregate((AllsampleBacsummaryfilesdf10top$Frequency),by=list(AllsampleBacsummaryfilesdf10top$species,AllsampleBacsummaryfilesdf10top$Sample),sum)
-aggtable2table <- aggregate((AllsampleBacsummaryfilesdf10top$average_percent_ident),by=list(AllsampleBacsummaryfilesdf10top$species),mean)
-aggtable3table <- aggregate((AllsampleBacsummaryfilesdf10top$length),by=list(AllsampleBacsummaryfilesdf10top$species),mean)
+aggtable <- aggregate((AllsampleBacsummaryfilesdf10top$Frequency),by=list(AllsampleBacsummaryfilesdf10top$subspecies,AllsampleBacsummaryfilesdf10top$Sample),sum)
+aggtable2table <- aggregate((AllsampleBacsummaryfilesdf10top$average_percent_ident),by=list(AllsampleBacsummaryfilesdf10top$subspecies),mean)
+aggtable3table <- aggregate((AllsampleBacsummaryfilesdf10top$length),by=list(AllsampleBacsummaryfilesdf10top$subspecies),mean)
 
 
 
@@ -857,13 +862,13 @@ AllsampleVirsummaryfilesdf <- bind_rows(AllsampleVirsummaryfiles)
 
 
 AllsampleVirsummaryfilesdf10top <- AllsampleVirsummaryfilesdf %>% 
-  filter(species %in% Viruses_top10$Species)
+  filter(subspecies %in% Viruses_top10$subspecies)
 
 
 
-aggtable <- aggregate((AllsampleVirsummaryfilesdf10top$Frequency),by=list(AllsampleVirsummaryfilesdf10top$species,AllsampleVirsummaryfilesdf10top$Sample),sum)
-aggtable2table <- aggregate((AllsampleVirsummaryfilesdf10top$average_percent_ident),by=list(AllsampleVirsummaryfilesdf10top$species),mean)
-aggtable3table <- aggregate((AllsampleVirsummaryfilesdf10top$length),by=list(AllsampleVirsummaryfilesdf10top$species),mean)
+aggtable <- aggregate((AllsampleVirsummaryfilesdf10top$Frequency),by=list(AllsampleVirsummaryfilesdf10top$subspecies,AllsampleVirsummaryfilesdf10top$Sample),sum)
+aggtable2table <- aggregate((AllsampleVirsummaryfilesdf10top$average_percent_ident),by=list(AllsampleVirsummaryfilesdf10top$subspecies),mean)
+aggtable3table <- aggregate((AllsampleVirsummaryfilesdf10top$length),by=list(AllsampleVirsummaryfilesdf10top$subspecies),mean)
 
 
 

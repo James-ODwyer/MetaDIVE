@@ -272,8 +272,8 @@ if ( nrow(uniquespmissing) >=1 ) {
 
 cat(paste0(" Starting taxonomy identification from all known taxids ", "\n"))
 
-taxids <- as.data.frame(matrix(nrow=nrow(Diamond_output),ncol=8))
-taxidsunique <- as.data.frame(matrix(nrow=nrow(contigsassignedunique),ncol=8))
+taxids <- as.data.frame(matrix(nrow=nrow(Diamond_output),ncol=9))
+taxidsunique <- as.data.frame(matrix(nrow=nrow(contigsassignedunique),ncol=9))
 
 taxids$V1 <- Diamond_output$staxidreduced
 taxidsunique$V1 <- contigsassignedunique$staxidreduced
@@ -289,7 +289,10 @@ for (i in c(1:nrow(contigsassignedunique))) {
   values <- taxonomizr::getRawTaxonomy(contigsassignedunique$staxidreduced[i], sqlFile=AccessionNamenode)
   
   if (!is.null(values[[1]][1])) {
-    values[[1]][1] -> taxidsunique[i,8]
+    values[[1]][1] -> taxidsunique[i,9]
+  }
+  if (is.null(values[[1]][1])) {
+    taxidsunique[i,8] -> taxidsunique[i,9]
   }
   
   
@@ -305,9 +308,12 @@ for (i in c(1:nrow(contigsassignedunique))) {
       
       values <- taxonomizr::getRawTaxonomy(value, sqlFile=AccessionNamenode)
     }
-    if (!is.null(values[[1]][1])) {
-      values[[1]][1] -> taxidsunique[i,8]
-    }
+  if (!is.null(values[[1]][1])) {
+    values[[1]][1] -> taxidsunique[i,9]
+  }
+  if (is.null(values[[1]][1])) {
+    taxidsunique[i,8] -> taxidsunique[i,9]
+  }
     
     
   }
@@ -322,8 +328,8 @@ d <- Sys.time()
 cat(paste0(NAMES," Finished taxid conversion to taxonomy ", "\n"))
 cat(paste0(Sys.time(), "\n"))
 
-taxidsunique<- as.data.frame(taxidsunique, ncol=8)
-colnames(taxidsunique) =c("staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species") 
+taxidsunique<- as.data.frame(taxidsunique, ncol=9)
+colnames(taxidsunique) =c("staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species","subspecies") 
 
 
 taxidsunique$startrow <- as.numeric(contigsassignedindexes$startingrow)
@@ -341,7 +347,7 @@ for ( i in c(1:nrow(taxidsunique))) {
   taxidsunique$endrow[i] ->fin
   
   
-  taxids[start:fin,2:8] <- taxidsunique[i,2:8]
+  taxids[start:fin,2:9] <- taxidsunique[i,2:9]
   
 }
 
@@ -350,7 +356,7 @@ f <- Sys.time()
 cat(paste0(" Finished grep converting unique taxids back to diamond output ", "\n"))
 cat(paste0(Sys.time(), "\n"))
 
-colnames(taxids) =c("staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species") 
+colnames(taxids) =c("staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species","subspecies") 
 
 Diamond_output$sp <- NULL
 
@@ -361,6 +367,7 @@ Diamond_output$order<- taxids$order
 Diamond_output$family<- taxids$family
 Diamond_output$genus<- taxids$genus
 Diamond_output$species<- taxids$species
+Diamond_output$subspecies<- taxids$subspecies
 
 
 rm(taxids,taxidsunique,uniquespmissing)

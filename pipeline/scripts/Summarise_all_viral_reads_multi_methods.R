@@ -18,6 +18,7 @@ parser$add_argument('--contigs', '-C', help= 'contigs_file_generated')
 parser$add_argument('--programdir', '-t', help= 'directory of analysis run (same as program_dir in config file)')
 parser$add_argument('--savdir', '-A', help= 'directory path of where to save viral raw reads output table')
 parser$add_argument('--Rdatas', '-r', help= ' I am the results Rdata environment from 99summary ')
+parser$add_argument('--dofalseposcheck', '-f', help= ' Whether to subset to only contigs which passed blastn analysis ')
 
 
 xargs<- parser$parse_args()
@@ -30,6 +31,7 @@ resultspathcompile <- xargs$savdir
 contigspathing <- xargs$contigs
 rdataenv <- xargs$Rdatas
 threads <- xargs$threads
+dofalsepossubset <- xargs$dofalseposcheck
 outtablespathcompile <- paste0(basepath,resultspath)
 outtablespath <- paste0(basepath,resultspath)
 
@@ -83,6 +85,15 @@ complexity_scores <- seqComplexity(sequences, kmerSize=3)
 seqs_plus_scores <- as.data.frame(cbind(sequencenames,complexity_scores))
 
 Combined_assigned_contigs_viruses_only <- subset(Combined_assigned_contigs,Combined_assigned_contigs$superkingdom=="Viruses")
+
+# If to replace viruses only if only false pos subsets are required
+
+if ( dofalsepossubset == "confirmed") {
+  
+  Combined_assigned_contigs_viruses_only <- subset(Combined_assigned_contigsfp,Combined_assigned_contigsfp$superkingdom=="Viruses")
+  
+}
+
 Combined_assigned_contigs_viruses_only$qseqid <- sub(" .*", "", Combined_assigned_contigs_viruses_only$qseqid)
 
 seqscores_viruses <- seqs_plus_scores[seqs_plus_scores$sequencenames %in% Combined_assigned_contigs_viruses_only$qseqid, ]
@@ -119,7 +130,7 @@ if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
   Viraltop100$contigs_assigned <- "yes"
   
   Combined_assigned_contigs_viruses_only$complexity_score <- as.numeric(Combined_assigned_contigs_viruses_only$complexity_score)
-  
+  save.image("testing_raws_contigs_combinedLongtables1.Rdata")
   
   for (i in c(1:nrow(Viraltop100))) {
     
@@ -141,8 +152,8 @@ if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
   Viraltop100$mean_complexity_of_raw_reads <- 0
   Viraltop100$mean_identity_of_raw_reads <- 0
   Viraltop100$mean_aligned_length_of_raw_reads <- 0
-
   
+  save.image("testing_raws_contigs_combinedLongtables2.Rdata")
   # generate the complete viral data for the raws info added to the contigs. Do another grep loop
   # then subset the raws file to remove any species that are already in the contigs. 
   # Then create a new dataframe with the colnames of viraltop100 and populate with the raw data info for remaining raw data species and 0/NA for sections not present.
@@ -172,12 +183,12 @@ if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
   
 }
 
-
+save.image("testing_raws_contigs_combinedLongtables3.Rdata")
 # First check if the raws is empty.
 # second check if the contigs is empty. (heirarchically)
 
 if (file.info(viralcomplexity)$size >= 500) {
-  remaining_raws <- anti_join(viral_raws_complexity_summary, Viraltop100, by = "species")
+  remaining_raws <- anti_join(viral_raws_complexity_summary, Viraltop100, by = "subspecies")
   
   if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
     
@@ -187,13 +198,14 @@ if (file.info(viralcomplexity)$size >= 500) {
   }
   if(nrow(Combined_assigned_contigs_viruses_only) <1) {
     
-    viral_raws_reads_compatability <- as.data.frame(matrix(ncol=20, nrow=nrow(remaining_raws)))
-    colnames(viral_raws_reads_compatability) <- c("reads_assigned_through_contigs","superkingdom","phylum","class","order","family","genus","species","average_percent_ident","min_percent_ident","max_percent_ident","max_percent_ident","length","number_contigs_assigned","mean_complexity_of_contigs","additional_raw_reads_assigned","number_of_raw_reads_assigned","mean_complexity_of_raw_reads","mean_identity_of_raw_reads","mean_aligned_length_of_raw_reads")
+    viral_raws_reads_compatability <- as.data.frame(matrix(ncol=21, nrow=nrow(remaining_raws)))
+    colnames(viral_raws_reads_compatability) <- c("reads_assigned_through_contigs","superkingdom","phylum","class","order","family","genus","species","subspecies","average_percent_ident","min_percent_ident","max_percent_ident","max_percent_ident","length","number_contigs_assigned","mean_complexity_of_contigs","additional_raw_reads_assigned","number_of_raw_reads_assigned","mean_complexity_of_raw_reads","mean_identity_of_raw_reads","mean_aligned_length_of_raw_reads")
     BOTHMISSING <- "NO"
   }
   
   
 }
+save.image("testing_raws_contigs_combinedLongtables4.Rdata")
 
 if (file.info(viralcomplexity)$size < 500) {
   
@@ -205,14 +217,14 @@ if (file.info(viralcomplexity)$size < 500) {
   }
   if(nrow(Combined_assigned_contigs_viruses_only) <1) {
     
-    viral_raws_reads_compatability <- as.data.frame(matrix(ncol=20, nrow=0))
-    colnames(viral_raws_reads_compatability) <- c("reads_assigned_through_contigs","superkingdom","phylum","class","order","family","genus","species","average_percent_ident","min_percent_ident","max_percent_ident","max_percent_ident","length","number_contigs_assigned","mean_complexity_of_contigs","additional_raw_reads_assigned","number_of_raw_reads_assigned","mean_complexity_of_raw_reads","mean_identity_of_raw_reads","mean_aligned_length_of_raw_reads")
+    viral_raws_reads_compatability <- as.data.frame(matrix(ncol=21, nrow=0))
+    colnames(viral_raws_reads_compatability) <- c("reads_assigned_through_contigs","superkingdom","phylum","class","order","family","genus","species","subspecies","average_percent_ident","min_percent_ident","max_percent_ident","max_percent_ident","length","number_contigs_assigned","mean_complexity_of_contigs","additional_raw_reads_assigned","number_of_raw_reads_assigned","mean_complexity_of_raw_reads","mean_identity_of_raw_reads","mean_aligned_length_of_raw_reads")
     BOTHMISSING <- "YES"
   }
   
 }
 
-
+save.image("testing_raws_contigs_combinedLongtables5.Rdata")
 if (BOTHMISSING =="NO") {
   
   
@@ -220,13 +232,14 @@ if (BOTHMISSING =="NO") {
     
     viral_raws_reads_compatability$reads_assigned_through_contigs <- 0
     viral_raws_reads_compatability$superkingdom <- remaining_raws$superkingdom
-    viral_raws_reads_compatability$phylum <- NA
-    viral_raws_reads_compatability$class <- NA
-    viral_raws_reads_compatability$order <- NA
+    viral_raws_reads_compatability$phylum <- remaining_raws$phylum
+    viral_raws_reads_compatability$class <- remaining_raws$class
+    viral_raws_reads_compatability$order <- remaining_raws$order
     viral_raws_reads_compatability$family <- remaining_raws$family
     viral_raws_reads_compatability$contigs_assigned <- "no"
-    viral_raws_reads_compatability$genus <- NA
+    viral_raws_reads_compatability$genus <- remaining_raws$genus
     viral_raws_reads_compatability$species <- remaining_raws$species
+    viral_raws_reads_compatability$subspecies <- remaining_raws$subspecies
     viral_raws_reads_compatability$average_percent_ident <- 0
     viral_raws_reads_compatability$min_percent_ident <- 0
     viral_raws_reads_compatability$max_percent_ident <- 0
@@ -246,8 +259,8 @@ if (BOTHMISSING =="NO") {
     print("no raw reads assigned to viruses")
   }
   
+  save.image("testing_raws_contigs_combinedLongtables6.Rdata")
   
-
   
   if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
     
@@ -293,7 +306,7 @@ if (BOTHMISSING =="NO") {
   virus_all$mean_identity_of_raw_reads <- as.numeric(virus_all$mean_identity_of_raw_reads)
   virus_all$length <- as.numeric(virus_all$length)
   
-  
+  save.image("testing_raws_contigs_combinedLongtables7.Rdata")
   
   colourise <- function(value, column) {
     if (column == "reads_assigned_through_contigs") {
@@ -302,7 +315,7 @@ if (BOTHMISSING =="NO") {
       } else if (value >= 25) {
         return("orange")
       } else if (value ==0) {
-        return(as.character(value))
+        return(NA)
       } else {
         return("red")
       }
@@ -312,7 +325,7 @@ if (BOTHMISSING =="NO") {
       } else if (value >= 1 && value <=20) {
         return("red")
       } else {
-        return(as.character(value))
+        return(NA)
       }
     } else if (column == "number_of_raw_reads_assigned") {
       if (value >= 50) {
@@ -320,7 +333,7 @@ if (BOTHMISSING =="NO") {
       } else if (value >= 25) {
         return("orange")
       }else if (value ==0) {
-        return(as.character(value))
+        return(NA)
       } else {
         return("red")
       }
@@ -330,7 +343,7 @@ if (BOTHMISSING =="NO") {
       } else if (value >= 33) {
         return("orange")
       } else if (value ==0) {
-        return(as.character(value))
+        return(NA)
       } else {
         return("red")
       }
@@ -340,7 +353,7 @@ if (BOTHMISSING =="NO") {
       } else if (value >= 33) {
         return("orange")
       } else if (value ==0) {
-        return(as.character(value))
+        return(NA)
       } else {
         return("red")
       }
@@ -350,7 +363,7 @@ if (BOTHMISSING =="NO") {
       } else if (value >= 80) {
         return("orange")
       } else if (value ==0) {
-        return(as.character(value))
+        return(NA)
       } else {
         return("blue")
       }
@@ -360,7 +373,7 @@ if (BOTHMISSING =="NO") {
       } else if (value >= 80) {
         return("orange")
       } else if (value ==0) {
-        return(as.character(value))
+        return(NA)
       } else {
         return("blue")
       }
@@ -370,7 +383,7 @@ if (BOTHMISSING =="NO") {
       } else if (value >= 300) {
         return("orange")
       } else if (value ==0) {
-        return(as.character(value))
+        return(NA)
       } else {
         return("red")
       }
@@ -391,9 +404,9 @@ if (BOTHMISSING =="NO") {
   
   for (i in c(1:nrow(coloured_data))) {
     
-    greens <- sum(grepl(pattern="color:green",x=coloured_data[i,c(1, 12, 14, 17, 18, 21)]))
-    oranges <- sum(grepl(pattern="color:orange",x=coloured_data[i,c(1, 12, 14, 17, 18, 21)]))
-    reds <- sum(grepl(pattern="color:red",x=coloured_data[i,c(1, 12, 14, 17, 18, 21)]))
+    greens <- sum(grepl(pattern="color:green",x=coloured_data[i,c(1, 13, 15, 18, 19, 22)]))
+    oranges <- sum(grepl(pattern="color:orange",x=coloured_data[i,c(1, 13, 15, 18, 19, 22)]))
+    reds <- sum(grepl(pattern="color:red",x=coloured_data[i,c(1, 13, 15, 18, 19, 20)]))
     
     
     
@@ -459,10 +472,10 @@ if (BOTHMISSING =="NO") {
     
     
     
-    greens2 <- sum(grepl(pattern="color:green",x=coloured_data[i,c(9, 12, 19)]))
-    oranges2 <- sum(grepl(pattern="color:orange",x=coloured_data[i,c(9, 12, 19)]))
-    reds2 <- sum(grepl(pattern="color:red",x=coloured_data[i,c(9, 12, 19)]))  
-    blues2 <- sum(grepl(pattern="color:blue",x=coloured_data[i,c(9, 12, 19)]))  
+    greens2 <- sum(grepl(pattern="color:green",x=coloured_data[i,c(10, 13, 20)]))
+    oranges2 <- sum(grepl(pattern="color:orange",x=coloured_data[i,c(10, 13, 20)]))
+    reds2 <- sum(grepl(pattern="color:red",x=coloured_data[i,c(10, 13, 20)]))  
+    blues2 <- sum(grepl(pattern="color:blue",x=coloured_data[i,c(10, 13, 20)]))  
     
     if(greens2 >=2) {
       
@@ -507,7 +520,7 @@ if (BOTHMISSING =="NO") {
     
   }
   
-
+  
   
   virus_all$classification_level_estimate <- coloured_data$classification_level_estimate
   virus_all$confidence_of_assignment_as_virus <- coloured_data$confidence_of_assignment_as_virus
@@ -629,7 +642,7 @@ if (BOTHMISSING =="NO") {
   # Final step. I need to iterate a save loop which will save a file with output/NAME/species_reads_title
   # and output/NAME/species_contigs_title
   
-
+  
   # Define the directory to save the text files
   # The input params for output directory includes the NAMES already 
   directory <- resultspathcompile
@@ -666,7 +679,7 @@ if (BOTHMISSING =="NO") {
   }
   
   
-
+  
   
   write.csv(virus_all, file=paste0(outtablespathcompile,NAMES,"_virusall_sums.csv"), row.names = FALSE)
   
@@ -687,3 +700,6 @@ if (BOTHMISSING =="YES") {
 # Then need to create another rule to use zcat | grep to extract all reads and contigs associated with each species of virus. 
 # For the reads, grep -A 4 will work as the reads are all 4line. For the contigs I hope it will work, but if not I may need to use something
 #like seqkt to do it
+
+
+save.image("test_final_raws_contigs_splitting.Rdata")

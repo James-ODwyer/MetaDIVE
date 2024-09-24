@@ -107,11 +107,16 @@ SSUweight: 2
 # an additional 1-24 hours to run through (depending on cpu cores) (A goal of a sample every 6-12 hours start to complete is unlikely with this setting on).
 #'yes'/'no'
 
-DNA_assign_blastn: 'yes'
+DNA_assign_blastn: 'no'
 
 
 # Whether or not to run a false positive check on the contigs assigned to viruses using BLASTn 
 Blastn_viral_contig_false_positive_check: 'yes'
+
+# Whether to return all contigs generated which Diamond blast matched to a virus or only those which passed the false positive check for final reads 
+# and contigs files generated. This will also change the names of viral assignments to match blastn results preferrentially over blastx results. 
+# 'all'/'confirmed'
+Final_contigs_returned: 'confirmed'
 
 # testing advanced microbiome analysis for rRNA. 
 #'yes/no'.
@@ -126,7 +131,7 @@ Viral_genome_tree_building: 'no'
 
 # Whether or not to run genomad viral detection pathways 
 # 'yes/no'
-Genomad_detect: 'yes'
+Genomad_detect: 'no'
 
 
 # Whether to run analyses on the raws reads that were not aligned to a contig (requires a long time)
@@ -134,19 +139,9 @@ Genomad_detect: 'yes'
 # 'yes/no'
 run_raws: 'yes'
 
-# Maximum number of raw read pairs to analyse as part of the raw read diamond blast - blastn analysis. If there ends up being millions of reads which fail to form contigs, not setting a reasonable
-# maximum can cause the pipeline to take days extra per sample (blastn is not designed for more than a few thousand comparisons and blastx can take a very long time at >1 million comparisons)
-# Recommend not having this above 500k #### (# note to self do some benchmark testing on this to see what is a reasonable maximum while not affecting detection accuracy#)
-# absolute is recommended as the fraction of reads not forming contigs is unknown before you start the pipeline. 
-# prelim benchmarking. 1.5million read pairs took ~7 hours real time. 500k took 3.8 hours real time (8CPUs), tested on samples of cultured viral isolate.
-
-# Write number as either numerical abolute without commas e.g., 100000  or can write it as a fraction of total reads not forming contigs e.g., 0.5 
-Raw_reads_subset: 100000
-
 # Whether to do diamond blast on the raws (very long, probably around 15-25% of the whole pipeline)
 #'yes/no'
 dodiamond_blast_raws: 'yes'
-
 
 # whether summary results files should be generated. This is required for all additional modules to generate their final results files.
 # 'yes/no'

@@ -21,6 +21,7 @@ parser$add_argument('--savdir', '-A', help= 'directory path of where to save vir
 parser$add_argument('--Log', '-l', help= 'Log of data')
 
 
+
 xargs<- parser$parse_args()
 
 
@@ -34,7 +35,7 @@ n.cores <- xargs$threads
 
 virus_input_table <- read.table(file=xargs$inputvirusdetails, sep="\t",header=TRUE,row.names=NULL, fill=TRUE,quote="")
 
-colnames(virus_input_table) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species")
+colnames(virus_input_table) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species","subspecies")
 
 
 virus_names <- read.table(file=xargs$viral_readnames, sep="\t",header=FALSE,row.names=NULL,quote="")
@@ -98,7 +99,7 @@ fasta_names <- names(sequences)
 
 # Create a dataframe
 readcomplexity_stats <- data.frame(Name = fasta_names,
-                 Complexity_score = complexity_scores)
+                                   Complexity_score = complexity_scores)
 
 
 readcomplexity_stats$Name <- sub(" .*", "", readcomplexity_stats$Name)
@@ -114,17 +115,20 @@ for (i in c(1:nrow(readcomplexity_stats))) {
 }
 
 
-
-
 viruses_input_confirmed_freqs <- viruses_input_confirmed %>%
-  group_by(species) %>%
+  group_by(subspecies) %>%
   summarize(count = n())
 
 
-viruses_input_confirmed_freqs<- subset(viruses_input_confirmed_freqs,!(is.na(viruses_input_confirmed_freqs$species)))
+viruses_input_confirmed_freqs<- subset(viruses_input_confirmed_freqs,!(is.na(viruses_input_confirmed_freqs$subspecies)))
 
 viruses_input_confirmed_freqs$superkingdom <- NA 
+viruses_input_confirmed_freqs$phylum <- NA 
+viruses_input_confirmed_freqs$class <- NA
+viruses_input_confirmed_freqs$order <- NA 
 viruses_input_confirmed_freqs$family <- NA 
+viruses_input_confirmed_freqs$genus <- NA
+viruses_input_confirmed_freqs$species <- NA
 viruses_input_confirmed_freqs$taxid <- NA
 viruses_input_confirmed_freqs$min_aligned_length <- NA 
 viruses_input_confirmed_freqs$max_aligned_length <- NA 
@@ -149,12 +153,17 @@ viruses_input_confirmed_freqs$max_complexity <- as.numeric(viruses_input_confirm
 for (l in c(1:nrow(viruses_input_confirmed_freqs) )) {
   
   viruses_input_confirmed_freqssubset <- viruses_input_confirmed %>%
-    filter(grepl(viruses_input_confirmed_freqs[l,1], viruses_input_confirmed$species))
+    filter(grepl(viruses_input_confirmed_freqs[l,1], viruses_input_confirmed$subspecies))
   
   
   
   viruses_input_confirmed_freqs$superkingdom[l] <- viruses_input_confirmed_freqssubset$superkingdom[1]
+  viruses_input_confirmed_freqs$phylum[l] <- viruses_input_confirmed_freqssubset$phylum[1]
+  viruses_input_confirmed_freqs$class[l] <- viruses_input_confirmed_freqssubset$class[1]
+  viruses_input_confirmed_freqs$order[l] <- viruses_input_confirmed_freqssubset$order[1]
   viruses_input_confirmed_freqs$family[l] <- viruses_input_confirmed_freqssubset$family[1]
+  viruses_input_confirmed_freqs$genus[l] <- viruses_input_confirmed_freqssubset$genus[1]
+  viruses_input_confirmed_freqs$species[l] <- viruses_input_confirmed_freqssubset$species[1]
   viruses_input_confirmed_freqs$taxid[l] <- viruses_input_confirmed_freqssubset$staxids[1]
   viruses_input_confirmed_freqs$min_aligned_length[l] <- min(viruses_input_confirmed_freqssubset$length)
   viruses_input_confirmed_freqs$max_aligned_length[l] <- max(viruses_input_confirmed_freqssubset$length)
@@ -169,6 +178,5 @@ for (l in c(1:nrow(viruses_input_confirmed_freqs) )) {
 
 
 write.table(viruses_input_confirmed_freqs,file=(paste0(outtablespath,NAMES,"Viral_hits_and_complexity.txt")),sep="\t",row.names=FALSE)
-
 
 

@@ -416,6 +416,7 @@ rule align_raws_to_contigs:
         unalignedsingles = config["sub_dirs"]["raws_to_contigs"] + "/{sample}_unaligned_singles.fastq.gz",
         samoutput = temp(config["sub_dirs"]["raws_to_contigs"] + "/{sample}.sam"),
         samoutputhits = config["sub_dirs"]["raws_to_contigs"] + "/{sample}_hits.sam",
+        samoutputhits2 = config["sub_dirs"]["raws_to_contigs"] + "/{sample}_hits_3col.sam",
         bamoutput = config["sub_dirs"]["raws_to_contigs"] + "/{sample}.bam",
         samoutputunaligned = temp(config["sub_dirs"]["raws_to_contigs"] + "/{sample}_contigs_unaligned_reads.sam")
     params:
@@ -441,6 +442,7 @@ rule align_raws_to_contigs:
             --fast \
             2> {log} && \
         samtools view -F 4 {output.samoutput} > {output.samoutputhits} && \
+        cut -f 1-3 {output.samoutputhits} > {output.samoutputhits2} && \
         samtools view -b -F 3584 {output.samoutput} > {output.bamoutput} && \
         samtools view -@ {threads} -f 4 -h {output.samoutput} > {output.samoutputunaligned} && \
         samtools fastq -@ {threads} -1 {output.unalignedreads1} -2 {output.unalignedreads2} -s {output.unalignedsingles} -n {output.samoutputunaligned}
