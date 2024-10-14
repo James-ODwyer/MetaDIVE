@@ -160,6 +160,39 @@ rule analyse_diamond_hits_raws:
         touch {output.superkingdoms} && \
         touch {output.contigsassigned}
         """
+rule generate_kraken_raws:
+    message:
+        """
+        Generate additional viral assignments for raw reads using kraken2
+        for {wildcards.sample}
+        """
+    input:
+        R1 = raws_after_hostR1,
+        R2 = raws_after_hostR2
+    output:
+        krakenout = config["sub_dirs"]["Kraken_viral_ids"] + "/{sample}_kraken_output.txt",
+        krakenreport = config["sub_dirs"]["Kraken_viral_ids"] + "/{sample}_kraken_report.txt",
+        readslist2 = config["sub_dirs"]["Kraken_viral_ids"] + "/{sample}_raw_read_names_to_virus.txt"
+    params:
+        krakendb= config["Kraken_database"]
+    log:
+        "logs/" + config["sub_dirs"]["Kraken_viral_ids"] + "/{sample}.log"
+    threads: 2
+    conda: "kraken2"
+    resources:
+        mem_mb=8000
+    benchmark:
+        "benchmarks/" + config["sub_dirs"]["Kraken_viral_ids"] + "/{sample}.txt"
+    shell:
+        """
+        kraken2 --db {params.krakendb} --paired \
+            --threads {threads} \
+            --report {output.krakenreport} \
+            --output {output.krakenout} \
+            {input.R1} {input.R2} \
+            2> {log} && \
+        awk '$1 == "C" {{print $2}}' "{output.krakenout}" > {output.readslist2}
+        """
 
 rule check_results_in_blastn:
     message:
@@ -170,15 +203,19 @@ rule check_results_in_blastn:
     input:
         R1 = raws_after_hostR1,
         R2 = raws_after_hostR2,
-        readslist = config["sub_dirs"]["Summary_results"] + "/{sample}_raw_read_names_to_virus.txt"
+        readslist = config["sub_dirs"]["Summary_results"] + "/{sample}_raw_read_names_to_virus.txt",
+        readslist2 = config["sub_dirs"]["Kraken_viral_ids"] + "/{sample}_raw_read_names_to_virus.txt"
     output:
+        readslistcomb = config["sub_dirs"]["raws_blastn_check"] + "/{sample}_raw_read_names_to_virus_comb.txt",
         fastqreads = config["sub_dirs"]["raws_blastn_check"] + "/{sample}_reads.fastq",
         fastareads = config["sub_dirs"]["raws_blastn_check"] + "/{sample}_reads.fasta",
         fasta_clust = config["sub_dirs"]["raws_blastn_check"] + "/{sample}_reads_clust.fasta",
+        fasta_clust_subset = config["sub_dirs"]["raws_blastn_check"] + "/{sample}_reads_clust.fasta",
         fasta_clust_ref_file = config["sub_dirs"]["raws_blastn_check"] + "/{sample}_reads_clust.fasta.clstr",
         blastfile = config["sub_dirs"]["raws_blastn_check"] + "/{sample}_matches_nucleotide.m8"
     params:
         blastdb= config["blast_nucleotide_database"],
+        reads_threshold = config["Raw_reads_max"],
         blastnfolder = config["sub_dirs"]["contigs_assigned_nucl"]
     log:
         "logs/" + config["sub_dirs"]["raws_blastn_check"] + "/{sample}_blastn.log"
@@ -196,18 +233,20 @@ rule check_results_in_blastn:
         lengthunassigned=(`wc -l {input.readslist}`) && \
         if [ ${{lengthunassigned}} -ge 1 ]
         then
-        zcat {input.R1} | grep --no-group-separator -A 3 -F -f "{input.readslist}" > {output.fastqreads}
-        zcat {input.R2} | grep --no-group-separator -A 3 -F -f "{input.readslist}" >> {output.fastqreads}
+        cat {input.readslist} {input.readslist2} > {output.readslistcomb}
+        zcat {input.R1} | grep --no-group-separator -A 3 -F -f "{output.readslistcomb}" > {output.fastqreads}
+        zcat {input.R2} | grep --no-group-separator -A 3 -F -f "{output.readslistcomb}" >> {output.fastqreads}
         seqtk seq -a {output.fastqreads} > {output.fastareads}
         cd-hit -i {output.fastareads} -o {output.fasta_clust} -c 0.99 -n 5 -T {threads} -d 0 -M 14000
-        blastn -query {output.fasta_clust} \
+        seqtk sample -s100 {output.fasta_clust} {params.reads_threshold} > {output.fasta_clustsubset}
+        blastn -query {output.fasta_clustsubset} \
             -db {params.blastdb} \
             -evalue 0.01 \
             -max_target_seqs 1 \
             -max_hsps 1 \
             -outfmt '6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp' \
             -num_threads {threads} \
-            -word_size 20 \
+            -word_size 22 \
             -out {output.blastfile} \
             2> {log}
         fi && \
@@ -215,6 +254,7 @@ rule check_results_in_blastn:
         touch {output.fastqreads} && \
         touch {output.fastareads} && \
         touch {output.fasta_clust} && \
+        touch {output.fasta_clustsubset} && \
         touch {output.fasta_clust_ref_file}
         """
 
@@ -243,7 +283,7 @@ rule analyse_blastn_raws:
     conda: "Rdataplotting"
     threads: 1
     resources:
-        mem_mb=6000
+        mem_mb=12000
     shell:
         """
         lengthblast=(`wc -l {input.blastfile}`) && \

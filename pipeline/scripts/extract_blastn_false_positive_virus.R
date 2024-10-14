@@ -44,7 +44,43 @@ parser$add_argument('--Accnode', '-N', help= 'Accessiontaxa name_node filepath')
 
 
 xargs<- parser$parse_args()
-blastn_output <- read.table(xargs$inputblastn, header = FALSE, sep = "\t",fill=TRUE,comment.char="")
+
+
+blastn_lines<- readLines(xargs$inputblastn)
+
+
+replace_newline_within_quotes <- function(line) {
+  parts <- strsplit(line, "\"")[[1]]
+  for (i in seq_along(parts)) {
+    if (i %% 2 == 0) {
+      parts[[i]] <- gsub("\n", " ", parts[[i]])
+    }
+  }
+  paste(parts, collapse = "\"")
+}
+
+
+# Apply the function to all lines
+modified_lines <- lapply(blastn_lines, replace_newline_within_quotes)
+modified_lines  <- unlist(modified_lines)
+modified_lines <- modified_lines[sapply(modified_lines, function(x) length(strsplit(x, "\t")[[1]]) > 1)]
+# Read the modified lines using read.table
+blastn_output <- read.table(text = modified_lines, sep = "\t", header = FALSE, stringsAsFactors = FALSE, quote = "\"", comment.char = "")
+
+# Replace the unique character sequence back to '\n' within the dataframe
+blastn_output[] <- lapply(blastn_output, function(col) gsub("###NEWLINE###", "\n", col))
+
+rm(modified_lines,blastn_lines)
+
+
+
+colnames(blastn_output) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore", "staxids", "stitle", "qcovhsp")
+
+
+
+
+
+
 outtablespath1 <- xargs$programdir
 outtablespath2 <- xargs$abundances
 outtablespath <- paste0(outtablespath1,outtablespath2)
@@ -86,7 +122,11 @@ save.image("testing_falsepositivechck.Rdata")
   # give proper column names
   colnames(blastn_output) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore", "staxids", "stitle", "qcovhsp")
   
-  cat(paste0("Succesfully read in Diamond file for sample", NAMES,"\n"))
+blastn_output$bitscore <- as.numeric(blastn_output$bitscore)
+blastn_output$length <- as.numeric(blastn_output$length)
+blastn_output$pident <- as.numeric(blastn_output$pident)
+
+  cat(paste0("Succesfully read in Blastn file for sample", NAMES,"\n"))
   
   cat("Head 10 \n ")
   print(blastn_output[1:10,])
@@ -235,7 +275,7 @@ a <- Sys.time()
     }
     
   }
-  
+save.image("testing_falsepositivechck2.Rdata")  
   
   
   cat(paste0(nrow(contigsassigned),"contigs assigned to reference sequences: ","\n"))
@@ -318,7 +358,7 @@ contigsassigned$genus<- taxids$genus
 contigsassigned$species<- taxids$species
 contigsassigned$subspecies<- taxids$subspecies
 
-
+save.image("testing_falsepositivechck3.Rdata")
 contigsassigned$stitle = substr(contigsassigned$stitle,1,50)
 
 

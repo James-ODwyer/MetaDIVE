@@ -444,7 +444,7 @@ for (i in seq_len(nrow(contigsassigned))) {
   }
   
   # Perform the search on the copy
-  index <- grep(contigsassigned$qseqid[i], clusters_df_search$read_id)
+  index <- grep(paste0(contigsassigned$qseqid[i],"$"), clusters_df_search$read_id)
   
   if (length(index) > 0) {
     index2 <- as.numeric(clusters_df_search$cluster_rep[index])

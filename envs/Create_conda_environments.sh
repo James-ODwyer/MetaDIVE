@@ -5,7 +5,7 @@
 #SBATCH --ntasks-per-node 1              # ntasks per node (not needed to play around with for the pipeline. the pipeline will allocate all resources as best needed)
 #SBATCH --cpus-per-task 1               # total number of CPUs to allocate  
 #SBATCH --mem 4G                       # Total memory. 
-#SBATCH --time 6:00:00                 # Time requirements hh/mm/ss 
+#SBATCH --time 2:00:00                 # Time requirements hh/mm/ss 
 #SBATCH --partition io                # If a particular download node is required
 
 
@@ -55,8 +55,6 @@ echo "Conda environment created at: $env_path"
 echo "Conda environment spades fully installed"
 
 
-
-
 mkdir -p "$conda_path"/envs/R4_2_dada
 
 env_path="$conda_path"/envs/R4_2_dada
@@ -66,6 +64,16 @@ conda env create --file R4_2_dada.yaml --prefix $env_path
 
 echo "Conda environment created at: $env_path"
 echo "Conda environment R4_2_dada fully installed"
+
+mkdir -p "$conda_path"/envs/kraken2
+
+env_path="$conda_path"/envs/kraken2
+
+# Create the Conda environment from the YAML file at the specified location
+conda env create --file kraken2.yaml --prefix $env_path
+
+echo "Conda environment created at: $env_path"
+echo "Conda environment kraken2 fully installed"
 
 
 
@@ -90,4 +98,12 @@ conda env create --file genomad.yaml --prefix $env_path
 
 echo "Conda environment created at: $env_path"
 echo "Conda environment genomad fully installed"
+
+eval "$(conda shell.bash hook)"
+
+conda activate Rdataplotting
+
+Rscript install_d3Tree.R
+
+conda deactivate
 

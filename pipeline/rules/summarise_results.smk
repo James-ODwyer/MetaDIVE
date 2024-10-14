@@ -161,6 +161,7 @@ rule summarise_all_results:
         """
     input:
         Fastplog = "logs/" + config["sub_dirs"]["trim_dir"] + "/{sample}.log",
+        Phixlog = "logs/" + config["sub_dirs"]["PhiX_dir"] + "/{sample}.log",
         CO1log = "logs/" + config["sub_dirs"]["CO1_dir"] + "/{sample}.log",
         LSUlog = "logs/" + config["sub_dirs"]["LSU_dir"] + "/{sample}.log",
         SSUlog = "logs/" + config["sub_dirs"]["SSU_dir"] + "/{sample}.log",
@@ -217,7 +218,7 @@ rule summarise_all_results:
         if [ ! -f {params.nohostgenomemarker} ]
         then
         Rscript {config[program_dir]}scripts/gather_results.R \
-            --fastplog {input.Fastplog} --CO1_bowtie {input.CO1log} --LSU_bowtie {input.LSUlog} --SSU_bowtie {input.SSUlog} \
+            --fastplog {input.Fastplog} --phiXlog {input.Phixlog} --CO1_bowtie {input.CO1log} --LSU_bowtie {input.LSUlog} --SSU_bowtie {input.SSUlog} \
             --CO1microbiome {input.CO1assignments} --LSUmicrobiome {input.LSUassignments} --SSUmicrobiome {input.SSUassignments} \
             --Assembly_log {input.Assembly_log} --hostsp {input.hostsp} --hostaligngenome {input.hostalignmentrates} --Assemblyused {params.Assemblychoice} \
             --diamondrawskingdoms {input.diamondrawskingdoms} --diamondrawslog {input.diamondrawsalign} --krakenraws {input.krakenrawstats} --rawtocontigsassignlog {input.raw_log} \
@@ -236,7 +237,7 @@ rule summarise_all_results:
         if [ -f {params.nohostgenomemarker} ]
         then
         Rscript {config[program_dir]}scripts/gather_results.R \
-            --fastplog {input.Fastplog} --CO1_bowtie {input.CO1log} --LSU_bowtie {input.LSUlog} --SSU_bowtie {input.SSUlog} \
+            --fastplog {input.Fastplog} --phiXlog {input.Phixlog} --CO1_bowtie {input.CO1log} --LSU_bowtie {input.LSUlog} --SSU_bowtie {input.SSUlog} \
             --CO1microbiome {input.CO1assignments} --LSUmicrobiome {input.LSUassignments} --SSUmicrobiome {input.SSUassignments} \
             --Assembly_log {input.Assembly_log} --hostsp {input.hostsp} --hostaligngenome {input.hostalignmentrates} --Assemblyused {params.Assemblychoice} \
             --diamondrawskingdoms {input.diamondrawskingdoms} --diamondrawslog {input.diamondrawsalign} --krakenraws {input.krakenrawstats} --rawtocontigsassignlog {input.raw_log} \

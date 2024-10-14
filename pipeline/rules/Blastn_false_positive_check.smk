@@ -22,9 +22,11 @@ rule Prep_viral_contigs:
         """
     input:
         contigsassignedtab = config["sub_dirs"]["contigs_assigned"] + "/abundances/{sample}_Contigsallinformationassignment.txt",
+        readslist2 = config["sub_dirs"]["Kraken_viral_ids_contigs"] + "/{sample}_contigs_to_virus.txt",
         contigfile = Assembly_used
     output:
-        contigslist = temp(config["sub_dirs"]["contigs_nucl_false_pos_check"] + "/{sample}_viral_assigned_contig_names.tsv"),
+        contigslist = config["sub_dirs"]["contigs_nucl_false_pos_check"] + "/{sample}_viral_assigned_temp1.tsv",
+        contigslist2 = config["sub_dirs"]["contigs_nucl_false_pos_check"] + "/{sample}_viral_assigned_contig_names.tsv",
         virus_contigs = config["sub_dirs"]["contigs_nucl_false_pos_check"] + "/{sample}_viral_assigned_contigs.fasta"
     threads: 4
     resources:
@@ -32,8 +34,9 @@ rule Prep_viral_contigs:
     shell:
         """
         awk -F '\t' '$12 == "Viruses" {{print $1}}' "{input.contigsassignedtab}" > {output.contigslist} && \
+        cat {output.contigslist} {input.readslist2} >> {output.contigslist2}
         if [ -n "{output.contigslist}" ]; then
-        seqkit grep -f {output.contigslist} {input.contigfile} > {output.virus_contigs}
+        seqkit grep -f {output.contigslist2} {input.contigfile} > {output.virus_contigs}
         fi && \
         touch {output.virus_contigs} && \
         touch {output.contigslist}

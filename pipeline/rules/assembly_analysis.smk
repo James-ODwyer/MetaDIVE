@@ -309,6 +309,40 @@ def Assembly_used_initfilter(wildcards):
             config["sub_dirs"]["contig_dir_either"] + "/{sample}_contigs.fa"
         ])
 
+rule generate_kraken_contigs:
+    message:
+        """
+        Generate additional viral assignments for contigs reads using kraken2
+        for {wildcards.sample}
+        """
+    input:
+        Assembly_used_initfilter
+    output:
+        krakenout = config["sub_dirs"]["Kraken_viral_ids_contigs"] + "/{sample}_kraken_output.txt",
+        krakenreport = config["sub_dirs"]["Kraken_viral_ids_contigs"] + "/{sample}_kraken_report.txt",
+        readslist2 = config["sub_dirs"]["Kraken_viral_ids_contigs"] + "/{sample}_contigs_to_virus.txt"
+    params:
+        krakendb= config["Kraken_database"]
+    log:
+        "logs/" + config["sub_dirs"]["Kraken_viral_ids_contigs"] + "/{sample}.log"
+    threads: 2
+    conda: "kraken2"
+    resources:
+        mem_mb=8000
+    benchmark:
+        "benchmarks/" + config["sub_dirs"]["Kraken_viral_ids_contigs"] + "/{sample}.txt"
+    shell:
+        """
+        kraken2 --db {params.krakendb} \
+            --threads {threads} \
+            --minimum-hit-groups 3 \
+            --report {output.krakenreport} \
+            --output {output.krakenout} \
+            {input} \
+            2> {log} && \
+        awk '$1 == "C" {{print $2}}' "{output.krakenout}" > {output.readslist2}
+        """
+
 # I had iterate on in the bash script but it appears the function was only introduced in 2.0.9. the latest anaconda version of Diamond is 2.0.8 
 rule Diamond_blast:
     message:

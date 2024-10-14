@@ -139,6 +139,10 @@ Genomad_detect: 'no'
 # 'yes/no'
 run_raws: 'yes'
 
+# Whether to subset the blastn raws to save time (strongly recommended if you have a big dataset of fragmented genomes typical of complex environmental samples. 
+# Set to 5000 so a maximum of 5000 raw reads after they have been compressed in cdhit will have blastn run on them. I would recommend not putting this above 20000
+Raw_reads_max: 5000
+
 # Whether to do diamond blast on the raws (very long, probably around 15-25% of the whole pipeline)
 #'yes/no'
 dodiamond_blast_raws: 'yes'
@@ -204,6 +208,8 @@ diamond_database: "/data/bioref/diamond_db/nr.dmnd"
 # Blast nucleotide base. Currently set to general DB on Petrichor HPC CSIRO
 blast_nucleotide_database: "/data/bioref/blast/ncbi/nt"
 
+# Kraken database for kraken viral assignment
+Kraken_database: "/scratch3/odw014/analysis/MetaDIVE_benchmarking/Initial_CAMISIM_test/databases/krakendb/"
 
 #MMseq database Currently set to general DB on Petrichor HPC CSIRO (Also I think this is redundant now, double check if this is needed after mmseqs2 was removed from nucleotide blast step. 
 MMSeq_nucleotide_database: "/path/Irrelevant"

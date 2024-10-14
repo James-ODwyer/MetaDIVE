@@ -463,7 +463,8 @@ save.image("test5.Rdata")
 
 write.table(Virus_final_mixed_table,file=(paste0(outtablespath,"Combined_samples_top_hits_to_Viral_species_blastn_false_positive_check.txt")),sep="\t",row.names=rownames(pairwise_matrixVir),col.names=colnames(pairwise_matrixVir))
 
-Viruses_top10red <- Viruses_top10[,1:10]
+Viruses_top10red <- Viruses_top10[1:10,]
+
 
 
 

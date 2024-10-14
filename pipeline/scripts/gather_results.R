@@ -28,6 +28,7 @@ if (!require("d3treeR", character.only = TRUE)) {
 parser <- ArgumentParser(description= 'Summarising results filtering and assembly')
 
 parser$add_argument('--fastplog', '-a', help= 'Log for fastp')
+parser$add_argument('--phiXlog', '-O', help= 'Log for Phix')
 parser$add_argument('--CO1_bowtie', '-b', help= 'Log for CO1 bowtie alignment')
 parser$add_argument('--LSU_bowtie', '-c', help= 'Log for LSU bowtie alignment')
 parser$add_argument('--SSU_bowtie', '-d', help= 'Log for SSU bowtie alignment')
@@ -93,6 +94,8 @@ AccessionNamenode <- xargs$Accnode
 # and so if else or presence checks for each file are not needed
 readLines(xargs$fastplog) -> fastpfile
 length(fastpfile)
+readLines(xargs$phiXlog) -> phixlogfile
+length(phixlogfile)
 readLines(xargs$CO1_bowtie)  -> bowtieCO1file
 paste0(NAMES,"length bowtie CO1", length(bowtieCO1file))
 readLines(xargs$LSU_bowtie) -> bowtieLSUfile
@@ -104,102 +107,135 @@ paste0(NAMES,"length bowtie SSU ", length(bowtieSSUfile))
 
 summary_reads_table <- as.data.frame(matrix(nrow=1, ncol=12))
 
-colnames(summary_reads_table) <- c("raw_read_pairs","filtered_read_pairs", "percentage_rem_QC_pairs", "Phix_filtered", "CO1_filtered", "Percentge_CO1","LSU_filtered", "Percentge_LSU","SSU_filtered", "Percentge_SSU", "remaining_reads","percentage_reads_remaining")
-# Will be parser sample name
-# Extract the number of reads from forward file (raw)
-as.numeric(str_extract(fastpfile[2], "[0-9]+")) -> raw1
-# Extract the number of reads from reverse file (raw)
-as.numeric(str_extract(fastpfile[8], "[0-9]+")) -> raw2
-# Extract the number of reads from forward file (post QC filtering)
-as.numeric(str_extract(fastpfile[14], "[0-9]+")) -> filtered1
-# Extract the number of reads from reverse file (post QC filtering)
-as.numeric(str_extract(fastpfile[20], "[0-9]+")) -> filtered2
+colnames(summary_reads_table) <- c("raw_reads","filtered_reads", "percentage_rem_QC", "Phix_filtered", "CO1_filtered", "Percentge_CO1","LSU_filtered", "Percentge_LSU","SSU_filtered", "Percentge_SSU", "remaining_reads","percentage_reads_remaining")
 
-# Dividing by 2 to convert to read pairs (shouldn't be necessary as all reads should be paired but is potentailly useful for non paired end data or data that isn't formally paired end in sequencing)
-total_raw <- ((raw1 + raw2)/2)
+# Extract total count for raw reads
+read1_line_index <- grep("Read1 before filtering", fastpfile)
+
+# Extract the next line (which contains the total reads)
+total_reads_line <- fastpfile[read1_line_index + 1]
+
+raw1 <- as.numeric(sub(".*total reads: ([0-9]+).*", "\\1", total_reads_line))
+
+read1_line_index <- grep("Read2 before filtering", fastpfile)
+
+# Extract the next line (which contains the total reads)
+total_reads_line <- fastpfile[read1_line_index + 1]
+
+raw2 <- as.numeric(sub(".*total reads: ([0-9]+).*", "\\1", total_reads_line))
+
+
+# Extract filtered reads number
+
+read1_line_index <- grep("Read1 after filtering", fastpfile)
+
+# Extract the next line (which contains the total reads)
+total_reads_line <- fastpfile[read1_line_index + 1]
+
+filtered1 <- as.numeric(sub(".*total reads: ([0-9]+).*", "\\1", total_reads_line))
+
+read1_line_index <- grep("Read2 after filtering", fastpfile)
+
+# Extract the next line (which contains the total reads)
+total_reads_line <- fastpfile[read1_line_index + 1]
+
+filtered2 <- as.numeric(sub(".*total reads: ([0-9]+).*", "\\1", total_reads_line))
+
+
+total_raw <- ((raw1 + raw2))
 
 # repeat for filtered data 
-total_filtered <- ((filtered1 + filtered2)/2)
+total_filtered <- ((filtered1 + filtered2))
 
 # calculate the percentage of read pairs which remain after filtering 
 percentremain <- ((total_filtered / total_raw)*100)
 
-summary_reads_table$raw_read_pairs <- total_raw
-summary_reads_table$filtered_read_pairs <- total_filtered 
-summary_reads_table$percentage_rem_QC_pairs  <- percentremain 
+summary_reads_table$raw_reads <- total_raw
+summary_reads_table$filtered_reads <- total_filtered 
+summary_reads_table$percentage_rem_QC  <- percentremain 
 
 # 3. CO1 hits removed. Also adding in the Phix removal step here based on loss from prior fastp and total inputted into CO1 (can actually read on Phix if needed but its usually <10000 reads (<0.1%)
 # and such a small component)
 
-# Continue on with R code.
-
-as.numeric(str_extract(bowtieCO1file[10], "[0-9]+")) -> unaligned
 
 
-as.numeric(str_extract(bowtieCO1file[1], "[0-9]+")) -> total
-length(bowtieCO1file) -> X
-percentage <- as.numeric(str_extract(bowtieCO1file[X], "[0-9]+\\.[0-9]+"))
-percentage_unassigned <- (100-percentage)
-unaligned <- ((percentage_unassigned*total)/100)
+reads_line_index <- grep("reads; of these:", phixlogfile)
 
+# Extract the line containing the reads information
+reads_line <- phixlogfile[reads_line_index]
 
+# Use a regular expression to extract the number before "reads"
+total_readpairs_prePhixfilter <- as.numeric(sub("([0-9]+) reads;.*", "\\1", reads_line))
+total_reads_prePhixfilter <- (total_readpairs_prePhixfilter *2)
 
 
 
+reads_line_index <- grep("reads; of these:", bowtieCO1file)
 
+# Extract the line containing the reads information
+reads_line <- bowtieCO1file[reads_line_index]
 
-Phixremoved <- (total_filtered - total )
-
-alignedCO1<- ( total - unaligned )
-round(alignedCO1) -> alignedCO1
-
-summary_reads_table$Phix_filtered <- Phixremoved
-
-summary_reads_table$CO1_filtered <- alignedCO1
-
-summary_reads_table$Percentge_CO1 <- (( alignedCO1 / summary_reads_table$raw_read_pairs ) *100 )
-
-
-# 4. LSU hits removed
-
-
-as.numeric(str_extract(bowtieLSUfile[1], "[0-9]+")) -> total
-length(bowtieLSUfile) -> X
-percentage <- as.numeric(str_extract(bowtieLSUfile[X], "[0-9]+\\.[0-9]+"))
-percentage_unassigned <- (100-percentage)
-unaligned <- ((percentage_unassigned*total)/100)
+# Use a regular expression to extract the number before "reads"
+total_readpairs_preCO1filter <- as.numeric(sub("([0-9]+) reads;.*", "\\1", reads_line))
+total_reads_preCO1filter <- (total_readpairs_preCO1filter *2)
 
 
 
-alignedLSU<- ( total - unaligned )
-round(alignedLSU) -> alignedLSU
+reads_line_index <- grep("reads; of these:", bowtieLSUfile)
+# Extract the line containing the reads information
+reads_line <- bowtieLSUfile[reads_line_index]
+
+# Use a regular expression to extract the number before "reads"
+total_readpairs_preLSUfilter <- as.numeric(sub("([0-9]+) reads;.*", "\\1", reads_line))
+total_reads_preLSUfilter <- (total_readpairs_preLSUfilter *2)
+
+reads_line_index <- grep("reads; of these:", bowtieSSUfile)
+# Extract the line containing the reads information
+reads_line <- bowtieSSUfile[reads_line_index]
+
+# Use a regular expression to extract the number before "reads"
+total_readpairs_preSSUfilter <- as.numeric(sub("([0-9]+) reads;.*", "\\1", reads_line))
+total_reads_preSSUfilter <- (total_readpairs_preSSUfilter *2)
 
 
-summary_reads_table$LSU_filtered <- alignedLSU
+alignment_rate_index <- grep("overall alignment rate", bowtieSSUfile)
 
-summary_reads_table$Percentge_LSU <- (( alignedLSU / summary_reads_table$raw_read_pairs )*100 )
+# Extract the line containing the alignment rate information
+alignment_rate_line <- bowtieSSUfile[alignment_rate_index]
 
-
-
-# 5. SSU hits removed
-
-as.numeric(str_extract(bowtieSSUfile[1], "[0-9]+")) -> total
-length(bowtieSSUfile) -> X
-percentage <- as.numeric(str_extract(bowtieSSUfile[X], "[0-9]+\\.[0-9]+"))
-percentage_unassigned <- (100-percentage)
-unaligned <- ((percentage_unassigned*total)/100)
+# Use a regular expression to extract the percentage value
+alignment_rate <- as.numeric(sub("([0-9\\.]+)% overall alignment rate.*", "\\1", alignment_rate_line))
 
 
-alignedSSU<- ( total - unaligned )
-round(alignedSSU) -> alignedSSU
+readsfilteredPhix <- (total_reads_prePhixfilter-total_reads_preCO1filter)
+readsfilteredCO1 <- (total_reads_preCO1filter-total_reads_preLSUfilter)
+readsfilteredLSU <- (total_reads_preLSUfilter-total_reads_preSSUfilter)
+readsfilteredSSU <- (alignment_rate * total_reads_preSSUfilter)
 
-summary_reads_table$SSU_filtered <- alignedSSU
+Percentage_CO1 <- ((readsfilteredCO1 / total_reads_preCO1filter)*100)
+Percentage_LSU <- ((readsfilteredCO1 / total_reads_preCO1filter)*100)
+Percentage_SSU <- alignment_rate
 
-summary_reads_table$Percentge_SSU <- (( alignedSSU / summary_reads_table$raw_read_pairs ) *100 )
+remainingreads <- (total_reads_preSSUfilter - readsfilteredSSU)
 
-summary_reads_table$remaining_reads <- unaligned
 
-summary_reads_table$percentage_reads_remaining <- ((unaligned / summary_reads_table$raw_read_pairs ) *100)
+summary_reads_table$Phix_filtered <- readsfilteredPhix 
+
+summary_reads_table$CO1_filtered <- readsfilteredCO1 
+
+summary_reads_table$Percentge_CO1 <- Percentage_CO1
+
+summary_reads_table$LSU_filtered <- readsfilteredLSU
+
+summary_reads_table$Percentge_LSU <- Percentage_LSU
+
+summary_reads_table$SSU_filtered <- readsfilteredSSU
+
+summary_reads_table$Percentge_SSU <- Percentage_SSU
+
+summary_reads_table$remaining_reads <- remainingreads
+
+summary_reads_table$percentage_reads_remaining <- ((remainingreads / summary_reads_table$raw_reads ) *100)
 
 summary_reads_table$SAMPLE <- NAMES
 write.table(summary_reads_table,file=(paste0(outtablespath,NAMES,"_summary_reads_filtering.txt")),sep="\t",row.names=FALSE)
@@ -439,7 +475,7 @@ if (docontigfalseposrenamespecies == 'confirmed') {
     grep(paste0("^",Diamondhitsfp$qseqid[i],"$"),freqsummary$contig) -> idxval2
     freqsummary[idxval2,4:11] <- Diamondhitsfp[i,12:19]
     freqsummary[idxval2,12:13] <- Diamondhitsfp[i,3:4]
-    
+    freqsummary[idxval2,3] <- "Blastn"
   }
   
 }
@@ -569,7 +605,7 @@ if (dohostdetect =="yes") {
     readLines(xargs$dohostcontigsrawsalign) -> readstohostcontigsalign
     
     if (length(hostrawsalign) >=1) {
-      total <- as.numeric(str_extract(hostrawsalign[1], "[0-9]+"))
+      total <- (as.numeric(str_extract(hostrawsalign[1], "[0-9]+"))*2)
       length(hostrawsalign) -> X
       percentage <- as.numeric(str_extract(hostrawsalign[X], "[0-9]+\\.[0-9]+"))
       percentage_unassigned <- (100-percentage)
@@ -579,7 +615,7 @@ if (dohostdetect =="yes") {
       # going to get contig hits later
       if (length(readstohostcontigsalign) >=1) {
         
-        totalhostcont <- as.numeric(str_extract(readstohostcontigsalign[1], "[0-9]+"))
+        totalhostcont <- (as.numeric(str_extract(readstohostcontigsalign[1], "[0-9]+"))*2)
         length(readstohostcontigsalign) -> X
         percentage <- as.numeric(str_extract(readstohostcontigsalign[X], "[0-9]+\\.[0-9]+"))
         percentage_unassigned <- (100-percentage)
@@ -595,7 +631,7 @@ if (dohostdetect =="yes") {
         percentage_unassigned <- (100-percentage)
         unassignedhostcont <- unassignedrawhost
         
-        
+        unassignedhostcont  <- round(unassignedhostcont)
       }
       
       
@@ -609,6 +645,9 @@ if (dohostdetect =="yes") {
       unassignedhostcont <- summary_reads_table$remaining_reads
       unassignedrawhost<- summary_reads_table$remaining_reads
       totalhostcont <-  summary_reads_table$remaining_reads
+
+	unassignedhostcont  <- round(unassignedhostcont)
+	unassignedrawhost<- round(unassignedrawhost)
       
     }
     
@@ -1052,11 +1091,10 @@ if (dodiamondraws == 'yes') {
       
     }
     
-    # This should become a variable to play around with! But I will set it to 2 here because I don't want to mess with the rules scripts yet
-    # Read number cout off!!! 
-    # set to 2 here 
+    # This should become a variable to play around with! I have set it to 1 right now as I am not sure about the benefit of not having it at all given there will be externam filters the user can apply on the final result
+    # Maybe its worth having for speed up purposes but it might be leading to a drop in true assignment rates
     save.image("test_Rdata_gather_error8.Rdata")
-    Diamondrawshitshighaccfreqssignificant <- subset(Diamondrawshitshighaccfreqs,Diamondrawshitshighaccfreqs$count>=2)
+    Diamondrawshitshighaccfreqssignificant <- subset(Diamondrawshitshighaccfreqs,Diamondrawshitshighaccfreqs$count>=1)
     
     # Now need to fill in the taxids and then split into raw files and add viruses on
     
