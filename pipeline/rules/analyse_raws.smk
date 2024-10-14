@@ -210,7 +210,7 @@ rule check_results_in_blastn:
         fastqreads = config["sub_dirs"]["raws_blastn_check"] + "/{sample}_reads.fastq",
         fastareads = config["sub_dirs"]["raws_blastn_check"] + "/{sample}_reads.fasta",
         fasta_clust = config["sub_dirs"]["raws_blastn_check"] + "/{sample}_reads_clust.fasta",
-        fasta_clust_subset = config["sub_dirs"]["raws_blastn_check"] + "/{sample}_reads_clust.fasta",
+        fasta_clust_subset = config["sub_dirs"]["raws_blastn_check"] + "/{sample}_reads_clust_subset.fasta",
         fasta_clust_ref_file = config["sub_dirs"]["raws_blastn_check"] + "/{sample}_reads_clust.fasta.clstr",
         blastfile = config["sub_dirs"]["raws_blastn_check"] + "/{sample}_matches_nucleotide.m8"
     params:
