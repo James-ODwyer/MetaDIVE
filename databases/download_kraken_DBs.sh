@@ -19,11 +19,11 @@ workingdir=$(pwd)
 
 mkdir "$workingdir"/krakendb
 
-#kraken2-build --download-taxonomy --db "$workingdir"/krakendb
+kraken2-build --download-taxonomy --db "$workingdir"/krakendb
 
 echo " Download taxonomy run succesfully"
 
-#kraken2-build --download-library viral --db "$workingdir"/krakendb
+kraken2-build --download-library viral --db "$workingdir"/krakendb
 
 echo " Download viral refseq run succesfully"
 
