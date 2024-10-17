@@ -238,8 +238,8 @@ rule check_results_in_blastn:
         zcat {input.R2} | grep --no-group-separator -A 3 -F -f "{output.readslistcomb}" >> {output.fastqreads}
         seqtk seq -a {output.fastqreads} > {output.fastareads}
         cd-hit -i {output.fastareads} -o {output.fasta_clust} -c 0.99 -n 5 -T {threads} -d 0 -M 14000
-        seqtk sample -s100 {output.fasta_clust} {params.reads_threshold} > {output.fasta_clustsubset}
-        blastn -query {output.fasta_clustsubset} \
+        seqtk sample -s100 {output.fasta_clust} {params.reads_threshold} > {output.fasta_clust_subset}
+        blastn -query {output.fasta_clust_subset} \
             -db {params.blastdb} \
             -evalue 0.01 \
             -max_target_seqs 1 \
@@ -254,7 +254,7 @@ rule check_results_in_blastn:
         touch {output.fastqreads} && \
         touch {output.fastareads} && \
         touch {output.fasta_clust} && \
-        touch {output.fasta_clustsubset} && \
+        touch {output.fasta_clust_subset} && \
         touch {output.fasta_clust_ref_file}
         """
 

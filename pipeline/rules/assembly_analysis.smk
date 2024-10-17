@@ -335,7 +335,7 @@ rule generate_kraken_contigs:
         """
         kraken2 --db {params.krakendb} \
             --threads {threads} \
-            --minimum-hit-groups 3 \
+            --minimum-hit-groups 5 \
             --report {output.krakenreport} \
             --output {output.krakenout} \
             {input} \

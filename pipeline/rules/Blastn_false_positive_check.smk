@@ -78,7 +78,7 @@ rule false_positive_check_blastn:
             -max_hsps 1 \
             -outfmt '6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp' \
             -num_threads {threads} \
-            -word_size 17 \
+            -word_size 19 \
             -out {output.blastfile} \
             2> {log}
         fi && \

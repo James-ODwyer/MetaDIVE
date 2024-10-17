@@ -97,7 +97,7 @@ length(fastpfile)
 readLines(xargs$phiXlog) -> phixlogfile
 length(phixlogfile)
 readLines(xargs$CO1_bowtie)  -> bowtieCO1file
-paste0(NAMES,"length bowtie CO1", length(bowtieCO1file))
+paste0(NAMES,"length bowtie CO1 ", length(bowtieCO1file))
 readLines(xargs$LSU_bowtie) -> bowtieLSUfile
 paste0(NAMES,"length bowtie LSU ", length(bowtieLSUfile))
 readLines(xargs$SSU_bowtie) -> bowtieSSUfile
@@ -146,12 +146,13 @@ total_raw <- ((raw1 + raw2))
 
 # repeat for filtered data 
 total_filtered <- ((filtered1 + filtered2))
+total_filteredremoved <- (total_raw - total_filtered)
 
 # calculate the percentage of read pairs which remain after filtering 
 percentremain <- ((total_filtered / total_raw)*100)
 
 summary_reads_table$raw_reads <- total_raw
-summary_reads_table$filtered_reads <- total_filtered 
+summary_reads_table$filtered_reads <- total_filteredremoved
 summary_reads_table$percentage_rem_QC  <- percentremain 
 
 # 3. CO1 hits removed. Also adding in the Phix removal step here based on loss from prior fastp and total inputted into CO1 (can actually read on Phix if needed but its usually <10000 reads (<0.1%)
@@ -189,13 +190,50 @@ reads_line <- bowtieLSUfile[reads_line_index]
 total_readpairs_preLSUfilter <- as.numeric(sub("([0-9]+) reads;.*", "\\1", reads_line))
 total_reads_preLSUfilter <- (total_readpairs_preLSUfilter *2)
 
-reads_line_index <- grep("reads; of these:", bowtieSSUfile)
+# SSU is a bit weird because I have thrown the unassigned single reads back into the filter so they can be grabbed by a later raw reads check if required. 
+# Ths means the total reads is not = 2* reads in first line of the log. 
+
+
+reads_line_index <- grep(" were paired; of these", bowtieSSUfile)
 # Extract the line containing the reads information
 reads_line <- bowtieSSUfile[reads_line_index]
 
 # Use a regular expression to extract the number before "reads"
-total_readpairs_preSSUfilter <- as.numeric(sub("([0-9]+) reads;.*", "\\1", reads_line))
-total_reads_preSSUfilter <- (total_readpairs_preSSUfilter *2)
+total_readpairs_preSSUfilter1 <- as.numeric(sub("^\\s*([0-9]+) \\(.*", "\\1", reads_line))
+total_reads_preSSUfilter1a <- (total_readpairs_preSSUfilter1 *2)
+
+reads_line_index <- grep(" were unpaired", bowtieSSUfile)
+# Extract the line containing the reads information
+reads_line <- bowtieSSUfile[reads_line_index]
+
+# Use a regular expression to extract the number before "reads"
+total_reads_preSSUfilter2 <- as.numeric(sub("^\\s*([0-9]+) \\(.*", "\\1", reads_line))
+total_reads_preSSUfilter <- (total_reads_preSSUfilter1a + total_reads_preSSUfilter2)
+
+
+
+mates_line_index <- grep("mates make up the pairs", bowtieSSUfile)
+
+# The target line is the one immediately after this line
+target_line <- bowtieSSUfile[mates_line_index + 1]
+
+# Use a regular expression to extract the first number in the target line
+readsunalignedSSU1a <- as.numeric(sub("^\\s*([0-9]+) \\(.*", "\\1", target_line))
+
+
+mates_line_index <- grep(" were unpaired; of these", bowtieSSUfile)
+
+# The target line is the one immediately after this line
+target_line <- bowtieSSUfile[mates_line_index + 1]
+
+# Use a regular expression to extract the first number in the target line
+readsunalignedSSU1b <- as.numeric(sub("^\\s*([0-9]+) \\(.*", "\\1", target_line))
+
+readsunalignedSSU <- (readsunalignedSSU1a +readsunalignedSSU1b)
+
+
+readsalignedSSU <- (total_reads_preSSUfilter - readsunalignedSSU )
+
 
 
 alignment_rate_index <- grep("overall alignment rate", bowtieSSUfile)
@@ -210,13 +248,13 @@ alignment_rate <- as.numeric(sub("([0-9\\.]+)% overall alignment rate.*", "\\1",
 readsfilteredPhix <- (total_reads_prePhixfilter-total_reads_preCO1filter)
 readsfilteredCO1 <- (total_reads_preCO1filter-total_reads_preLSUfilter)
 readsfilteredLSU <- (total_reads_preLSUfilter-total_reads_preSSUfilter)
-readsfilteredSSU <- (alignment_rate * total_reads_preSSUfilter)
-
+readsfilteredSSU <- (readsalignedSSU)
+readsfilteredSSU  <- round(readsfilteredSSU)
 Percentage_CO1 <- ((readsfilteredCO1 / total_reads_preCO1filter)*100)
 Percentage_LSU <- ((readsfilteredCO1 / total_reads_preCO1filter)*100)
 Percentage_SSU <- alignment_rate
 
-remainingreads <- (total_reads_preSSUfilter - readsfilteredSSU)
+remainingreads <- readsunalignedSSU
 
 
 summary_reads_table$Phix_filtered <- readsfilteredPhix 
@@ -239,6 +277,8 @@ summary_reads_table$percentage_reads_remaining <- ((remainingreads / summary_rea
 
 summary_reads_table$SAMPLE <- NAMES
 write.table(summary_reads_table,file=(paste0(outtablespath,NAMES,"_summary_reads_filtering.txt")),sep="\t",row.names=FALSE)
+
+save.image(paste0(NAMES,"R_gather_testing_errors_counts.Rdata"))
 
 
 #Now finished raw reads analysis 
@@ -574,22 +614,35 @@ summary_contigs_table$Assigned_contigs_Diamond <- Diamondhitslen
 summary_contigs_table$Assigned_contigs_Blastn <- Blastnhitslen
 summary_contigs_table$Percentage_of_contigs_assigned_total <- Percentagecontigsassigned
 
+
+
 length(bowtieraws) -> X
 percentage <- as.numeric(str_extract(bowtieraws[X], "[0-9]+\\.[0-9]+"))
 percentage_unassigned <- (100-percentage)
 
-unaligned <- ((percentage_unassigned*total)/100)
+reads_line_index <- grep("reads; of these:", bowtieraws)
+
+# Extract the line containing the reads information
+reads_line <- bowtieraws[reads_line_index]
+
+# Use a regular expression to extract the number before "reads"
+total_readpairs_prealigntoraws <- as.numeric(sub("([0-9]+) reads;.*", "\\1", reads_line))
+total_reads_prealigningtoraws <- (total_readpairs_prealigntoraws *2)
+
+
+
+unaligned <- (((percentage_unassigned / 100)*total_reads_prealigningtoraws ))
 
 as.numeric(str_extract(bowtieraws[1], "[0-9]+")) -> total
 
-aligned_raws <- ( total - unaligned )
+aligned_raws <- ( total_reads_prealigningtoraws - unaligned )
 
 
 # Not sure if I want the classified contigs one
-summary_contigs_table$raw_reads_assigned_to_classified_contigs <- floor(readsassignedclassifiedcontigs / 2)
-summary_contigs_table$Non_host_reads_assigned_via_protein_search <- floor(readsassigneddiamondx / 2)
-summary_contigs_table$Non_host_reads_assigned_via_nucleotide_search <- floor(readsassignedblastn / 2)
-summary_contigs_table$Raw_reads_assigned_to_host_blastn_diamondx <- floor((readsassigneddiamondxhost + readsassignedblastnhost)/2)
+summary_contigs_table$raw_reads_assigned_to_classified_contigs <- (readsassignedclassifiedcontigs)
+summary_contigs_table$Non_host_reads_assigned_via_protein_search <- (readsassigneddiamondx)
+summary_contigs_table$Non_host_reads_assigned_via_nucleotide_search <- (readsassignedblastn)
+summary_contigs_table$Raw_reads_assigned_to_host_blastn_diamondx <- (readsassigneddiamondxhost + readsassignedblastnhost)
 # Potentially rename to raw reads not assigned total, then have grey reads as measure here. 
 #summary_contigs_table$raw_reads_not_assigned_to_contigs <- ( summary_reads_table$remaining_reads - aligned_raws )
 
@@ -605,12 +658,59 @@ if (dohostdetect =="yes") {
     readLines(xargs$dohostcontigsrawsalign) -> readstohostcontigsalign
     
     if (length(hostrawsalign) >=1) {
-      total <- (as.numeric(str_extract(hostrawsalign[1], "[0-9]+"))*2)
+
+
+
+
+	reads_line_index <- grep(" were paired; of these", hostrawsalign)
+	# Extract the line containing the reads information
+	reads_line <- hostrawsalign[reads_line_index]
+
+	# Use a regular expression to extract the number before "reads"
+	total_readpairss_prehostfilter1 <- as.numeric(sub("^\\s*([0-9]+) \\(.*", "\\1", reads_line))
+	total_reads_prehostfilter1a <- (total_readpairss_prehostfilter1 *2)
+
+	reads_line_index <- grep(" were unpaired", hostrawsalign)
+	# Extract the line containing the reads information
+	reads_line <- hostrawsalign[reads_line_index]
+
+	# Use a regular expression to extract the number before "reads"
+	total_readpairs_prehostfilter2 <- as.numeric(sub("^\\s*([0-9]+) \\(.*", "\\1", reads_line))
+	total_reads_prehostfilter <- (total_reads_prehostfilter1a + total_readpairs_prehostfilter2)
+
+
+
+	mates_line_index <- grep("mates make up the pairs", hostrawsalign)
+
+# The target line is the one immediately after this line
+	target_line <- hostrawsalign[mates_line_index + 1]
+
+#Use a regular expression to extract the first number in the target line
+	readsunalignedhost1a <- as.numeric(sub("^\\s*([0-9]+) \\(.*", "\\1", target_line))
+
+
+	mates_line_index <- grep(" were unpaired; of these", hostrawsalign)
+# The target line is the one immediately after this line
+	target_line <- hostrawsalign[mates_line_index + 1]
+
+# Use a regular expression to extract the first number in the target line
+	readsunalignedhost1b <- as.numeric(sub("^\\s*([0-9]+) \\(.*", "\\1", target_line))
+
+	readsunalignedhost <- (readsunalignedhost1a + readsunalignedhost1b)
+
+
+	readsalignedhost <- (total_reads_prehostfilter - readsunalignedhost )
+
+
+
+
+
+
+      total <- total_reads_prehostfilter
       length(hostrawsalign) -> X
       percentage <- as.numeric(str_extract(hostrawsalign[X], "[0-9]+\\.[0-9]+"))
       percentage_unassigned <- (100-percentage)
-      unassignedrawhost <- ((percentage_unassigned*total)/100)
-      
+      unassignedrawhost <-  readsunalignedhost     
       # Put inside first because if the sample doesn't get any raw read hits to a host genome its nor
       # going to get contig hits later
       if (length(readstohostcontigsalign) >=1) {
@@ -700,6 +800,9 @@ colnames(contigsspecies) <- c("Frequency","superkingdom","phylum","class","order
 
 
 cat(paste0("creating species idvec worked", "\t"))
+
+freqsummaryonlyna <- subset(freqsummary, is.na(freqsummary$percentident))
+readsfromunassignedcontigs <- sum(freqsummaryonlyna$freq)
 
 freqsummarynona <- subset(freqsummary, !is.na(freqsummary$percentident))
 freqsummarynona$percentident <- as.numeric(freqsummarynona$percentident)
@@ -1045,9 +1148,9 @@ if (dodiamondraws == 'yes') {
   
   summary_contigs_table$Raw_reads_assigned_raw_diamond <- rawdiamondassignedreads
   
-  paste0(" No species level information for raw Diamond blast will be returned for low identity reads here, for details of assignments see directory /11_Diamond_ASSIGNED_RAWS/abundances")
+  paste0(" No species level information for raw Diamond blast will be returned for low identity reads here, for details of assignments see directory /11_Diamond_ASSIGNED_RAWS/abundances or read the final output tables combining raws and contigs")
   
-  summary_contigs_table$raw_reads_not_assigned <- (summary_reads_table$remaining_reads-(summary_contigs_table$Non_host_reads_assigned_via_protein_search + summary_contigs_table$Non_host_reads_assigned_via_nucleotide_search + summary_contigs_table$Raw_reads_assigned_to_host_genome + summary_contigs_table$Raw_reads_assigned_to_host_aligned_contigs + summary_contigs_table$Raw_reads_assigned_to_host_blastn_diamondx + summary_contigs_table$Raw_reads_assigned_raw_diamond))
+  summary_contigs_table$raw_reads_not_assigned <- (summary_reads_table$remaining_reads-(summary_contigs_table$Non_host_reads_assigned_via_protein_search + summary_contigs_table$Non_host_reads_assigned_via_nucleotide_search + summary_contigs_table$Raw_reads_assigned_to_host_genome + summary_contigs_table$Raw_reads_assigned_to_host_aligned_contigs + summary_contigs_table$Raw_reads_assigned_to_host_blastn_diamondx + summary_contigs_table$Raw_reads_assigned_raw_diamond + readsfromunassignedcontigs))
   
   summary_contigs_table$raw_reads_not_assigned <- round(summary_contigs_table$raw_reads_not_assigned)
   
@@ -1193,7 +1296,7 @@ if (nrow(Diamondrawshitshighaccfreqs) <1) {
 }
 save.image("test_Rdata_gather_error13.Rdata")
 if (dodiamondraws == 'no') {
-  summary_contigs_table$raw_reads_not_assigned <- (summary_reads_table$remaining_reads-(summary_contigs_table$Non_host_reads_assigned_via_protein_search + summary_contigs_table$Non_host_reads_assigned_via_nucleotide_search + summary_contigs_table$Raw_reads_assigned_to_host_genome + summary_contigs_table$Raw_reads_assigned_to_host_aligned_contigs + summary_contigs_table$Raw_reads_assigned_to_host_blastn_diamondx))
+  summary_contigs_table$raw_reads_not_assigned <- (summary_reads_table$remaining_reads-(summary_contigs_table$Non_host_reads_assigned_via_protein_search + summary_contigs_table$Non_host_reads_assigned_via_nucleotide_search + summary_contigs_table$Raw_reads_assigned_to_host_genome + summary_contigs_table$Raw_reads_assigned_to_host_aligned_contigs + summary_contigs_table$Raw_reads_assigned_to_host_blastn_diamondx + readsfromunassignedcontigs))
 }
 
 
@@ -1671,6 +1774,8 @@ if (dodiamondraws == 'no') {
 
 
 
+ 
+
 
 # Generate approx superkingdom read hits across all analyses.
 
@@ -1684,25 +1789,27 @@ Eukaryotes <- Eukaryotesraws[1,2] + Eukaryotesspeciessum
 Bacteria <- Bacteriaraws[1,2] + Bacteriaspeciessum
 Viruses <- Virusesraws[1,2] + Viralspeciessum
 
-# Generate other summ stats results
 
-summary_contigs_table
-summary_reads_table
+
+# Generate other summ stats results
+  
+
 # Values for final bar graph
-QC <- (summary_reads_table$raw_read_pairs-summary_reads_table$filtered_read_pairs)
+QC <- (summary_reads_table$filtered_reads)
 PhiX <- summary_reads_table$Phix_filtered
 CO1 <- summary_reads_table$CO1_filtered
 LSU <- summary_reads_table$LSU_filtered
 SSU <- summary_reads_table$SSU_filtered
 hosthits <- (summary_contigs_table$Raw_reads_assigned_to_host_genome + summary_contigs_table$Raw_reads_assigned_to_host_aligned_contigs + summary_contigs_table$Raw_reads_assigned_to_host_blastn_diamondx)
 hosthits <- round(hosthits)
-unassigned <- summary_contigs_table$raw_reads_not_assigned
+unassignedcontigs <- readsfromunassignedcontigs
+unassignedreads <- summary_contigs_table$raw_reads_not_assigned
 
 # create final table for barplot
 
-barplotdf <- as.data.frame(matrix(nrow=1,ncol=10))
+barplotdf <- as.data.frame(matrix(nrow=1,ncol=11))
 
-colnames(barplotdf) <- c("Low quality reads","PhiX contamination","CO1 hits","LSU hits","SSU hits","Host species","Eukaryotes","Bacteria","Viruses","Unassigned reads")
+colnames(barplotdf) <- c("Low quality reads","PhiX contamination","CO1 hits","LSU hits","SSU hits","Host species","Eukaryotes","Bacteria","Viruses","Reads from unassigned contigs","Unassigned reads")
 
 barplotdf[1,1] <- QC 
 barplotdf[1,2] <- PhiX 
@@ -1713,8 +1820,18 @@ barplotdf[1,6] <- hosthits
 barplotdf[1,7] <- Eukaryotes
 barplotdf[1,8] <- Bacteria
 barplotdf[1,9] <- Viruses
-barplotdf[1,10] <- unassigned
+barplotdf[1,10] <- unassignedcontigs
+barplotdf[1,11] <- unassignedreads
 barplotdf$Sample <- NAMES
+
+#The reads that partial assign to the host genomes are getting double counted with the raw reads. I need to subtract them off again 
+
+
+extrareads <- (summary_reads_table$remaining_reads - (hosthits + Eukaryotes + Bacteria + Viruses + unassignedcontigs + unassignedreads ))
+
+unassignedreads2 <- (unassignedreads + extrareads)
+
+barplotdf[1,11] <- unassignedreads2
 
 
 

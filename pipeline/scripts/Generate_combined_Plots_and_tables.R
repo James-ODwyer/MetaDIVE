@@ -60,13 +60,13 @@ for (i in c(1:length(samplereadssummaryfiles))) {
   Resultstable <- read.table(samplereadssummaryfiles[i],header = TRUE,sep = "\t")
   sample<- Resultstable$Sample
   
-  Resultstable <- Resultstable[,-11]
+  Resultstable <- Resultstable[,-12]
   
   Resultstablet <- t(Resultstable)
   
   Resultstablet[,1]
   
-  Resultstableformatted <- as.data.frame(matrix(nrow=10,ncol=3))
+  Resultstableformatted <- as.data.frame(matrix(nrow=11,ncol=3))
   
   Resultstableformatted$V1 <- rownames(Resultstablet)
   Resultstableformatted$V2 <- Resultstablet[,1]
@@ -80,7 +80,7 @@ for (i in c(1:length(samplereadssummaryfiles))) {
 Resultssummaryreadsassignments <-bind_rows(Allreadssummaryresultstable)
 
 #Resultssummaryreadsassignments$Filtering_step  <- factor(Resultssummaryreadsassignments$Filtering_step,levels = c("Low.quality.reads", "PhiX.contamination", "CO1.hits", "LSU.hits", "SSU.hits", "Host.species", "Eukaryotes", "Bacteria", "Viruses", "Unassigned.reads"))
-Resultssummaryreadsassignments$Filtering_step  <- factor(Resultssummaryreadsassignments$Filtering_step,levels = c("Unassigned.reads", "Viruses", "Bacteria", "Eukaryotes", "Host.species", "SSU.hits", "LSU.hits", "CO1.hits", "PhiX.contamination", "Low.quality.reads"))
+Resultssummaryreadsassignments$Filtering_step  <- factor(Resultssummaryreadsassignments$Filtering_step,levels = c("Unassigned.reads" "Reads.from.unassigned.contigs", "Viruses", "Bacteria", "Eukaryotes", "Host.species", "SSU.hits", "LSU.hits", "CO1.hits", "PhiX.contamination", "Low.quality.reads"))
 
 Resultssummaryreadsassignments$Reads[is.na(Resultssummaryreadsassignments$Reads)] <- 0
 

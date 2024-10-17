@@ -374,7 +374,7 @@ if (BOTHMISSING =="NO") {
         return("orange")
       } else if (value ==0) {
         return(NA)
-      } else {
+      } else if (value <= 80){
         return("blue")
       }
     } else if (column == "length") {
@@ -476,7 +476,7 @@ if (BOTHMISSING =="NO") {
     oranges2 <- sum(grepl(pattern="color:orange",x=coloured_data[i,c(10, 13, 20)]))
     reds2 <- sum(grepl(pattern="color:red",x=coloured_data[i,c(10, 13, 20)]))  
     blues2 <- sum(grepl(pattern="color:blue",x=coloured_data[i,c(10, 13, 20)]))  
-    
+    totcols <- sum(greens2 + oranges2 + reds2 + blues2)
     if(greens2 >=2) {
       
       coloured_data$classification_level_estimate <- "Likely same species"
@@ -518,6 +518,12 @@ if (BOTHMISSING =="NO") {
       coloured_data$classification_level_estimate[i] <- "Likely different species"
     }
     
+    if(totcols <=1 && greens2 ==0) {
+      
+      coloured_data$classification_level_estimate[i] <- "Insufficient data to reliably infer"
+    }
+
+
   }
   
   
