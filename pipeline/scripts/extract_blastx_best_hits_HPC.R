@@ -583,7 +583,7 @@ Virusesamultisp <- subset(Viruses, Viruses$multiplesp=="yes")
 nrow(Virusesamultisp)
 sum(Virusesamultisp$genus!="NA")
 Virusesamultispgenuscounts <-plyr::count(Virusesamultisp$genus)
-Virusessinglesp <- subset(Viruses, Viruses$multiplesp=="no")
+Virusessinglesp <- Viruses 
 Virusessinglespspcounts <-plyr::count(Virusessinglesp$species)
 nrow(Virusessinglesp)
 sum(Virusessinglesp$species!="NA")

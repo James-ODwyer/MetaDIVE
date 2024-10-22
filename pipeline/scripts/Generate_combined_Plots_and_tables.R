@@ -78,9 +78,9 @@ for (i in c(1:length(samplereadssummaryfiles))) {
 }
 
 Resultssummaryreadsassignments <-bind_rows(Allreadssummaryresultstable)
-
+save.image("testing_summarygraphs1.Rdata")
 #Resultssummaryreadsassignments$Filtering_step  <- factor(Resultssummaryreadsassignments$Filtering_step,levels = c("Low.quality.reads", "PhiX.contamination", "CO1.hits", "LSU.hits", "SSU.hits", "Host.species", "Eukaryotes", "Bacteria", "Viruses", "Unassigned.reads"))
-Resultssummaryreadsassignments$Filtering_step  <- factor(Resultssummaryreadsassignments$Filtering_step,levels = c("Unassigned.reads" "Reads.from.unassigned.contigs", "Viruses", "Bacteria", "Eukaryotes", "Host.species", "SSU.hits", "LSU.hits", "CO1.hits", "PhiX.contamination", "Low.quality.reads"))
+Resultssummaryreadsassignments$Filtering_step  <- factor(Resultssummaryreadsassignments$Filtering_step,levels = c("Unassigned.reads", "Reads.from.unassigned.contigs", "Viruses", "Bacteria", "Eukaryotes", "Host.species", "SSU.hits", "LSU.hits", "CO1.hits", "PhiX.contamination", "Low.quality.reads"))
 
 Resultssummaryreadsassignments$Reads[is.na(Resultssummaryreadsassignments$Reads)] <- 0
 
@@ -197,6 +197,7 @@ for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
   sampname <- gsub(".*99_SUMMARY_RESULTS/",x=summaryreturnedhitsfromcontigs[i],replacement="")
   sampname <- gsub("_summarycontighits.*",x=sampname,replacement="")
   sampname <- gsub("/",x=sampname,replacement="")
+  sampname <- gsub(".*_SAMPLES",x=sampname,replacement="")
   Resultstable <- subset(Resultstable, !(is.na(Resultstable$species)))
   # Need to remove all NA rows from data
   
@@ -334,6 +335,12 @@ Viruses <- bind_rows(virlist)
 Bacteria <- bind_rows(bactlist)
 Eukaryotes <- bind_rows(Euklist)
 
+
+Viruses <- subset(Viruses,Viruses$Species != "")
+Bacteria <- subset(Bacteria,Bacteria$Species != "")
+Eukaryotes <- subset(Eukaryotes,Eukaryotes$Species != "")
+
+
 # Now create top 10s based on aggregate reads assigned.
 
 # Viruses
@@ -393,7 +400,7 @@ if (nrow(Eukaryotes_sums)<10) {
 Eukaryotes_top10 <- Eukaryotes %>% 
   filter(Species %in% Eukaryotes_sumstop10$Group.1)
 
-Eukaryotes_top10$Group.1
+
 
 
 

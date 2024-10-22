@@ -1,29 +1,29 @@
 
-# config parameters for Nextseq_run_69 AIV unbiased.
+# config parameters for MetaDIVE run X.
 
 # These are read by snakemake as a list 
 samples:
-  24-02048-0003-01:
-    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02048-0003-01_S1_R1_001.fastq.gz
-    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02048-0003-01_S1_R2_001.fastq.gz
-  24-02048-0004-02:
-    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02048-0004-02_S2_R1_001.fastq.gz
-    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02048-0004-02_S2_R2_001.fastq.gz
-  24-02070-0006-03:
-    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02070-0006-03_S3_R1_001.fastq.gz
-    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02070-0006-03_S3_R2_001.fastq.gz
-  24-02070-0007:
-    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02070-0007-01_S4_R1_001.fastq.gz
-    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02070-0007-01_S4_R2_001.fastq.gz
-  24-02178-0001-07:
-    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02178-0001-07_S5_R1_001.fastq.gz
-    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02178-0001-07_S5_R2_001.fastq.gz
-  24-02202-0001-05:
-    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02202-0001-05_S6_R1_001.fastq.gz
-    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02202-0001-05_S6_R2_001.fastq.gz
-  24-02203-0001-04:
-    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02203-0001-04_S7_R1_001.fastq.gz
-    - /datasets/work/acdp-nextseq/work/2024/Nextseqrun69/240624_VH00151_79_AAFMVK3M5/Analysis/1/Data/fastq/24-02203-0001-04_S7_R2_001.fastq.gz
+  Sample1:
+    - /filepath/to/rawreads/Sample1_S1_R1_001.fastq.gz
+    - /filepath/to/rawreads/Sample1_S1_R2_001.fastq.gz
+  Sample2:
+    - /filepath/to/rawreads/Sample2_S2_R1_001.fastq.gz
+    - /filepath/to/rawreads/Sample2_S2_R2_001.fastq.gz
+  Sample3:
+    - /filepath/to/rawreads/Sample3_S3_R1_001.fastq.gz
+    - /filepath/to/rawreads/Sample3_S3_R2_001.fastq.gz
+  Sample4:
+    - /filepath/to/rawreads/Sample4_S4_R1_001.fastq.gz
+    - /filepath/to/rawreads/Sample4_S4_R2_001.fastq.gz
+  Sample5:
+    - /filepath/to/rawreads/Sample5_S5_R1_001.fastq.gz
+    - /filepath/to/rawreads/Sample5_S5_R2_001.fastq.gz
+  Sample6:
+    - /filepath/to/rawreads/Sample6_S6_R1_001.fastq.gz
+    - /filepath/to/rawreads/Sample6_S6_R2_001.fastq.gz
+  Sample7:
+    - /filepath/to/rawreads/Sample7_S7_R1_001.fastq.gz
+    - /filepath/to/rawreads/Sample7_S7_R2_001.fastq.gz
 
 # Program directory (working directory to output results and where the rules/scripts folders are along with the snakefiles and config files)
 program_dir: "/scratch3/odw014/analysis/test_MetaDIVE_2/MetaDIVE/pipeline/"
@@ -105,6 +105,8 @@ SSUweight: 2
 # Whether or not to try and analyse non coding related DNA. yes/no
 # This adds a very large time increase into the pipeline and adds a comparatively small benefit. at 36 cores, decently sequenced samples on a p2 nextseq cartridge took
 # an additional 1-24 hours to run through (depending on cpu cores) (A goal of a sample every 6-12 hours start to complete is unlikely with this setting on).
+# Worst case scenario, a beta tester with a very large number of unassigned contigs turned this on and each sample took 2.5 days to complete this step. Strongly recommend it is only used 
+# when working with smaller datasets or when >95% of reads are expected to be depleted due to host.
 #'yes'/'no'
 
 DNA_assign_blastn: 'no'
@@ -179,8 +181,6 @@ PhiX_genome_index: "/scratch3/odw014/analysis/test_MetaDIVE_2/MetaDIVE/databases
 
 # CO1 genomes Bowtie indexed
 CO1_genome_index: "/scratch3/odw014/analysis/test_MetaDIVE_2/MetaDIVE/databases/bowtie2/CO1/CO1_reference_idx"
-#CO1_genome_base: "/scratch3/odw014/analysis/test_MetaDIVE_2/MetaDIVE/databases/CO1_database/bowtie2/dna-sequences.fasta"
-#CO1_genome_tax: "/scratch3/odw014/analysis/databases/CO1_database/bowtie2/taxonomy.tsv"
 
 # CO1 genomes mmseqs2 indexed
 CO1_genome_index_mmseq: "/scratch3/odw014/analysis/test_MetaDIVE_2/MetaDIVE/databases/CO1/CO1_DB"
@@ -188,8 +188,6 @@ CO1_genome_index_mmseq: "/scratch3/odw014/analysis/test_MetaDIVE_2/MetaDIVE/data
 
 #LSU genomes Bowtie indexed.
 LSU_genome_index: "/scratch3/odw014/analysis/test_MetaDIVE_2/MetaDIVE/databases/bowtie2/LSU/LSU_reference_idx"
-#LSU_genome_base: "/scratch3/odw014/analysis/databases/LSU_database/Combined_SILVA_GENBANK/Bowtie/Combined_LSU_database.fasta"
-#LSU_genome_tax: "/scratch3/odw014/analysis/databases/taxmaps/Combined_databases/LSU/combined_taxmap_LSU.txt"
 
 # LSU taxonomy map mmseq2 indexed
 LSU_genome_index_mmseq: "/scratch3/odw014/analysis/test_MetaDIVE_2/MetaDIVE/databases/LSU/LSU_DB"
@@ -336,7 +334,7 @@ Blast_method: 'blast'
 
 # Superflous code to remove after streamlined module selections
 # Whether to do KRaken viral classification on the raw sequences 
-doviral_raws_classification: 'no' # REMOVE as will be removing Kraken from the pipeline so only one raws analysis is available # need to remove from summary R script first.
+doviral_raws_classification: 'no' # REMOVE as will be removing Kraken from the pipeline so only one raws analysis is available # need to remove from summary R script first. 
 kraken_database: "/scratch3/odw014/analysis/databases/Kraken/" # REMOVE
 virus_protein_database: "/scratch3/odw014/analysis/databases/Complete_viral/Viral_proteinsdb" # REMOVE
 

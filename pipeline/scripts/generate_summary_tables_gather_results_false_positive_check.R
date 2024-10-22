@@ -62,6 +62,9 @@ save.image("testing_fp_blastn.Rdata")
 
 
 # Set as No, but set it as yes if the contigs are found 
+
+allassignedfreqs <- allassignedfreqspreblastnfpcheckNas
+
 allassignedfreqs$blastn_false_positive_check <- "No"
 allassignedfreqs$blastn_alternate_superkingdom_id <- "NA"
 allassignedfreqs$blastn_alternate_species <- "NA"
@@ -94,6 +97,9 @@ if (nrow(Blastnfalseposhits) >=1) {
   }
   
 }
+
+allassignedfreqs2 <- subset(allassignedfreqs, !(is.na(allassignedfreqs$contigassignment) & is.na(allassignedfreqs$blastn_alternate_superkingdom_id)))
+allassignedfreqs <- allassignedfreqs2 
 
 save.image("testing_fp1_blastn.Rdata")
 

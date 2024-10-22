@@ -160,6 +160,11 @@ rule analyse_diamond_hits_raws:
         touch {output.superkingdoms} && \
         touch {output.contigsassigned}
         """
+
+# Add in the max reads filter here as well. I just realised that if I filter down after the cd merge the majority of more likely reads (blastx identified) might be drowned out by the bulk
+# of the kraken returned which is less reliable. Applying the max filter outright means I don't get the best results though. Added in a bash script which will iterate over 12 variants of kraken2
+# and identify the read subset closest in number to the target read numbers (most sensitive without being restrictive) and reporting those results
+# Kraken time to run ~10-60 seconds per run = 2-12 min total run time per sample so not a large increase in time and is a large sensitivity boost. 
 rule generate_kraken_raws:
     message:
         """
@@ -172,9 +177,10 @@ rule generate_kraken_raws:
     output:
         krakenout = config["sub_dirs"]["Kraken_viral_ids"] + "/{sample}_kraken_output.txt",
         krakenreport = config["sub_dirs"]["Kraken_viral_ids"] + "/{sample}_kraken_report.txt",
-        readslist2 = config["sub_dirs"]["Kraken_viral_ids"] + "/{sample}_raw_read_names_to_virus.txt"
+        readslist = config["sub_dirs"]["Kraken_viral_ids"] + "/{sample}_raw_read_names_to_virus.txt"
     params:
-        krakendb= config["Kraken_database"]
+        krakendb = config["Kraken_database"],
+        reads_threshold = config["Raw_reads_max"]
     log:
         "logs/" + config["sub_dirs"]["Kraken_viral_ids"] + "/{sample}.log"
     threads: 2
@@ -185,14 +191,10 @@ rule generate_kraken_raws:
         "benchmarks/" + config["sub_dirs"]["Kraken_viral_ids"] + "/{sample}.txt"
     shell:
         """
-        kraken2 --db {params.krakendb} --paired \
-            --threads {threads} \
-            --report {output.krakenreport} \
-            --output {output.krakenout} \
-            {input.R1} {input.R2} \
-            2> {log} && \
-        awk '$1 == "C" {{print $2}}' "{output.krakenout}" > {output.readslist2}
+        bash scripts/run_kraken2_raws_iterations.sh \
+            {params.krakendb} {threads} {output.krakenreport} {output.krakenout} {input.R1} {input.R2} {output.readslist} {params.reads_threshold} {log}
         """
+
 
 rule check_results_in_blastn:
     message:
@@ -230,15 +232,24 @@ rule check_results_in_blastn:
         then
             mkdir {params.blastnfolder}
         fi && \
-        lengthunassigned=(`wc -l {input.readslist}`) && \
+        cat {input.readslist} {input.readslist2} > {output.readslistcomb} && \
+        zcat {input.R1} | grep --no-group-separator -A 3 -F -f "{output.readslistcomb}" > {output.fastqreads} && \
+        zcat {input.R2} | grep --no-group-separator -A 3 -F -f "{output.readslistcomb}" >> {output.fastqreads} && \
+        lengthunassigned=(`wc -l {output.readslistcomb}`) && \
         if [ ${{lengthunassigned}} -ge 1 ]
         then
-        cat {input.readslist} {input.readslist2} > {output.readslistcomb}
-        zcat {input.R1} | grep --no-group-separator -A 3 -F -f "{output.readslistcomb}" > {output.fastqreads}
-        zcat {input.R2} | grep --no-group-separator -A 3 -F -f "{output.readslistcomb}" >> {output.fastqreads}
         seqtk seq -a {output.fastqreads} > {output.fastareads}
         cd-hit -i {output.fastareads} -o {output.fasta_clust} -c 0.99 -n 5 -T {threads} -d 0 -M 14000
+        lengthreads=(`wc -l {output.fasta_clust}`) && \
+        lengthreads2=$(( $lengthreads / 2)) && \
+        if [ ${{lengthreads2}} -gt {params.reads_threshold} ]
+        then
         seqtk sample -s100 {output.fasta_clust} {params.reads_threshold} > {output.fasta_clust_subset}
+        fi && \
+        if [ ${{lengthreads2}} -le {params.reads_threshold} ]
+        then
+        cat {output.fasta_clust} > {output.fasta_clust_subset}
+        fi && \
         blastn -query {output.fasta_clust_subset} \
             -db {params.blastdb} \
             -evalue 0.01 \
@@ -252,6 +263,7 @@ rule check_results_in_blastn:
         fi && \
         touch {output.blastfile} && \
         touch {output.fastqreads} && \
+        touch {output.readslistcomb} && \
         touch {output.fastareads} && \
         touch {output.fasta_clust} && \
         touch {output.fasta_clust_subset} && \
@@ -356,6 +368,7 @@ rule compile_raws_and_contigs:
         summarytable = config["sub_dirs"]["raws_results"] + "/{sample}Viral_hits_and_complexity.txt",
         fastqreads = config["sub_dirs"]["raws_blastn_check"] + "/{sample}_reads.fastq",
         contigsfile = config["sub_dirs"]["contig_dir_either"] + "/{sample}_contigs.fa",
+        raws_all_assignments_blastn = config["sub_dirs"]["raws_blastn_r"] + "/{sample}_all_reads_assignments.txt",
         summaryRdatafile = config["sub_dirs"]["Summary_results"] + "/{sample}_gather_summary_files_R_environment.Rdata"
     output:
         output_datatable = config["sub_dirs"]["compiled_summary"] + "/{sample}/{sample}_virusall_datatable.html",
@@ -377,7 +390,7 @@ rule compile_raws_and_contigs:
     shell:
         """
         Rscript {config[program_dir]}scripts/Summarise_all_viral_reads_multi_methods.R \
-            --inputvirusdetails {input.summarytable} --name {params.samplename} \
+            --inputvirusdetails {input.summarytable} --name {params.samplename} --allrawsassign {input.raws_all_assignments_blastn} \
             --threads {threads} --contigs {input.contigsfile} --Rdatas {input.summaryRdatafile} \
             --programdir {params.basedir} --savdir {params.wrkdir} --dofalseposcheck {params.docontigsubsetting} && \
         touch {output.output_datatable} && \

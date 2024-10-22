@@ -19,6 +19,7 @@ parser$add_argument('--programdir', '-t', help= 'directory of analysis run (same
 parser$add_argument('--savdir', '-A', help= 'directory path of where to save viral raw reads output table')
 parser$add_argument('--Rdatas', '-r', help= ' I am the results Rdata environment from 99summary ')
 parser$add_argument('--dofalseposcheck', '-f', help= ' Whether to subset to only contigs which passed blastn analysis ')
+parser$add_argument('--allrawsassign', '-g', help= 'the complete blastn assignment table for raw reads')
 
 
 xargs<- parser$parse_args()
@@ -31,6 +32,7 @@ resultspathcompile <- xargs$savdir
 contigspathing <- xargs$contigs
 rdataenv <- xargs$Rdatas
 threads <- xargs$threads
+rawsassign <- xargs$allrawsassign
 dofalsepossubset <- xargs$dofalseposcheck
 outtablespathcompile <- paste0(basepath,resultspath)
 outtablespath <- paste0(basepath,resultspath)
@@ -49,16 +51,21 @@ outtablespath <- paste0(basepath,resultspath)
 
 load(rdataenv)
 
-if (file.info(viralcomplexity)$size >= 500) {
+save.image("testing_final_comilingreads01.Rdata")
+
+if (file.info(viralcomplexity)$size >= 330) {
   
-  viral_raws_complexity_summary <- read.table(viralcomplexity, header=TRUE)
+	viral_raws_complexity_summary <- read.table(viralcomplexity, header=TRUE)
+	rawsassigntable <- read.table(rawsassign, header=FALSE, sep="\t")
+
   
 }
 
-if (file.info(viralcomplexity)$size < 500) {
+if (file.info(viralcomplexity)$size < 330) {
   
   viral_raws_complexity_summary <- as.data.frame(matrix(nrow=0, ncol=ncol(Combined_assigned_contigs)))
   colnames(viral_raws_complexity_summary) <- colnames(Combined_assigned_contigs)
+	rawsassigntable <- read.table(rawsassign, header=FALSE,sep="\t")
 }
 
 
@@ -90,7 +97,7 @@ Combined_assigned_contigs_viruses_only <- subset(Combined_assigned_contigs,Combi
 
 if ( dofalsepossubset == "confirmed") {
   
-  Combined_assigned_contigs_viruses_only <- subset(Combined_assigned_contigsfp,Combined_assigned_contigsfp$superkingdom=="Viruses")
+  Combined_assigned_contigs_viruses_only <- subset(Combined_assigned_contigs,Combined_assigned_contigs$superkingdom=="Viruses")
   
 }
 
@@ -107,11 +114,10 @@ if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
   
   for (i in c(1:nrow(seqscores_viruses))) {
     
+	grep(pattern=paste0("^", seqscores_viruses$sequencenames[i], "$"),x=Combined_assigned_contigs_viruses_only$qseqid) -> idx
     
-    grep(pattern=seqscores_viruses$sequencenames[i],x=Combined_assigned_contigs_viruses_only$qseqid) -> idx
     
-    
-    Combined_assigned_contigs_viruses_only$complexity_score[idx] <- seqscores_viruses$complexity_scores[i]
+	Combined_assigned_contigs_viruses_only$complexity_score[idx] <- seqscores_viruses$complexity_scores[i]
     
   }
   
@@ -183,11 +189,15 @@ if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
   
 }
 
+viral_raws_complexity_summary <- subset(viral_raws_complexity_summary,viral_raws_complexity_summary$superkingdom=="Viruses")
+
+viral_raws_complexity_summary$subspecies <- as.character(viral_raws_complexity_summary$subspecies)
+Viraltop100$subspecies <- as.character(Viraltop100$subspecies)
 save.image("testing_raws_contigs_combinedLongtables3.Rdata")
 # First check if the raws is empty.
 # second check if the contigs is empty. (heirarchically)
 
-if (file.info(viralcomplexity)$size >= 500) {
+if (file.info(viralcomplexity)$size >= 350) {
   remaining_raws <- anti_join(viral_raws_complexity_summary, Viraltop100, by = "subspecies")
   
   if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
@@ -207,7 +217,7 @@ if (file.info(viralcomplexity)$size >= 500) {
 }
 save.image("testing_raws_contigs_combinedLongtables4.Rdata")
 
-if (file.info(viralcomplexity)$size < 500) {
+if (file.info(viralcomplexity)$size < 350) {
   
   if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
     
@@ -228,7 +238,7 @@ save.image("testing_raws_contigs_combinedLongtables5.Rdata")
 if (BOTHMISSING =="NO") {
   
   
-  if (file.info(viralcomplexity)$size >= 500) {
+  if (file.info(viralcomplexity)$size >= 350) {
     
     viral_raws_reads_compatability$reads_assigned_through_contigs <- 0
     viral_raws_reads_compatability$superkingdom <- remaining_raws$superkingdom
@@ -254,7 +264,7 @@ if (BOTHMISSING =="NO") {
   }
   
   
-  if (file.info(viralcomplexity)$size < 500) {
+  if (file.info(viralcomplexity)$size < 350) {
     
     print("no raw reads assigned to viruses")
   }
@@ -265,7 +275,7 @@ if (BOTHMISSING =="NO") {
   if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
     
     
-    if (file.info(viralcomplexity)$size >= 500) {
+    if (file.info(viralcomplexity)$size >= 350) {
       
       virus_all <- rbind(Viraltop100,viral_raws_reads_compatability)
       
@@ -273,7 +283,7 @@ if (BOTHMISSING =="NO") {
     
     
     
-    if (file.info(viralcomplexity)$size < 500) {
+    if (file.info(viralcomplexity)$size < 350) {
       
       virus_all <- Viraltop100
       
@@ -563,9 +573,20 @@ if (BOTHMISSING =="NO") {
   #2. Diamondrawshitsvirus
   #3. reads_contigs_virus
   #4. allassignedfreqsvirus
-  
+  #5. the full raws assignment table to pick up extra kraken specific reads
+
+rawsassigntable$Sample <- NAMES
+colnames(rawsassigntable) <- colnames(Diamondrawshits)
+
+rawsassigntablevirus <- subset(rawsassigntable,rawsassigntable$superkingdom=="Viruses")  
+
+
   Diamondrawhitsvirus <- subset(Diamondrawshits, Diamondrawshits$superkingdom=="Viruses")
-  
+  Diamondrawhitsvirusorig <- Diamondrawhitsvirus
+
+Diamondrawhitsvirus2 <- rbind(rawsassigntablevirus,Diamondrawhitsvirus)
+Diamondrawhitsvirus <- Diamondrawhitsvirus2
+
   combined_virus_reads <- as.data.frame(matrix(nrow=0,ncol=2))
   colnames(combined_virus_reads) <- c("Reads","Species")
   combined_virus_contigs <- as.data.frame(matrix(nrow=0,ncol=2))

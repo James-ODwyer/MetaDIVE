@@ -215,7 +215,7 @@ rule diamondblastn_viralhits:
             -max_hsps 1 \
             -outfmt '6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp' \
             -num_threads {threads} \
-            -word_size 25 \
+            -word_size 22 \
             -out {output.blastfile} \
             2> {log}
         touch {output.blastfile}

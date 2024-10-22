@@ -377,6 +377,18 @@ if ( docontigfalsepos == 'yes') {
 }
 
 Combined_assigned_contigs <- rbind(Diamondhits,Blastnhits)
+Combined_assigned_contigspreblastnupdates <- rbind(Diamondhits,Blastnhits)
+i=1
+if (docontigfalseposrenamespecies == 'confirmed') {
+
+	for (i in c(1:nrow(Diamondhitsfp))) {
+		grep(paste0("^",Diamondhitsfp$qseqid[i],"$"),Combined_assigned_contigs$qseqid) -> idxval2
+
+		Combined_assigned_contigs[idxval2,] <- Diamondhitsfp[i,]
+
+	}
+
+}
 
 summary_contigs_table <- as.data.frame(matrix(nrow=1, ncol=15))
 
@@ -505,17 +517,27 @@ for (i in c(1:nrow(freqsummary))) {
 cat(paste0("freqsummary worked", "\t"))
 #Save the freqsum file of the diamond hits pre editing for blastn false positive (if option is chosen)
 allassignedfreqspreblastnfpcheck <- subset(freqsummary,!is.na(freqsummary$contigassignment))
-
-
+allassignedfreqspreblastnfpcheckNas <- freqsummary
+i=1
 if (docontigfalseposrenamespecies == 'confirmed') {
   
   for(i in c(1:nrow(Diamondhitsfp))) {
     
-    
     grep(paste0("^",Diamondhitsfp$qseqid[i],"$"),freqsummary$contig) -> idxval2
+superkindombefore <- freqsummary$superkingdom[idxval2]
+superkindomafter <- Diamondhitsfp[i,12]
+
+if (!is.na(superkindombefore) && !is.na(superkindomafter) && superkindombefore != superkindomafter) {
+  # Both values are not NA and they are different
+  print(paste0("The superkingdoms of the blastx and blastn do not match."))
+  print(paste0("Changing best blastx to blastn, resulting in ", freqsummary[idxval2, 11], " changing to ", Diamondhitsfp[i, 19]))
+}
     freqsummary[idxval2,4:11] <- Diamondhitsfp[i,12:19]
     freqsummary[idxval2,12:13] <- Diamondhitsfp[i,3:4]
     freqsummary[idxval2,3] <- "Blastn"
+
+	
+	
   }
   
 }
