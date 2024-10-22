@@ -117,7 +117,7 @@ dir.create(outtablespath, recursive = FALSE, mode = "0777")
 
 cat(paste0("printing results tables to", outtablespath))
 
-save.image("testing_falsepositivechck.Rdata")
+
 
   # give proper column names
   colnames(blastn_output) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore", "staxids", "stitle", "qcovhsp")
@@ -275,7 +275,7 @@ a <- Sys.time()
     }
     
   }
-save.image("testing_falsepositivechck2.Rdata")  
+
   
   
   cat(paste0(nrow(contigsassigned),"contigs assigned to reference sequences: ","\n"))
@@ -358,7 +358,7 @@ contigsassigned$genus<- taxids$genus
 contigsassigned$species<- taxids$species
 contigsassigned$subspecies<- taxids$subspecies
 
-save.image("testing_falsepositivechck3.Rdata")
+
 contigsassigned$stitle = substr(contigsassigned$stitle,1,50)
 
 

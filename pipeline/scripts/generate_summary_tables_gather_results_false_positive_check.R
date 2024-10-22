@@ -33,7 +33,7 @@ resultspath <- xargs2$outputpath
 outtablespath <- paste0(basepath,resultspath)
 
 
-save.image("testing_fp_blastn.Rdata")
+
 
 
 
@@ -58,7 +58,7 @@ load(Renv)
 
 # I need this to change for the tables and figures for 99 compile
 # allassignedfreqs
-save.image("testing_fp_blastn.Rdata")
+
 
 
 # Set as No, but set it as yes if the contigs are found 
@@ -101,7 +101,7 @@ if (nrow(Blastnfalseposhits) >=1) {
 allassignedfreqs2 <- subset(allassignedfreqs, !(is.na(allassignedfreqs$contigassignment) & is.na(allassignedfreqs$blastn_alternate_superkingdom_id)))
 allassignedfreqs <- allassignedfreqs2 
 
-save.image("testing_fp1_blastn.Rdata")
+
 
 
 
@@ -156,7 +156,7 @@ contigsspecies$top_alternate_assigned_subspecies <- "NA"
 contigsspecies$alternate_assigned_average_percent_ident <- "NA"
 contigsspecies$alternate_assigned_average_alignment_length <- "NA"
 
-save.image("testing_fp2_blastn.Rdata")
+
 
 if (nrow(Blastnfalseposhits ) >=1) {
   
@@ -266,7 +266,7 @@ if (nrow(Viralspeciesordered)<= 100) {
 
 
 
-save.image("testing_fp3_blastn.Rdata")
+
 
 write.table(Viraltop100,file=(paste0(outtablespath,NAMES,"_top100Viralhits_contigs_included_false_positive_check.txt")),sep="\t",row.names=FALSE,quote = FALSE)
 write.table(Viraltop20,file=(paste0(outtablespath,NAMES,"_top20Viralhits_contigs_included_false_positive_check.txt")),sep="\t",row.names=FALSE,quote = FALSE)

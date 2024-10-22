@@ -51,7 +51,7 @@ outtablespath <- paste0(basepath,resultspath)
 
 load(rdataenv)
 
-save.image("testing_final_comilingreads01.Rdata")
+
 
 if (file.info(viralcomplexity)$size >= 330) {
   
@@ -136,7 +136,7 @@ if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
   Viraltop100$contigs_assigned <- "yes"
   
   Combined_assigned_contigs_viruses_only$complexity_score <- as.numeric(Combined_assigned_contigs_viruses_only$complexity_score)
-  save.image("testing_raws_contigs_combinedLongtables1.Rdata")
+
   
   for (i in c(1:nrow(Viraltop100))) {
     
@@ -159,7 +159,7 @@ if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
   Viraltop100$mean_identity_of_raw_reads <- 0
   Viraltop100$mean_aligned_length_of_raw_reads <- 0
   
-  save.image("testing_raws_contigs_combinedLongtables2.Rdata")
+
   # generate the complete viral data for the raws info added to the contigs. Do another grep loop
   # then subset the raws file to remove any species that are already in the contigs. 
   # Then create a new dataframe with the colnames of viraltop100 and populate with the raw data info for remaining raw data species and 0/NA for sections not present.
@@ -193,7 +193,7 @@ viral_raws_complexity_summary <- subset(viral_raws_complexity_summary,viral_raws
 
 viral_raws_complexity_summary$subspecies <- as.character(viral_raws_complexity_summary$subspecies)
 Viraltop100$subspecies <- as.character(Viraltop100$subspecies)
-save.image("testing_raws_contigs_combinedLongtables3.Rdata")
+
 # First check if the raws is empty.
 # second check if the contigs is empty. (heirarchically)
 
@@ -215,7 +215,7 @@ if (file.info(viralcomplexity)$size >= 350) {
   
   
 }
-save.image("testing_raws_contigs_combinedLongtables4.Rdata")
+
 
 if (file.info(viralcomplexity)$size < 350) {
   
@@ -234,7 +234,7 @@ if (file.info(viralcomplexity)$size < 350) {
   
 }
 
-save.image("testing_raws_contigs_combinedLongtables5.Rdata")
+
 if (BOTHMISSING =="NO") {
   
   
@@ -269,7 +269,7 @@ if (BOTHMISSING =="NO") {
     print("no raw reads assigned to viruses")
   }
   
-  save.image("testing_raws_contigs_combinedLongtables6.Rdata")
+
   
   
   if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
@@ -316,7 +316,7 @@ if (BOTHMISSING =="NO") {
   virus_all$mean_identity_of_raw_reads <- as.numeric(virus_all$mean_identity_of_raw_reads)
   virus_all$length <- as.numeric(virus_all$length)
   
-  save.image("testing_raws_contigs_combinedLongtables7.Rdata")
+
   
   colourise <- function(value, column) {
     if (column == "reads_assigned_through_contigs") {
@@ -729,4 +729,4 @@ if (BOTHMISSING =="YES") {
 #like seqkt to do it
 
 
-save.image("test_final_raws_contigs_splitting.Rdata")
+

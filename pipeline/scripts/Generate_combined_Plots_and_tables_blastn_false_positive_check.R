@@ -47,7 +47,7 @@ intablespath <- paste0(basepath,inputdir)
 # Top 5 of each superkingdom as separate lists per sample. run files to create and assign each. Then rbind list values into combined data frame for 
 # combined figure generation.
 
-save.image("test1.Rdata")
+
 
   
   summaryreturnedhitsfromcontigs <- list.files(path = intablespath, pattern = "summarycontighits_assigned_assembly_including_blastn_false_positive_check", all.files = FALSE,
@@ -60,7 +60,7 @@ Euklist <- list()
 bactlist <- list()
 virlist <- list()
 
-save.image("test2.Rdata")
+
 
 for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
   
@@ -243,7 +243,7 @@ for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
 }
 
 
-save.image("test3.Rdata")
+
 # Combine lists
 Viruses <- bind_rows(virlist)
 Bacteria <- bind_rows(bactlist)
@@ -305,7 +305,6 @@ Eukaryotes_top10 <- Eukaryotes %>%
   filter(Species %in% Eukaryotes_sumstop10$Group.1)
 
 
-save.image("test4.Rdata")
 
 
 
@@ -459,7 +458,7 @@ Virus_final_mixed_table$avg_aligned_length <- aggtable3table$x
 
 Virus_final_mixed_table[is.na(Virus_final_mixed_table)] <- 0
 
-save.image("test5.Rdata")
+
 
 write.table(Virus_final_mixed_table,file=(paste0(outtablespath,"Combined_samples_top_hits_to_Viral_species_blastn_false_positive_check.txt")),sep="\t",row.names=rownames(pairwise_matrixVir),col.names=colnames(pairwise_matrixVir))
 

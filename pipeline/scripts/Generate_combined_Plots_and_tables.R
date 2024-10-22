@@ -78,7 +78,7 @@ for (i in c(1:length(samplereadssummaryfiles))) {
 }
 
 Resultssummaryreadsassignments <-bind_rows(Allreadssummaryresultstable)
-save.image("testing_summarygraphs1.Rdata")
+
 #Resultssummaryreadsassignments$Filtering_step  <- factor(Resultssummaryreadsassignments$Filtering_step,levels = c("Low.quality.reads", "PhiX.contamination", "CO1.hits", "LSU.hits", "SSU.hits", "Host.species", "Eukaryotes", "Bacteria", "Viruses", "Unassigned.reads"))
 Resultssummaryreadsassignments$Filtering_step  <- factor(Resultssummaryreadsassignments$Filtering_step,levels = c("Unassigned.reads", "Reads.from.unassigned.contigs", "Viruses", "Bacteria", "Eukaryotes", "Host.species", "SSU.hits", "LSU.hits", "CO1.hits", "PhiX.contamination", "Low.quality.reads"))
 
@@ -755,7 +755,7 @@ ggsave(paste0(outtablespath,"Summary_barplot_contigs_virus_Eukaryote_raw_reads_d
 
 }
 
-save.image("test_summary_graphs.Rdata")
+
 
 # Eukaryotes top 20 returned hits sumamry table
 
