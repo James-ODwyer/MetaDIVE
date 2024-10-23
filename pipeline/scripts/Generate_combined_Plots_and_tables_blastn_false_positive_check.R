@@ -48,7 +48,6 @@ intablespath <- paste0(basepath,inputdir)
 # combined figure generation.
 
 
-
   
   summaryreturnedhitsfromcontigs <- list.files(path = intablespath, pattern = "summarycontighits_assigned_assembly_including_blastn_false_positive_check", all.files = FALSE,
                                                full.names = TRUE, recursive = FALSE,
@@ -79,7 +78,7 @@ for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
   if (nrow(ResultstableEuk)>=1) { 
   for ( j in c(1:length(uniquespecies))) {
     
-    resultstablesubset <- subset(ResultstableEuk,ResultstableEuk$species==uniquespecies[j])
+    resultstablesubset <- subset(ResultstableEuk,ResultstableEuk$subspecies==uniquespecies[j])
     
     speciescounts[j,1] <- resultstablesubset$species[1]
     speciescounts[j,2] <- resultstablesubset$subspecies[1]
@@ -87,8 +86,7 @@ for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
     speciescounts[j,4] <- mean(resultstablesubset$percentident)
     speciescounts[j,5] <- max(resultstablesubset$percentident)
     speciescounts[j,6] <- min(resultstablesubset$percentident)
-    speciescounts[j,7] <- resultstablesubset$Sample[1]
-    
+    speciescounts[j,7] <- sampname    
     
   }
     speciescounts <- speciescounts[order(-speciescounts$`Reads assigned`),]
@@ -125,7 +123,7 @@ for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
   if (nrow(Resultstablebacteria)>=1) { 
   for ( j in c(1:length(uniquespecies))) {
     
-    resultstablesubset <- subset(Resultstablebacteria,Resultstablebacteria$species==uniquespecies[j])
+    resultstablesubset <- subset(Resultstablebacteria,Resultstablebacteria$subspecies==uniquespecies[j])
     
     speciescounts[j,1] <- resultstablesubset$species[1]
     speciescounts[j,2] <- resultstablesubset$subspecies[1]
@@ -133,7 +131,7 @@ for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
     speciescounts[j,4] <- mean(resultstablesubset$percentident)
     speciescounts[j,5] <- max(resultstablesubset$percentident)
     speciescounts[j,6] <- min(resultstablesubset$percentident)
-    speciescounts[j,7] <- resultstablesubset$Sample[1]
+    speciescounts[j,7] <- sampname
     
   }
     speciescounts <- speciescounts[order(-speciescounts$`Reads assigned`),]
@@ -168,7 +166,7 @@ for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
   if (nrow(ResultstableVirus)>=1) { 
   for ( j in c(1:length(uniquespecies))) {
     
-    resultstablesubset <- subset(ResultstableVirus,ResultstableVirus$species==uniquespecies[j])
+    resultstablesubset <- subset(ResultstableVirus,ResultstableVirus$subspecies==uniquespecies[j])
     
     speciescounts[j,1] <- resultstablesubset$species[1]
     speciescounts[j,2] <- resultstablesubset$subspecies[1]
@@ -207,7 +205,7 @@ for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
 
     speciescounts[j,10] <- mean(as.numeric(resultstablesubset$`blastn_alternate_percentident`))
     speciescounts[j,11] <- mean(as.numeric(resultstablesubset$`blastn_alternate_alignment_length`))
-    speciescounts[j,12] <- resultstablesubset$Sample[1]
+    speciescounts[j,12] <- sampname
     
   }
     speciescounts <- speciescounts[order(-speciescounts$`Reads assigned`),]
@@ -303,6 +301,7 @@ if (nrow(Eukaryotes_sums)<10) {
 
 Eukaryotes_top10 <- Eukaryotes %>% 
   filter(Species %in% Eukaryotes_sumstop10$Group.1)
+
 
 
 
