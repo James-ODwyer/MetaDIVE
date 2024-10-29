@@ -143,9 +143,13 @@ run_raws: 'yes'
 
 # Whether to subset the blastn raws to save time (strongly recommended if you have a big dataset of fragmented genomes typical of complex environmental samples. 
 # Set to 5000 so a maximum of 5000 raw reads after they have been compressed in cdhit will have blastn run on them. I would recommend not putting this above 20000
+# This setting does not mean only 5000 raw reads will be analysed. All raw reads will be analysed with BLASTx (Diamond blastx) if run_raws is set
+# The reads_max_filter is applied to the reads detected as viruses either through BLASTx or Kraken2 and after CD-hit has compressed the viral reads to remove duplicates. This means in samples with 
+# an expected low-medium viral count, 5000-10000 reads will likely be all potential viral reads and the samples which contain more, reads are first prioritised by how likely
+# the read is to be viral (based on Kraken assignment scores)
 Raw_reads_max: 5000
 
-# Whether to do diamond blast on the raws (very long, probably around 15-25% of the whole pipeline)
+# Whether to do diamond blast on the raws (very long, probably around 15-25% of the whole pipeline) Set to yes with the run_raws or set both to no.
 #'yes/no'
 dodiamond_blast_raws: 'yes'
 
@@ -153,13 +157,16 @@ dodiamond_blast_raws: 'yes'
 # 'yes/no'
 generate_results_summary: 'yes'
 
+# Final read count threshold. The final combined raws and contigs reads table will be filtered to this minimum read count
+# Higher values will result in more likely viruses to be detected but may miss more low frequency viruses
+# recommended between 3 and 20 depending on the purpose of the analysis. 
+readcountthresh: 3
 
 
-# Databases and other filepaths (once updated during the first time, these will remain static). All have been tarred and compressed in the github except the Diamond and blastn databases, all that needs to be done is update paths to where
-# You save the databases
+# Databases and other filepaths (once updated during the first time, these will remain static). All have been tarred and compressed on github or will be built on the spot except the Diamond and blastn databases.
 # Diamond and blastn databases were not included as these are very large databases (>100GB each usually) and it is recommended these are installed on an HPC (high performance computer cluster) in a location everyone can access. They are also very common so will likely be present somewhere if routine bioinformatics work
 # has been done on your HPC before. 
-# Have a look around the HPC and potentially contact your HPC admin to see where they are before downloading them yourself. Otherwise, run Diamond_download.sh, and Diamond_download.sh
+# Have a look around the HPC and potentially contact your HPC admin to see where they are before downloading them yourself. (note this last part to download the diamond and blastn databases isn't made yet and I may not at all) Otherwise,run Diamond_download.sh, and Diamond_download.sh
 
 
 # Trinity temp path.

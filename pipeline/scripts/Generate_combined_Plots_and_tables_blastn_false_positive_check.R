@@ -66,7 +66,7 @@ for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
   Resultstable <- read.table(summaryreturnedhitsfromcontigs[i],header = TRUE,sep = "\t")
   sampname <- gsub(".*\\/" , x=summaryreturnedhitsfromcontigs[i],replacement="")
   sampname <- gsub("_summarycontig.*",x=sampname,replacement="")
-  Resultstable <- subset(Resultstable, !(is.na(Resultstable$species)))
+  Resultstable <- subset(Resultstable, !(is.na(Resultstable$contigassignment) & is.na(Resultstable$blastn_alternate_superkingdom_id)))
   # Need to remove all NA rows from data
   
   ResultstableEuk <- subset(Resultstable,Resultstable$superkingdom=="Eukaryota")
@@ -157,7 +157,7 @@ for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
   
 
 
-  ResultstableVirus <- subset(Resultstable,Resultstable$superkingdom=="Viruses")
+  ResultstableVirus <- subset(Resultstable,(Resultstable$superkingdom=="Viruses" | Resultstable$blastn_alternate_superkingdom_id=="Viruses"))
   
   uniquespecies <- unique(ResultstableVirus$subspecies)
   speciescounts <- as.data.frame(matrix(nrow = length(uniquespecies), ncol=12))
@@ -249,12 +249,38 @@ Eukaryotes <- bind_rows(Euklist)
 
 # Now create top 10s based on aggregate reads assigned.
 
-# Viruses
-Viruses_sums <- Viruses[order(-Viruses$`Reads assigned`),]
 
-#Viruses_sums <- aggregate(Viruses,by = Viruses$`Reads assigned`,FUN = sum())
-Viruses_sums <- aggregate((Viruses$`Reads assigned`),by=list(Viruses$subspecies),sum)
+
+Viruses$finalassignmentsubsp <- "NA"
+
+for (f in c(1:nrow(Viruses))) {
+
+
+	if(Viruses$`Blastn alternate subspecies identified`[f] !="None") {
+	
+	Viruses$finalassignmentsubsp[f] <- Viruses$`Blastn alternate subspecies identified`[f]
+	}
+	
+	if(Viruses$`Blastn alternate subspecies identified`[f] =="None") {
+	
+	Viruses$finalassignmentsubsp[f] <- Viruses$subspecies[f]
+	}
+
+
+
+}
+
+Virusesconfirmedvir <- subset(Viruses,(Viruses$`Blastn alternate kingdom identified` != "Eukaryota" & Viruses$`Blastn alternate kingdom identified` != "Bacteria"))
+
+
+# Viruses
+Virusesconfirmedvir <- Virusesconfirmedvir[order(-Virusesconfirmedvir$`Reads assigned`),]
+
+#Viruses_sums <- aggregate(Virusesconfirmedvir,by = Virusesconfirmedvir$`Reads assigned`,FUN = sum())
+Viruses_sums <- aggregate((Virusesconfirmedvir$`Reads assigned`),by=list(Virusesconfirmedvir$finalassignmentsubsp),sum)
 Viruses_sums <- Viruses_sums[order(-Viruses_sums$`x`),]
+
+Viruses_sums <- subset(Viruses_sums,Viruses_sums$x >=1)
 
 if (nrow(Viruses_sums)>=10) {
   Viruses_sumstop10 <- Viruses_sums[1:10,]
@@ -264,9 +290,17 @@ if (nrow(Viruses_sums)<10) {
 }
 
 Viruses_top10 <- Viruses %>% 
-  filter(subspecies %in% Viruses_sumstop10$Group.1)
+  filter(finalassignmentsubsp %in% Viruses_sumstop10$Group.1)
 
-Viruses_sumstop10$Group.1
+if (nrow(Viruses_sums)>=100) {
+  Viruses_sumstop100 <- Viruses_sums[1:100,]
+}
+if (nrow(Viruses_sums)<100) {
+  Viruses_sumstop100 <- Viruses_sums
+}
+
+Viruses_top100 <- Viruses %>% 
+  filter(finalassignmentsubsp %in% Viruses_sumstop100$Group.1)
 
 
 # Bacteria
@@ -305,8 +339,6 @@ Eukaryotes_top10 <- Eukaryotes %>%
 
 
 
-
-
 # ggplot graphs 
 
 Viruses_top10$`Reads assigned` <- as.numeric(as.character(Viruses_top10$`Reads assigned`))
@@ -321,15 +353,33 @@ for (a in c(1:nrow(Viruses_top10))) {
 
 if (Viruses_top10$`Blastn alternate kingdom identified`[a] !="Viral species returned from Blastn") {
 
-Viruses_top10$Species2[a] <- paste0(Viruses_top10$subspecies[a],"*")
+Viruses_top10$Species2[a] <- paste0(Viruses_top10$finalassignmentsubsp[a],"*")
 
 }
 
 else {
-Viruses_top10$Species2[a] <- Viruses_top10$subspecies[a]
+Viruses_top10$Species2[a] <- Viruses_top10$finalassignmentsubsp[a]
 }
 
 }
+
+Viruses_top100$Species2 <- NA
+
+for (a in c(1:nrow(Viruses_top10))) {
+
+
+if (Viruses_top100$`Blastn alternate kingdom identified`[a] !="Viral species returned from Blastn") {
+
+Viruses_top100$Species2[a] <- paste0(Viruses_top100$finalassignmentsubsp[a],"*")
+
+}
+
+else {
+Viruses_top100$Species2[a] <- Viruses_top10$finalassignmentsubsp[a]
+}
+
+}
+
 
 
 # ggplot graphs 
@@ -367,7 +417,7 @@ ggsave(paste0(outtablespath,"Summary_barplot_top_virus_species_from_contigs_incl
 # Now Viral 
 
 
-sampleVirsummaryfiles <- list.files(path = intablespath, pattern = "top20Viralhits_contigs.txt", all.files = FALSE,
+sampleVirsummaryfiles <- list.files(path = intablespath, pattern = "top100Viralhits_contigs_included_false_positive_check.txt", all.files = FALSE,
                       full.names = TRUE, recursive = FALSE,
                       ignore.case = FALSE, include.dirs = FALSE)
 
@@ -377,25 +427,49 @@ AllsampleVirsummaryfiles <- list()
 for (i in c(1:length(sampleVirsummaryfiles))) {
   
   Resultstable <- read.table(sampleVirsummaryfiles[i],header = TRUE,sep = "\t")
-  sample<- Resultstable$Sample
-  
+  sampname <- gsub(".*\\/" , x=sampleVirsummaryfiles[i],replacement="")
+  sampname <- gsub("_top100Viralhits.*",x=sampname,replacement="")
+	if(nrow(Resultstable) >=1) {
+		Resultstable$sample <- sampname
+  		}
   AllsampleVirsummaryfiles[[i]] <- Resultstable
   
 }
 
 AllsampleVirsummaryfilesdf <- bind_rows(AllsampleVirsummaryfiles)
 
+AllsampleVirsummaryfilesdf$finalassignmentsubsp <- NA
 
 
-AllsampleVirsummaryfilesdf10top <- AllsampleVirsummaryfilesdf %>% 
-  filter(subspecies %in% Viruses_top10$subspecies)
+for (f in c(1:nrow(AllsampleVirsummaryfilesdf))) {
+
+
+	if(AllsampleVirsummaryfilesdf$`false_positive_blastn_test_undertaken`[f] !="Yes") {
+	
+	AllsampleVirsummaryfilesdf$finalassignmentsubsp[f] <- AllsampleVirsummaryfilesdf$`subspecies`[f]
+	}
+	
+	if(AllsampleVirsummaryfilesdf$`false_positive_blastn_test_undertaken`[f] =="Yes") {
+	
+	AllsampleVirsummaryfilesdf$finalassignmentsubsp[f] <- AllsampleVirsummaryfilesdf$`top_alternate_assigned_subspecies`[f]
+	}
+
+
+
+}
 
 
 
 
-aggtable <- aggregate((AllsampleVirsummaryfilesdf10top$Frequency),by=list(AllsampleVirsummaryfilesdf10top$subspecies,AllsampleVirsummaryfilesdf10top$Sample),sum)
-aggtable2table <- aggregate((AllsampleVirsummaryfilesdf10top$average_percent_ident),by=list(AllsampleVirsummaryfilesdf10top$subspecies),mean)
-aggtable3table <- aggregate((AllsampleVirsummaryfilesdf10top$length),by=list(AllsampleVirsummaryfilesdf10top$subspecies),mean)
+AllsampleVirsummaryfilesdf100top <- AllsampleVirsummaryfilesdf %>% 
+  filter(finalassignmentsubsp %in% Viruses_top100$finalassignmentsubsp)
+
+
+
+
+aggtable <- aggregate((AllsampleVirsummaryfilesdf100top$Frequency),by=list(AllsampleVirsummaryfilesdf100top$finalassignmentsubsp,AllsampleVirsummaryfilesdf100top$sample),sum)
+aggtable2table <- aggregate((AllsampleVirsummaryfilesdf100top$average_percent_ident),by=list(AllsampleVirsummaryfilesdf100top$finalassignmentsubsp),mean)
+aggtable3table <- aggregate((AllsampleVirsummaryfilesdf100top$length),by=list(AllsampleVirsummaryfilesdf100top$finalassignmentsubsp),mean)
 
 
 
@@ -420,26 +494,26 @@ rownames(Virus_final_mixed_table) <- rownames(pairwise_matrixVir)
 
 for ( i in c(1:(ncol(Virus_final_mixed_table)-2))) {
 
-grep(colnames(Virus_final_mixed_table[i]),Viruses_top10$Sample) -> index1 
+grep(colnames(Virus_final_mixed_table[i]),Viruses_top100$Sample) -> index1 
 
-Viruses_top10sampleX <-Viruses_top10[index1,]
+Viruses_top100sampleX <-Viruses_top100[index1,]
 
 for (j in c(1:nrow(Virus_final_mixed_table))) {
 
 
 rownames(Virus_final_mixed_table)[j] -> Speciesnametest
 
-Viruses_top10sampleXvirsubset <- subset(Viruses_top10sampleX,Viruses_top10sampleX$subspecies==Speciesnametest)
+Viruses_top100sampleXvirsubset <- subset(Viruses_top100sampleX,Viruses_top100sampleX$finalassignmentsubsp==Speciesnametest)
 
-if (nrow(Viruses_top10sampleXvirsubset) >=1) {
+if (nrow(Viruses_top100sampleXvirsubset) >=1) {
 
-if (Speciesnametest != Viruses_top10sampleXvirsubset$Species2) {
+if (Speciesnametest != Viruses_top100sampleXvirsubset$Species2) {
 
 Virus_final_mixed_table[j,i] <- paste0(pairwise_matrixVir[j,i],"*")
 
 }
 
-if (Speciesnametest == Viruses_top10sampleXvirsubset$Species2) {
+if (Speciesnametest == Viruses_top100sampleXvirsubset$Species2) {
 
 Virus_final_mixed_table[j,i] <- pairwise_matrixVir[j,i]
 
@@ -461,13 +535,24 @@ Virus_final_mixed_table[is.na(Virus_final_mixed_table)] <- 0
 
 write.table(Virus_final_mixed_table,file=(paste0(outtablespath,"Combined_samples_top_hits_to_Viral_species_blastn_false_positive_check.txt")),sep="\t",row.names=rownames(pairwise_matrixVir),col.names=colnames(pairwise_matrixVir))
 
-Viruses_top10red <- Viruses_top10[1:10,]
+Viruses_top100red <- Viruses_top100[1:100,]
 
 
 
+Viruses_top100red<- Viruses_top100red[rowSums(is.na(Viruses_top100red)) != ncol(Viruses_top100red), ]
+
+names(Viruses_top100red)[names(Viruses_top100red) == "finalassignmentsubsp"] <- "final_viral_subspecies_assignment"
+
+names(Viruses_top100red)[names(Viruses_top100red) == "Species"] <- "Diamond_assigned_species"
+names(Viruses_top100red)[names(Viruses_top100red) == "subspecies"] <- "Diamond_assigned_subspecies"
+
+# Delete column
+Viruses_top100red$Species2 <- NULL
+
+Viruses_top100red <- Viruses_top100red[c(setdiff(names(Viruses_top100red), "Sample"), "Sample")]
 
 
-write.table(Viruses_top10red,file=(paste0(outtablespath,"Combined_samples_top_hits_to_Viral_species_long_table_format_blastn_false_positive_check.txt")),sep="\t",row.names=FALSE,col.names=colnames(Viruses_top10red))
+write.table(Viruses_top100red,file=(paste0(outtablespath,"Combined_samples_top_hits_to_Viral_species_long_table_format_blastn_false_positive_check.txt")),sep="\t",row.names=FALSE,col.names=colnames(Viruses_top100red))
 
 
 

@@ -397,6 +397,38 @@ rule compile_raws_and_contigs:
         touch {output.output_csv}
         """
 
+rule Compile_shared_graphs_raws_incl:
+    message:
+        """
+        Generating summary graphs and tables for combined raws results
+        """
+    input:
+        summaryallreadsfiles = expand(config["sub_dirs"]["compiled_summary"] + "/{sample}/{sample}_virusall_sums.csv", sample=config["samples"])
+    output:
+        output_fig = config["sub_dirs"]["Summary_results2"] + "/Top_viral_hits_combined_raws_plus_contigs.pdf",
+        output_table = config["sub_dirs"]["Summary_results2"] + "/Top_viral_hits_combined_raws_plus_contigs.txt"
+    params:
+        basedir = config["program_dir"],
+        indir = config["sub_dirs"]["compiled_summary"] + "/",
+        outdir = config["sub_dirs"]["Summary_results2"] + "/",
+        rawreadthreshold = config["readcountthresh"]
+    log:
+        "logs/" + config["sub_dirs"]["compiled_summary"] + "/final_collate.log"
+    benchmark:
+        "benchmarks/" + config["sub_dirs"]["compiled_summary"] + "/final_collate.txt"
+    conda: "Rdataplotting"
+    threads: 1
+    resources:
+        mem_mb=3000
+    shell:
+        """
+        Rscript {config[program_dir]}scripts/Generate_combined_Plots_and_tables_contigs_plus_raws.R \
+            --inputbasedir {params.basedir} --input_resultscsvsmain {params.indir} --outputpath {params.outdir} --minreadthreshold {params.rawreadthreshold} && \
+        touch {output.output_fig} && \
+        touch {output.output_table}
+        """
+
+
 rule extract_reads_and_contigs:
     message:
         """
@@ -406,6 +438,7 @@ rule extract_reads_and_contigs:
     input:
         R1 = host_removed_dataR1,
         R2 = host_removed_dataR2,
+        output_fig = config["sub_dirs"]["Summary_results2"] + "/Top_viral_hits_combined_raws_plus_contigs.pdf",
         output_datatable = config["sub_dirs"]["compiled_summary"] + "/{sample}/{sample}_virusall_datatable.html",
         contigfile = config["sub_dirs"]["contig_dir_either"] + "/{sample}_contigs.fa"
     output:

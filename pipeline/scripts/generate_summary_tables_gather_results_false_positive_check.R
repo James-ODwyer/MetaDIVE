@@ -60,7 +60,6 @@ load(Renv)
 # allassignedfreqs
 
 
-
 # Set as No, but set it as yes if the contigs are found 
 
 allassignedfreqs <- allassignedfreqspreblastnfpcheckNas
@@ -82,7 +81,7 @@ if (nrow(Blastnfalseposhits) >=1) {
     
     
     if (length(idx) >=1) {
-      
+      #print(paste0(" Match observed in ", Blastnfalseposhits$qseqid[i], allassignedfreqs$contig[idx], " index location ", idx, "species " , allassignedfreqs$subspecies[idx]))
       allassignedfreqs$blastn_false_positive_check[idx] <- "Yes"
       allassignedfreqs$blastn_alternate_superkingdom_id[idx] <- Blastnfalseposhits$superkingdom[i]
       allassignedfreqs$blastn_alternate_species[idx] <- Blastnfalseposhits$species[i]
@@ -98,7 +97,7 @@ if (nrow(Blastnfalseposhits) >=1) {
   
 }
 
-allassignedfreqs2 <- subset(allassignedfreqs, !(is.na(allassignedfreqs$contigassignment) & is.na(allassignedfreqs$blastn_alternate_superkingdom_id)))
+allassignedfreqs2 <- subset(allassignedfreqs, !(is.na(allassignedfreqs$contigassignment) & (allassignedfreqs$blastn_alternate_superkingdom_id=="NA")))
 allassignedfreqs <- allassignedfreqs2 
 
 
