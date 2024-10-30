@@ -328,14 +328,14 @@ rule generate_kraken_contigs:
     threads: 2
     conda: "kraken2"
     resources:
-        mem_mb=8000
+        mem_mb=4000
     benchmark:
         "benchmarks/" + config["sub_dirs"]["Kraken_viral_ids_contigs"] + "/{sample}.txt"
     shell:
         """
         kraken2 --db {params.krakendb} \
             --threads {threads} \
-            --minimum-hit-groups 7 \
+            --minimum-hit-groups 11 \
             --report {output.krakenreport} \
             --output {output.krakenout} \
             {input} \
