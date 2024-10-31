@@ -137,6 +137,8 @@ if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
   
   Combined_assigned_contigs_viruses_only$complexity_score <- as.numeric(Combined_assigned_contigs_viruses_only$complexity_score)
 
+save.image("testing_combinedrawscontigs.Rdata")
+
   
   for (i in c(1:nrow(Viraltop100))) {
     

@@ -365,7 +365,7 @@ Viruses_top10$Species2[a] <- Viruses_top10$finalassignmentsubsp[a]
 
 Viruses_top100$Species2 <- NA
 
-for (a in c(1:nrow(Viruses_top10))) {
+for (a in c(1:nrow(Viruses_top100))) {
 
 
 if (Viruses_top100$`Blastn alternate kingdom identified`[a] !="Viral species returned from Blastn") {
@@ -375,7 +375,8 @@ Viruses_top100$Species2[a] <- paste0(Viruses_top100$finalassignmentsubsp[a],"*")
 }
 
 else {
-Viruses_top100$Species2[a] <- Viruses_top10$finalassignmentsubsp[a]
+Viruses_top100$Species2[a] <- Viruses_top100$finalassignmentsubsp[a]
+
 }
 
 }
@@ -505,6 +506,8 @@ rownames(Virus_final_mixed_table)[j] -> Speciesnametest
 
 Viruses_top100sampleXvirsubset <- subset(Viruses_top100sampleX,Viruses_top100sampleX$finalassignmentsubsp==Speciesnametest)
 
+
+
 if (nrow(Viruses_top100sampleXvirsubset) >=1) {
 
 if (Speciesnametest != Viruses_top100sampleXvirsubset$Species2) {
@@ -556,4 +559,4 @@ write.table(Viruses_top100red,file=(paste0(outtablespath,"Combined_samples_top_h
 
 
 
-save.image(paste0(outtablespath,"gather_summary_files_R_environment_Blastn_false_positive_check.Rdata"))
+save.image(paste0(outtablespath,"gather_summary_files_R_environment_false_positive_blastncheck.Rdata"))

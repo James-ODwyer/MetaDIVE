@@ -383,8 +383,18 @@ if (docontigfalseposrenamespecies == 'confirmed') {
 
 	for (i in c(1:nrow(Diamondhitsfp))) {
 		grep(paste0("^",Diamondhitsfp$qseqid[i],"$"),Combined_assigned_contigs$qseqid) -> idxval2
+		
+		if(length(idxval2) >=1) {
 
 		Combined_assigned_contigs[idxval2,] <- Diamondhitsfp[i,]
+		}
+		# Adding new double check for if no idx values returned. This occurs only when
+		# blastx identified nothing and kraken identified virus and blastn confirmed virus. Very uncommon but needed!
+		# just rbind the new row in
+		if(length(idxval2) ==0) {
+			Combined_assigned_contigs <- rbind(Combined_assigned_contigs,Diamondhitsfp[i,])
+
+		}
 
 	}
 
@@ -518,14 +528,16 @@ cat(paste0("freqsummary worked", "\t"))
 #Save the freqsum file of the diamond hits pre editing for blastn false positive (if option is chosen)
 allassignedfreqspreblastnfpcheck <- subset(freqsummary,!is.na(freqsummary$contigassignment))
 allassignedfreqspreblastnfpcheckNas <- freqsummary
+
+
 i=1
 if (docontigfalseposrenamespecies == 'confirmed') {
-  
-  for(i in c(1:nrow(Diamondhitsfp))) {
+  if (nrow(Diamondhitsfp) >=1) {
+  	for(i in c(1:nrow(Diamondhitsfp))) {
     
-    grep(paste0("^",Diamondhitsfp$qseqid[i],"$"),freqsummary$contig) -> idxval2
-superkindombefore <- freqsummary$superkingdom[idxval2]
-superkindomafter <- Diamondhitsfp[i,12]
+	grep(paste0("^",Diamondhitsfp$qseqid[i],"$"),freqsummary$contig) -> idxval2
+	superkindombefore <- freqsummary$superkingdom[idxval2]
+	superkindomafter <- Diamondhitsfp[i,12]
 
 if (!is.na(superkindombefore) && !is.na(superkindomafter) && superkindombefore != superkindomafter) {
   # Both values are not NA and they are different
@@ -539,7 +551,7 @@ if (!is.na(superkindombefore) && !is.na(superkindomafter) && superkindombefore !
 	
 	
   }
-  
+  }
 }
 
 

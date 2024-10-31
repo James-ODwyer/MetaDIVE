@@ -154,7 +154,6 @@ build_sankey_network <- function(my_report, taxRanks =  c("D","K","P","C","O","F
 
 myfile <- pavian::read_report(inputtaxa)
 
-
 if (!(is.null(myfile))) {
   
   if ( (sum(grepl("D",x = myfile$taxRank)) >=2) | sum(grepl("K",x = myfile$taxRank)) >=1) {
@@ -233,7 +232,7 @@ if(nrow(speciesrank>=1)) {
     
     # Now need to do pairwise comparisons to make sure one species is being detected sufficiently more frequently to justify their classification as the host species
     
-    # Two main subsets here. 1, is there more than one detected fam/genus/sp per subsetted class above. Willr equire a bit of heirarchical analysis here
+    # Two main subsets here. 1, is there more than one detected fam/genus/sp per subsetted class above. Will require a bit of heirarchical analysis here
     if (nrow(familyordered) >=2) {
       
       if (familyordered$cladeReads[1] >= 3*familyordered$cladeReads[2]) {
@@ -629,11 +628,18 @@ if (downscalefam == "no") {
   
 }
     
- 
+ # Can't reliably tell which family. Will return the top species count from the families  
     if (downscalefam=="yes") {
       
       
       downscalefam_species <-  subset(topfamreturns,topfamreturns$taxRank=="S")
+
+	# no species returned in top fams. moving to top species of any family. 
+	if (nrow(downscalefam_species) <1) {
+		downscalefam_species <- subset(Animals,Animals$taxRank=="S")
+
+	}
+
       
       if(sum(downscalefam_species$percentage >=5) >= 1) {
         downscalefam_speciestop5percent <- subset(downscalefam_species,downscalefam_species$percentage >=5)
