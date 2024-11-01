@@ -249,29 +249,37 @@ Eukaryotes <- bind_rows(Euklist)
 
 # Now create top 10s based on aggregate reads assigned.
 
-
+save.image("testing_combinedplots_fp.Rdata")
 
 Viruses$finalassignmentsubsp <- "NA"
 
 for (f in c(1:nrow(Viruses))) {
 
-
-	if(Viruses$`Blastn alternate subspecies identified`[f] !="None") {
+	if(!is.na(Viruses$`Blastn alternate subspecies identified`[f])) {
+		if(Viruses$`Blastn alternate subspecies identified`[f] !="None") {
+		
+		Viruses$finalassignmentsubsp[f] <- Viruses$`Blastn alternate subspecies identified`[f]
+		}
 	
-	Viruses$finalassignmentsubsp[f] <- Viruses$`Blastn alternate subspecies identified`[f]
+		if(Viruses$`Blastn alternate subspecies identified`[f] =="None") {
+		
+		Viruses$finalassignmentsubsp[f] <- Viruses$subspecies[f]
+		}
+	
 	}
-	
-	if(Viruses$`Blastn alternate subspecies identified`[f] =="None") {
+
+	if(is.na(Viruses$`Blastn alternate subspecies identified`[f])) {
 	
 	Viruses$finalassignmentsubsp[f] <- Viruses$subspecies[f]
 	}
 
 
+	
 
 }
 
 Virusesconfirmedvir <- subset(Viruses,(Viruses$`Blastn alternate kingdom identified` != "Eukaryota" & Viruses$`Blastn alternate kingdom identified` != "Bacteria"))
-
+Virusesconfirmedvir <- subset(Virusesconfirmedvir, !is.na(Virusesconfirmedvir$finalassignmentsubsp))
 
 # Viruses
 Virusesconfirmedvir <- Virusesconfirmedvir[order(-Virusesconfirmedvir$`Reads assigned`),]
@@ -504,26 +512,52 @@ for (j in c(1:nrow(Virus_final_mixed_table))) {
 
 rownames(Virus_final_mixed_table)[j] -> Speciesnametest
 
+
+# This can throw up a warning when there are duplicates in Viruses_top100sampleX$finalassignmentsubsp 
+# This can happen when the final assignment of two species is the same final assignment but the initial assignment was different
+# e.g., when a blastx identified a slightly different relative for two different contigs but blastn condenses it to one
+# The warning doesn't affect anything and still is correct as the two values should be starred. I am leaving as is
+
 Viruses_top100sampleXvirsubset <- subset(Viruses_top100sampleX,Viruses_top100sampleX$finalassignmentsubsp==Speciesnametest)
 
 
 
-if (nrow(Viruses_top100sampleXvirsubset) >=1) {
+	if (nrow(Viruses_top100sampleXvirsubset) >=1) {
 
-if (Speciesnametest != Viruses_top100sampleXvirsubset$Species2) {
 
-Virus_final_mixed_table[j,i] <- paste0(pairwise_matrixVir[j,i],"*")
 
-}
 
-if (Speciesnametest == Viruses_top100sampleXvirsubset$Species2) {
+		if (Speciesnametest != Viruses_top100sampleXvirsubset$Species2) {
 
-Virus_final_mixed_table[j,i] <- pairwise_matrixVir[j,i]
+			Virus_final_mixed_table[j,i] <- paste0(pairwise_matrixVir[j,i],"*")
 
-}
-}
+		}
 
-}
+		if (Speciesnametest == Viruses_top100sampleXvirsubset$Species2) {
+
+			Virus_final_mixed_table[j,i] <- pairwise_matrixVir[j,i]
+
+		}
+
+	}
+
+
+
+
+	if(nrow(Viruses_top100sampleXvirsubset) == 0) {
+		if(pairwise_matrixVir[j,i] !=0) {
+
+			Virus_final_mixed_table[j,i] <- paste0(pairwise_matrixVir[j,i],"*")
+		}
+
+		if(pairwise_matrixVir[j,i] ==0) {
+			Virus_final_mixed_table[j,i] <- pairwise_matrixVir[j,i]
+		}
+
+	}
+
+
+	}
 
 j=1
 
