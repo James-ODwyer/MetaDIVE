@@ -34,7 +34,7 @@ python "$workingdir"/download_viral_spp_nuccore.py
 
 echo " python run succesfully"
 
-kraken2-build --add-to-library viral_sequences_selected.fasta --db "$workingdir"/krakendb
+kraken2-build --add-to-library viral_combined_sequences_kraken.fasta --db "$workingdir"/krakendb
 
 echo " add to library run succesfully"
 kraken2-build --build --db "$workingdir"/krakendb --threads 2 --kmer-len 29 --minimizer-len 29 --minimizer-spaces 7
