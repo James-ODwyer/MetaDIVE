@@ -121,26 +121,22 @@ species_exclusion_query = "NOT (" + " OR ".join([f'"{species}"[Organism]' for sp
 
 # Function to download nucleotide viruses with dynamic batching strategy and species exclusion
 def download_nucleotide_viruses(viral_taxids):
-    all_seq_ids = []
+    all_seq_ids = set()  # Use set to store unique sequence IDs
     taxid_count = 0  # Counter for tracking TaxIDs processed
     max_retries = 3  # Maximum number of retries for errors
 
     # Convert viral_taxids to a set initially for efficient removal
     viral_taxids_set = set(viral_taxids)
     
-    # Record the start time of the entire download process
     start_time = time.time()
-
-    # Retmax thresholds and corresponding batch levels
-    Retmax1 = 6000
-    Retmax2 = 4000
-    Retmax3 = 1500
-    Retmax4 = 400
+    Retmax1 = 5000
+    Retmax2 = 3000
+    Retmax3 = 1200
+    Retmax4 = 300
     Retmax5 = 60
 
-    # Process TaxIDs starting with the largest batch size of 120
     while viral_taxids_set:
-        taxid_batch = list(viral_taxids_set)[:120]  # Get the first 120 taxids
+        taxid_batch = list(viral_taxids_set)[:120]
         taxid_query = " OR ".join([f"txid{taxid}[Organism]" for taxid in taxid_batch])
         complete_query = f"({taxid_query}) {species_exclusion_query}"
         
@@ -150,7 +146,6 @@ def download_nucleotide_viruses(viral_taxids):
             handle.close()
             count = int(record["Count"])
 
-            # If count exceeds Retmax1, reduce batch size and retmax progressively
             if count > Retmax1:
                 print(f"Batch of 120 too large ({count} sequences). Splitting into smaller batches of 30 with retmax={Retmax2}.")
                 
@@ -163,7 +158,6 @@ def download_nucleotide_viruses(viral_taxids):
                     handle.close()
                     sub_count = int(sub_record["Count"])
 
-                    # If count still exceeds Retmax2, go to the next level
                     if sub_count > Retmax2:
                         print(f"Sub-batch of 30 too large ({sub_count} sequences). Splitting into smaller batches of 10 with retmax={Retmax3}.")
                         
@@ -176,7 +170,6 @@ def download_nucleotide_viruses(viral_taxids):
                             handle.close()
                             mini_count = int(mini_record["Count"])
 
-                            # If count still exceeds Retmax3, go to the next level
                             if mini_count > Retmax3:
                                 print(f"Mini-batch of 10 too large ({mini_count} sequences). Splitting into pairs with retmax={Retmax4}.")
                                 
@@ -189,7 +182,6 @@ def download_nucleotide_viruses(viral_taxids):
                                     handle.close()
                                     pair_count = int(pair_record["Count"])
 
-                                    # If count still exceeds Retmax4, process each TaxID individually
                                     if pair_count > Retmax4:
                                         print(f"Pair too large ({pair_count} sequences). Processing each TaxID individually with retmax={Retmax5}.")
                                         
@@ -198,23 +190,21 @@ def download_nucleotide_viruses(viral_taxids):
                                             handle = Entrez.esearch(db="nuccore", term=individual_query, retmax=Retmax5)
                                             individual_record = Entrez.read(handle)
                                             handle.close()
-                                            all_seq_ids.extend(individual_record["IdList"])
+                                            all_seq_ids.update(individual_record["IdList"])
                                             print(f"Retrieved {len(individual_record['IdList'])} sequences for TaxID {taxid}")
                                     else:
-                                        all_seq_ids.extend(pair_record["IdList"])
+                                        all_seq_ids.update(pair_record["IdList"])
                                         print(f"Retrieved {len(pair_record['IdList'])} sequences for pair batch")
                             else:
-                                all_seq_ids.extend(mini_record["IdList"])
+                                all_seq_ids.update(mini_record["IdList"])
                                 print(f"Retrieved {len(mini_record['IdList'])} sequences for mini-batch")
                     else:
-                        all_seq_ids.extend(sub_record["IdList"])
+                        all_seq_ids.update(sub_record["IdList"])
                         print(f"Retrieved {len(sub_record['IdList'])} sequences for sub-batch")
             else:
-                # If initial batch is within Retmax1, add all IDs to results
-                all_seq_ids.extend(record["IdList"])
+                all_seq_ids.update(record["IdList"])
                 print(f"Retrieved {count} sequences for batch of 120 TaxIDs")
 
-            # Update counter and report progress
             taxid_count += len(taxid_batch)
             if taxid_count % 1000 == 0:
                 elapsed_time = time.time() - start_time
@@ -223,20 +213,40 @@ def download_nucleotide_viruses(viral_taxids):
 
         except Exception as e:
             print(f"Error retrieving batch: {e}")
-            time.sleep(5)  # Delay before retrying the batch
+            time.sleep(5)
 
-        # Remove processed taxids from the set to avoid reprocessing
         viral_taxids_set.difference_update(taxid_batch)
-        
-        # Small delay to respect NCBI server rate limits
         time.sleep(0.05)
 
     return all_seq_ids
 
-# Run the function to get all nucleotide sequence IDs using viral_taxids
-all_seq_ids = download_nucleotide_viruses(viral_taxids)
-print(f"Total unique sequence IDs retrieved: {len(all_seq_ids)}")
+# Secondary function for a general search excluding specific TaxIDs
+def general_search_excluding_taxids(excluded_taxids):
+    nuccore_search_query = f'(viruses[filter] AND ("1300"[SLEN] : "500000"[SLEN])) {species_exclusion_query}'
+    handle = Entrez.esearch(db="nuccore", term=nuccore_search_query, retmax=500000)
+    record = Entrez.read(handle)
+    handle.close()
+    
+    all_general_ids = set(record["IdList"])
+    print(f"Total IDs found in general search: {len(all_general_ids)}")
+    
+    # Remove IDs corresponding to excluded TaxIDs
+    return all_general_ids - excluded_taxids
 
+# Run the primary TaxID-based download
+all_seq_ids = download_nucleotide_viruses(viral_taxids)
+print(f"Total unique sequence IDs from TaxID search: {len(all_seq_ids)}")
+
+# Convert TaxID sequences to TaxID set for exclusion in general search
+taxid_seq_ids = set(all_seq_ids)
+
+# Run the secondary general search, excluding already downloaded TaxIDs
+additional_seq_ids = general_search_excluding_taxids(taxid_seq_ids)
+print(f"Total unique sequence IDs from general search: {len(additional_seq_ids)}")
+
+# Combine and deduplicate sequence IDs from both methods
+combined_seq_ids = list(all_seq_ids | additional_seq_ids)
+print(f"Total unique sequence IDs after combining: {len(combined_seq_ids)}")
 
 # Function to fetch summaries with retry logic
 def fetch_summary_with_retries(seq_id_batch, retries=3):
@@ -259,7 +269,7 @@ def fetch_summary_with_retries(seq_id_batch, retries=3):
 
 # Process sequence IDs in batches to retrieve TaxIDs with retry logic
 taxid_seq_ids = defaultdict(list)
-for seq_id_batch in batch(all_seq_ids, 500):
+for seq_id_batch in batch(combined_seq_ids, 500):
     records = fetch_summary_with_retries(seq_id_batch)
     if records is None:
         continue
@@ -274,7 +284,7 @@ print(f"Total unique TaxIDs (species): {len(taxid_seq_ids)}")
 # Select up to 60 sequences per species
 selected_seq_ids = []
 for taxid, ids in taxid_seq_ids.items():
-    selected_ids = ids[:60]
+    selected_ids = ids[:50]
     selected_seq_ids.extend(selected_ids)
 
 print(f"Total selected sequences: {len(selected_seq_ids)}")
