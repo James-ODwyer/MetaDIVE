@@ -705,7 +705,8 @@ Diamondrawhitsvirus <- Diamondrawhitsvirus2
   
   # repeat for contigs
   split_dfcontigs <- split(combined_virus_contigs_unique, combined_virus_contigs_unique$Species)
-  
+  names(split_dfcontigs) <- gsub("/", "_", names(split_dfcontigs))
+
   # Save each dataframe in the list as a separate text file
   for (category_value in names(split_dfcontigs)) {
     file_name <- paste0(directory, category_value, "/",category_value,"_contig_names.txt")
