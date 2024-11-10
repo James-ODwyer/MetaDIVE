@@ -98,7 +98,7 @@ rule unmapped_reads_diamond:
             --fast \
             --max-target-seqs 1 \
             -f 6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp \
-            --evalue 0.0001 \
+            --evalue 0.00001 \
             --threads {threads} \
             -o {output.diamondfile} \
             --memory-limit {params.diamondmem} \
@@ -113,7 +113,7 @@ rule unmapped_reads_diamond:
             --fast \
             --max-target-seqs 1 \
             -f 6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp \
-            --evalue 0.0001 \
+            --evalue 0.00001 \
             --threads {threads} \
             -o {output.diamondfile} \
             --memory-limit {params.diamondmem} \

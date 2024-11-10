@@ -532,28 +532,31 @@ allassignedfreqspreblastnfpcheckNas <- freqsummary
 
 i=1
 if (docontigfalseposrenamespecies == 'confirmed') {
-  if (nrow(Diamondhitsfp) >=1) {
-  	for(i in c(1:nrow(Diamondhitsfp))) {
-    
-	grep(paste0("^",Diamondhitsfp$qseqid[i],"$"),freqsummary$contig) -> idxval2
-	superkindombefore <- freqsummary$superkingdom[idxval2]
-	superkindomafter <- Diamondhitsfp[i,12]
-
-if (!is.na(superkindombefore) && !is.na(superkindomafter) && superkindombefore != superkindomafter) {
-  # Both values are not NA and they are different
-  print(paste0("The superkingdoms of the blastx and blastn do not match."))
-  print(paste0("Changing best blastx to blastn, resulting in ", freqsummary[idxval2, 11], " changing to ", Diamondhitsfp[i, 19]))
-}
-    freqsummary[idxval2,4:11] <- Diamondhitsfp[i,12:19]
-    freqsummary[idxval2,12:13] <- Diamondhitsfp[i,3:4]
-    freqsummary[idxval2,3] <- "Blastn"
-
-	
-	
+  if (nrow(Diamondhitsfp) >= 1) {
+    for (i in c(1:nrow(Diamondhitsfp))) {
+      
+      idxval2 <- grep(paste0("^", Diamondhitsfp$qseqid[i], "$"), freqsummary$contig)
+      
+      # Check if idxval2 is not empty before accessing elements in freqsummary
+      if (length(idxval2) > 0) {
+        superkingombefore <- freqsummary$superkingdom[idxval2]
+        superkingomafter <- Diamondhitsfp[i, 12]
+        
+        # Check if both superkingombefore and superkingomafter are non-empty and not NA
+        if (!is.na(superkingombefore) && !is.na(superkingomafter) && superkingombefore != superkingomafter) {
+          # Both values are not NA and they are different
+          print(paste0("The superkingdoms of the blastx and blastn do not match."))
+          print(paste0("Changing best blastx to blastn, resulting in ", freqsummary[idxval2, 11], " changing to ", Diamondhitsfp[i, 19]))
+        }
+        
+        # Update freqsummary only if idxval2 is valid
+        freqsummary[idxval2, 4:11] <- Diamondhitsfp[i, 12:19]
+        freqsummary[idxval2, 12:13] <- Diamondhitsfp[i, 3:4]
+        freqsummary[idxval2, 3] <- "Blastn"
+      }
+    }
   }
-  }
 }
-
 
 
 

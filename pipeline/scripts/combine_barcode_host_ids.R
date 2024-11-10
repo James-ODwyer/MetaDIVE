@@ -41,8 +41,11 @@ inputLSU$value <- (LSUweight * inputLSU$percentage_reads_total_from_marker)
 
 allinputs <- rbind(inputCO1,inputSSU,inputLSU)
 
+
+
 summaryvalues <- aggregate(allinputs$value, by=list(Species=allinputs$species), FUN=sum)
 
+if(nrow(summaryvalues) >=1) {
 summaryvaluesordered <- summaryvalues[order(-summaryvalues$x),]
 
 
@@ -50,3 +53,13 @@ top_host_species <- summaryvaluesordered$Species[1]
 
 write.table(top_host_species,file=(paste0(outtablespath,NAMES,"_top_host_species_overall.txt")), sep="\t",quote = FALSE, row.names = FALSE, col.names = FALSE)
 write.table(summaryvaluesordered,file=(paste0(outtablespath,NAMES,"_top_host_scaled_host_info.txt")),sep="\t",quote = FALSE, row.names = FALSE, col.names = TRUE)
+
+}
+
+if(nrow(summaryvalues) ==0) {
+top_host_species <- "No species assigned due to insufficient reads in any marker"
+write.table(top_host_species,file=(paste0(outtablespath,NAMES,"_top_host_species_overall.txt")), sep="\t",quote = FALSE, row.names = FALSE, col.names = FALSE)
+write.table(summaryvalues,file=(paste0(outtablespath,NAMES,"_top_host_scaled_host_info.txt")),sep="\t",quote = FALSE, row.names = FALSE, col.names = TRUE)
+
+
+}

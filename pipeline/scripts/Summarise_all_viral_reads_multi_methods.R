@@ -121,7 +121,8 @@ if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
     
   }
   
-  
+
+
   
   Combined_assigned_contigs_viruses_species_summary <- Combined_assigned_contigs_viruses_only %>%
     group_by(species) %>%
@@ -137,7 +138,7 @@ if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
   
   Combined_assigned_contigs_viruses_only$complexity_score <- as.numeric(Combined_assigned_contigs_viruses_only$complexity_score)
 
-save.image("testing_combinedrawscontigs.Rdata")
+
 
   
   for (i in c(1:nrow(Viraltop100))) {
@@ -319,7 +320,8 @@ if (BOTHMISSING =="NO") {
   virus_all$length <- as.numeric(virus_all$length)
   
 
-  
+
+
   colourise <- function(value, column) {
     if (column == "reads_assigned_through_contigs") {
       if (value >= 50) {
@@ -538,7 +540,8 @@ if (BOTHMISSING =="NO") {
 
   }
   
-  
+
+ 
   
   virus_all$classification_level_estimate <- coloured_data$classification_level_estimate
   virus_all$confidence_of_assignment_as_virus <- coloured_data$confidence_of_assignment_as_virus
@@ -685,7 +688,10 @@ Diamondrawhitsvirus <- Diamondrawhitsvirus2
   
   # Split the dataframe into a list of dataframes based on the values in the category column
   split_dfraws <- split(combined_virus_reads_unique, combined_virus_reads_unique$Species)
-  
+
+# Some names have slashes in them which mess with the directory creation so change them to underscores
+  names(split_dfraws) <- gsub("/", "_", names(split_dfraws))
+
   # Save each dataframe in the list as a separate text file
   for (category_value in names(split_dfraws)) {
     file_name <- paste0(directory, category_value, "/",category_value,"_read_names.txt")
