@@ -98,7 +98,7 @@ rule unmapped_reads_diamond:
             --fast \
             --max-target-seqs 1 \
             -f 6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp \
-            --evalue 0.0001 \
+            --evalue 0.00001 \
             --threads {threads} \
             -o {output.diamondfile} \
             --memory-limit {params.diamondmem} \
@@ -113,7 +113,7 @@ rule unmapped_reads_diamond:
             --fast \
             --max-target-seqs 1 \
             -f 6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp \
-            --evalue 0.0001 \
+            --evalue 0.00001 \
             --threads {threads} \
             -o {output.diamondfile} \
             --memory-limit {params.diamondmem} \
@@ -180,7 +180,7 @@ rule generate_kraken_raws:
         readslist = config["sub_dirs"]["Kraken_viral_ids"] + "/{sample}_raw_read_names_to_virus.txt"
     params:
         krakendb = config["Kraken_database"],
-        reads_threshold = config["Raw_reads_max"]
+        reads_threshold = config["Raw_reads_max_kraken"]
     log:
         "logs/" + config["sub_dirs"]["Kraken_viral_ids"] + "/{sample}.log"
     threads: 2
@@ -232,13 +232,13 @@ rule check_results_in_blastn:
             mkdir {params.blastnfolder}
         fi && \
         cat {input.readslist} {input.readslist2} > {output.readslistcomb} && \
-        zcat {input.R1} | grep --no-group-separator -A 3 -F -f "{output.readslistcomb}" > {output.fastqreads} && \
-        zcat {input.R2} | grep --no-group-separator -A 3 -F -f "{output.readslistcomb}" >> {output.fastqreads} && \
+        zcat {input.R1} | grep --no-group-separator -A 3 -w -F -f "{output.readslistcomb}" > {output.fastqreads} && \
+        zcat {input.R2} | grep --no-group-separator -A 3 -w -F -f "{output.readslistcomb}" >> {output.fastqreads} && \
         lengthunassigned=(`wc -l {output.readslistcomb}`) && \
         if [ ${{lengthunassigned}} -ge 1 ]
         then
         seqtk seq -a {output.fastqreads} > {output.fastareads}
-        cd-hit -i {output.fastareads} -o {output.fasta_clust} -c 0.99 -n 5 -T {threads} -d 0 -M 14000
+        cd-hit -i {output.fastareads} -o {output.fasta_clust} -c 0.97 -n 5 -T {threads} -d 0 -M 14000
         lengthreads=(`wc -l {output.fasta_clust}`) && \
         lengthreads2=$(( $lengthreads / 2)) && \
         if [ ${{lengthreads2}} -gt {params.reads_threshold} ]
@@ -251,12 +251,12 @@ rule check_results_in_blastn:
         fi && \
         blastn -query {output.fasta_clust_subset} \
             -db {params.blastdb} \
-            -evalue 0.01 \
+            -evalue 0.001 \
             -max_target_seqs 1 \
             -max_hsps 1 \
             -outfmt '6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp' \
             -num_threads {threads} \
-            -word_size 22 \
+            -word_size 25 \
             -out {output.blastfile} \
             2> {log}
         fi && \
