@@ -320,7 +320,7 @@ rule generate_kraken_contigs:
     output:
         krakenout = config["sub_dirs"]["Kraken_viral_ids_contigs"] + "/{sample}_kraken_output.txt",
         krakenreport = config["sub_dirs"]["Kraken_viral_ids_contigs"] + "/{sample}_kraken_report.txt",
-        readslist2 = config["sub_dirs"]["Kraken_viral_ids_contigs"] + "/{sample}_contigs_to_virus.txt"
+        readslist = config["sub_dirs"]["Kraken_viral_ids_contigs"] + "/{sample}_contigs_to_virus.txt"
     params:
         krakendb= config["Kraken_database"]
     log:
@@ -333,14 +333,8 @@ rule generate_kraken_contigs:
         "benchmarks/" + config["sub_dirs"]["Kraken_viral_ids_contigs"] + "/{sample}.txt"
     shell:
         """
-        kraken2 --db {params.krakendb} \
-            --threads {threads} \
-            --minimum-hit-groups 11 \
-            --report {output.krakenreport} \
-            --output {output.krakenout} \
-            {input} \
-            2> {log} && \
-        awk '$1 == "C" {{print $2}}' "{output.krakenout}" > {output.readslist2}
+        bash scripts/run_kraken2_contigs_iterations.sh \
+            {params.krakendb} {threads} {output.krakenreport} {output.krakenout} {input} {output.readslist} {log}
         """
 
 # I had iterate on in the bash script but it appears the function was only introduced in 2.0.9. the latest anaconda version of Diamond is 2.0.8 

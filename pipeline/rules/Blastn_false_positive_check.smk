@@ -57,9 +57,9 @@ rule false_positive_check_blastn:
         blastnfolder = config["sub_dirs"]["contigs_nucl_false_pos_check"]
     log:
         "logs/" + config["sub_dirs"]["contigs_nucl_false_pos_check"] + "/{sample}.log"
-    threads: 6
+    threads: 4
     resources:
-        mem_mb=20000
+        mem_mb=32000
     benchmark:
         "benchmarks/" + config["sub_dirs"]["contigs_nucl_false_pos_check"] + "/{sample}.txt"
     shell:
@@ -73,8 +73,8 @@ rule false_positive_check_blastn:
         then
         blastn -query {input.virus_contigs} \
             -db {params.blastdb} \
-            -evalue 0.0001 \
-            -max_target_seqs 10 \
+            -evalue 0.00001 \
+            -max_target_seqs 4 \
             -max_hsps 1 \
             -outfmt '6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp' \
             -num_threads {threads} \

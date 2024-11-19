@@ -98,7 +98,7 @@ rule unmapped_reads_diamond:
             --fast \
             --max-target-seqs 1 \
             -f 6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp \
-            --evalue 0.00001 \
+            --evalue 0.0001 \
             --threads {threads} \
             -o {output.diamondfile} \
             --memory-limit {params.diamondmem} \
@@ -113,7 +113,7 @@ rule unmapped_reads_diamond:
             --fast \
             --max-target-seqs 1 \
             -f 6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp \
-            --evalue 0.00001 \
+            --evalue 0.0001 \
             --threads {threads} \
             -o {output.diamondfile} \
             --memory-limit {params.diamondmem} \
@@ -194,7 +194,6 @@ rule generate_kraken_raws:
         bash scripts/run_kraken2_raws_iterations.sh \
             {params.krakendb} {threads} {output.krakenreport} {output.krakenout} {input.R1} {input.R2} {output.readslist} {params.reads_threshold} {log}
         """
-
 
 rule check_results_in_blastn:
     message:
