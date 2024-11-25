@@ -245,11 +245,14 @@ rule trinity_assembly:
         R2_temp = temp(config["sub_dirs"]["contig_dir_trinity"] + "/{sample}_R2_trinity.fastq"),
         contigsfile = config["sub_dirs"]["contig_dir_trinity"] + "/{sample}_trinity.Trinity.fasta"
     params:
-        temptrinitypath = config["Trinitytemppath"] + "/{sample}_trinity",
+        temptrinitypath = config["Trinitytemppath"] + "{sample}_trinity",
         trinity_file = ".Trinity.fasta",
         Assembly_size = config["Assembly_size"],
         trinitymemory = trinity_memtot,
-        GCthreads = trinity_mem_GCs
+        GCthreads = trinity_mem_GCs,
+        memstore = config["Use_memory_as_storage"],
+        memdir = config["Memory_directory_location"],
+        memdirsampnum = "/{sample}/read_partitions"
     log:
         "logs/" + config["sub_dirs"]["contig_dir_trinity"] + "/{sample}.log"
     threads: 6
@@ -264,17 +267,37 @@ rule trinity_assembly:
         """
         zcat {input.R1} | awk '/^@/ {{print $0"/1"}} !/^@/ {{print $0}}' > {output.R1_temp} && \
         zcat {input.R2} | awk '/^@/ {{print $0"/2"}} !/^@/ {{print $0}}' > {output.R2_temp} && \
-        Trinity --left {output.R1_temp} --right {output.R2_temp} \
-            --seqType fq \
-            --full_cleanup \
-            --CPU {threads} \
-            --max_memory {params.trinitymemory}G \
-            --min_contig_length {params.Assembly_size} \
-            --normalize_reads \
-            --bflyHeapSpaceMax 10G \
-            --bflyGCThreads {params.GCthreads} \
-            --output {params.temptrinitypath} \
-            2> {log} && \
+        if [ "{params.memstore}" == "yes" ]; then
+            rm -f {params.temptrinitypath}
+            mkdir -p {params.memdir}/{params.memdirsampnum}
+            mkdir -p {params.temptrinitypath}
+            echo " the memory directory is at {params.memdir} file path "
+            ln -s {params.memdir}/{params.memdirsampnum} {params.temptrinitypath}/read_partitions
+            Trinity --left {output.R1_temp} --right {output.R2_temp} \
+                --seqType fq \
+                --full_cleanup \
+                --CPU {threads} \
+                --max_memory {params.trinitymemory}G \
+                --min_contig_length {params.Assembly_size} \
+                --normalize_reads \
+                --bflyHeapSpaceMax 10G \
+                --bflyGCThreads {params.GCthreads} \
+                --output {params.temptrinitypath} \
+                2> {log}
+        fi && \
+        if [ "{params.memstore}" != "yes" ]; then
+            Trinity --left {output.R1_temp} --right {output.R2_temp} \
+                --seqType fq \
+                --full_cleanup \
+                --CPU {threads} \
+                --max_memory {params.trinitymemory}G \
+                --min_contig_length {params.Assembly_size} \
+                --normalize_reads \
+                --bflyHeapSpaceMax 10G \
+                --bflyGCThreads {params.GCthreads} \
+                --output {params.temptrinitypath} \
+                2> {log}
+        fi && \
         mv {params.temptrinitypath}{params.trinity_file} {output.contigsfiletemp} && \
         reformat.sh in={output.contigsfiletemp} out={output.contigsfile} trd=t
         """

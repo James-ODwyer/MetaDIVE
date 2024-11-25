@@ -136,6 +136,24 @@ NCBI_API_KEY: 'b81d4cea18edf2ff96dd6aeb096d6eb56009'
 
 Assembly_choice: 'Megahit'
 
+
+# These below two settings are currently only implemented for Trinity runs. As trinity can create up to a million intermediate files of near zero size
+# this can crash a computer/compute cluster by breaking its read/write capacity/rate. One solution to this is to get trinity to 
+# write to store these files in memory instead of physically writing them. As they are so small typically all files can be stored on
+# only ~12GB of memory and can create significant speed ups to a trinity run.
+# This requires this to be possible on your HPC system if you use it. It is currently hard coded to sym link (ln -s ) to the memory 
+# directory in the snakemake rule.
+# consider whether you have a global variable for the memory directory  e.g., $MEMDIR that you can put in to the file directly, or
+# if there is a hard code path for where the memdir is if there is one. if there is neither of these, utilising  the memdir will not 
+# be feasible for you with the current shell scripts used. If you have any ideas on how to define the $MEMDIR in specific/general use
+# cases in shell script that can be implemented in later iterations
+
+Use_memory_as_storage: 'yes'
+Memory_directory_location: $MEMDIR
+
+
+
+
 # Assembly contig minimum size: This is the minimum size in base pairs for assembled genome fragments created from the paired end reads (smaller size allows for more reads to be assembled
 # but smaller size requires significantly more memory and extends analysis time. Lastly very small sized contigs can lead to increased false positives).
 Assembly_size: '301'

@@ -104,6 +104,20 @@ readLines(xargs$SSU_bowtie) -> bowtieSSUfile
 paste0(NAMES,"length bowtie SSU ", length(bowtieSSUfile))
 
 
+# Function for reading in blast results tables which prevents errors associated with special characters in the species name
+	replace_newline_within_quotes <- function(line) {
+	  parts <- strsplit(line, "\"")[[1]]
+	  for (i in seq_along(parts)) {
+	    if (i %% 2 == 0) {
+	      parts[[i]] <- gsub("\n", " ", parts[[i]])
+	    }
+	  }
+	  paste(parts, collapse = "\"")
+	}
+
+
+
+
 
 summary_reads_table <- as.data.frame(matrix(nrow=1, ncol=12))
 
@@ -325,8 +339,35 @@ rm(bowtieCO1file,bowtieLSUfile,bowtieSSUfile,fastpfile)
 
 Diamondpresence <-readLines(xargs$Diamondtab)
 if (length(Diamondpresence) >=1) {
-  Diamondhits <- read.table(file=xargs$Diamondtab, sep="\t",header=TRUE,row.names=NULL, fill=TRUE,quote="")
+
+	modified_lines <- lapply(Diamondpresence, replace_newline_within_quotes)
+	modified_lines  <- unlist(modified_lines)
+	modified_lines <- modified_lines[sapply(modified_lines, function(x) length(strsplit(x, "\t")[[1]]) > 1)]
+	# Read the modified lines using read.table
+	Diamondhits <- read.table(text = modified_lines, sep = "\t", header = TRUE, stringsAsFactors = FALSE, quote = "\"", comment.char = "")
+
+	# Replace the unique character sequence back to '\n' within the dataframe
+	Diamondhits[] <- lapply(Diamondhits, function(col) gsub("###NEWLINE###", "\n", col))
+
+	rm(modified_lines)
+
+#Diamondhits <- read.table(file=xargs$Diamondtab, sep="\t",header=TRUE,row.names=NULL, fill=TRUE,quote="")
+
   paste0(NAMES," dim Diamondhits ", dim(Diamondhits))
+
+colnames(Diamondhits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp", "multiplesp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species", "subspecies")
+
+Diamondhits$pident <- as.numeric(Diamondhits$pident)
+Diamondhits$length<- as.numeric(Diamondhits$length)
+Diamondhits$qcovhsp<- as.numeric(Diamondhits$qcovhsp)
+
+
+# Diamond returns values as aa smiliarity, convert alignment lengths to nt
+Diamondhits<- Diamondhits%>% 
+  mutate(length = length * 3)
+
+
+
 }
 if (length(Diamondpresence) ==0) {
   Diamondhits <- as.data.frame(matrix(nrow=0,ncol=19))
@@ -335,7 +376,20 @@ if (length(Diamondpresence) ==0) {
 
 blastnpresence <-readLines(xargs$Blastntab)
 if (length(blastnpresence) >=1) {
-  Blastnhits <- read.table(file=xargs$Blastntab, sep="\t",header=TRUE,row.names=NULL, fill=TRUE,quote="")
+
+	modified_lines <- lapply(blastnpresence, replace_newline_within_quotes)
+	modified_lines  <- unlist(modified_lines)
+	modified_lines <- modified_lines[sapply(modified_lines, function(x) length(strsplit(x, "\t")[[1]]) > 1)]
+	# Read the modified lines using read.table
+	Blastnhits <- read.table(text = modified_lines, sep = "\t", header = TRUE, stringsAsFactors = FALSE, quote = "\"", comment.char = "")
+
+	# Replace the unique character sequence back to '\n' within the dataframe
+	Blastnhits[] <- lapply(Blastnhits, function(col) gsub("###NEWLINE###", "\n", col))
+
+	rm(modified_lines)
+
+
+  #Blastnhits <- read.table(file=xargs$Blastntab, sep="\t",header=TRUE,row.names=NULL, fill=TRUE,quote="")
   paste0(NAMES," dim Blastnhits ", dim(Blastnhits))
 }
 if (length(blastnpresence) ==0) {
@@ -344,11 +398,11 @@ if (length(blastnpresence) ==0) {
 }
 
 colnames(Blastnhits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp", "multiplesp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species", "subspecies")
-colnames(Diamondhits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp", "multiplesp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species", "subspecies")
 
-# Diamond returns values as aa smiliarity, convert alignment lengths to nt
-Diamondhits<- Diamondhits%>% 
-  mutate(length = length * 3)
+Blastnhits$pident <- as.numeric(Blastnhits$pident)
+Blastnhits$length<- as.numeric(Blastnhits$length)
+Blastnhits$qcovhsp<- as.numeric(Blastnhits$qcovhsp)
+
 
 
 # adding in check for if any viral contigs were returned after false positive check. This will get it to point where it can be read in to summarise all reads and raws. (Combined_assigned_contigsfp)
@@ -356,12 +410,30 @@ Diamondhits<- Diamondhits%>%
 if ( docontigfalsepos == 'yes') {
   Diamondpresencefp <-readLines(xargs$falseposcontigsrem)
   if (length(Diamondpresencefp) >=1) {
-    Diamondhitsfp <- read.table(file=xargs$falseposcontigsrem, sep="\t",header=TRUE,row.names=NULL, fill=TRUE,quote="")
+
+	modified_lines <- lapply(Diamondpresencefp, replace_newline_within_quotes)
+	modified_lines  <- unlist(modified_lines)
+	modified_lines <- modified_lines[sapply(modified_lines, function(x) length(strsplit(x, "\t")[[1]]) > 1)]
+	# Read the modified lines using read.table
+	Diamondhitsfp <- read.table(text = modified_lines, sep = "\t", header = TRUE, stringsAsFactors = FALSE, quote = "\"", comment.char = "")
+
+	# Replace the unique character sequence back to '\n' within the dataframe
+	Diamondhitsfp[] <- lapply(Diamondhitsfp, function(col) gsub("###NEWLINE###", "\n", col))
+
+	rm(modified_lines)
+
+
+    #Diamondhitsfp <- read.table(file=xargs$falseposcontigsrem, sep="\t",header=TRUE,row.names=NULL, fill=TRUE,quote="")
     paste0(NAMES," dim Diamondhits after false positive check ", dim(Diamondhitsfp))
     
     colnames(Diamondhitsfp) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp", "multiplesp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species","subspecies")
-    Diamondhitsfp <- Diamondhitsfp%>% 
-      mutate(length = length * 3)
+	Diamondhitsfp$pident <- as.numeric(Diamondhitsfp$pident)
+	Diamondhitsfp$length<- as.numeric(Diamondhitsfp$length)
+	Diamondhitsfp$qcovhsp<- as.numeric(Diamondhitsfp$qcovhsp)
+   
+
+	 Diamondhitsfp <- Diamondhitsfp%>% 
+      		mutate(length = length * 3)
     
     
   }
@@ -371,6 +443,7 @@ if ( docontigfalsepos == 'yes') {
     colnames(Diamondhitsfp) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp", "multiplesp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species", "subspecies")
   }
   
+
   
   Combined_assigned_contigsfp <- rbind(Diamondhitsfp,Blastnhits)
   
@@ -1139,12 +1212,21 @@ if (dodiamondraws == 'yes') {
   Diamondrawpresence <-readLines(xargs$diamondrawskingdoms)
   if (length(Diamondrawpresence >=1)) {
     
-    Diamondrawshits <- read.table(file=xargs$diamondrawskingdoms, sep="\t",header=TRUE,row.names=NULL, fill=TRUE)
+	modified_lines <- lapply(Diamondrawpresence, replace_newline_within_quotes)
+	modified_lines  <- unlist(modified_lines)
+	modified_lines <- modified_lines[sapply(modified_lines, function(x) length(strsplit(x, "\t")[[1]]) > 1)]
+	# Read the modified lines using read.table
+	Diamondrawshits <- read.table(text = modified_lines, sep = "\t", header = TRUE, stringsAsFactors = FALSE, quote = "\"", comment.char = "")
+
+	# Replace the unique character sequence back to '\n' within the dataframe
+	Diamondrawshits[] <- lapply(Diamondrawshits, function(col) gsub("###NEWLINE###", "\n", col))
+
+	rm(modified_lines)
+
     paste0(NAMES," dim Diamondrawshits ", dim(Diamondrawshits))
     
     
     colnames(Diamondrawshits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species","subspecies")
-    
     
   }
   if (length(Diamondrawpresence) ==0) {
@@ -1156,6 +1238,11 @@ if (dodiamondraws == 'yes') {
   
   # Diamond returns length alignments as aa length, convert to nucleotide length
   
+Diamondrawshits$pident <- as.numeric(Diamondrawshits$pident)
+Diamondrawshits$length<- as.numeric(Diamondrawshits$length)
+Diamondrawshits$qcovhsp<- as.numeric(Diamondrawshits$qcovhsp)
+
+
   Diamondrawshits<- Diamondrawshits%>% 
     mutate(length = length * 3)
   
