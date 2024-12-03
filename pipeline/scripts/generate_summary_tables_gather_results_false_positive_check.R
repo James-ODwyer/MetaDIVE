@@ -34,9 +34,6 @@ outtablespath <- paste0(basepath,resultspath)
 
 
 
-
-
-
 blastnfalsepospresence <-readLines(xargs2$inputblastn_results)
 
 if (length(blastnfalsepospresence) >=1) {

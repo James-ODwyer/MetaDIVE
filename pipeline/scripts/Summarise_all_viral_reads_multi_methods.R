@@ -38,6 +38,7 @@ outtablespathcompile <- paste0(basepath,resultspath)
 outtablespath <- paste0(basepath,resultspath)
 
 
+
 # working script for summary final virus reads detection
 
 # The intention of this R script is to 
@@ -121,7 +122,6 @@ if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
     
   }
   
-
 
   
   Combined_assigned_contigs_viruses_species_summary <- Combined_assigned_contigs_viruses_only %>%
@@ -218,7 +218,6 @@ if (file.info(viralcomplexity)$size >= 350) {
   
   
 }
-
 
 if (file.info(viralcomplexity)$size < 350) {
   
@@ -702,11 +701,11 @@ Diamondrawhitsvirus <- Diamondrawhitsvirus2
     write.table(Readnames, file = file_name, sep = "\t", row.names = FALSE,col.names=FALSE,quote = FALSE)
   }
   
-  
+
   # repeat for contigs
   split_dfcontigs <- split(combined_virus_contigs_unique, combined_virus_contigs_unique$Species)
-  names(split_dfcontigs) <- gsub("/", "_", names(split_dfcontigs))
-
+names(split_dfcontigs) <- gsub("/", "_", names(split_dfcontigs))
+  
   # Save each dataframe in the list as a separate text file
   for (category_value in names(split_dfcontigs)) {
     file_name <- paste0(directory, category_value, "/",category_value,"_contig_names.txt")

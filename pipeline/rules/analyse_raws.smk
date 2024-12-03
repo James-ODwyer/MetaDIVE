@@ -452,27 +452,28 @@ rule extract_reads_and_contigs:
         "benchmarks/" + config["sub_dirs"]["compiled_summary"] + "/{sample}_extracting_reads.txt"
     threads: 1
     resources:
-        mem_mb=2000
+        mem_mb=4000
     shell:
         """
-        directories=$(ls -d {params.wrkdir}/*/) && \
-        for dir in $directories; do
-        if [[ ! ${{dir}} =~ _virusall_datatable_files ]]; then
-        filtered_directories+=("${{dir}}")
-        fi
-        done
-        for path in ${{filtered_directories[@]}}; do
-        reads=$(ls ${{path}}*read_names*) && \
-        if [ -n "${{reads}}" ]; then
-        name=$(basename "${{reads}}" | sed 's/_read_names\.txt$//') && \
-        zcat {input.R1} | grep -F -A 3 --no-group-separator -f ${{reads}} | gzip > ${{path}}${{name}}_reads_R1.fastq.gz && \
-        zcat {input.R2} | grep -F -A 3 --no-group-separator -f ${{reads}} | gzip > ${{path}}${{name}}_reads_R2.fastq.gz && \
-        contigs=$(find "${{path}}" -name "*contig_names*")
-        fi && \
-        if [ -n "${{contigs}}" ]; then
-        cat ${{contigs}} | cut -f 1 > ${{contigs}}temp.txt && \
-        seqkit grep -f ${{contigs}}temp.txt {input.contigfile} > ${{path}}${{name}}_contigs.fasta
-        fi 
+        filtered_directories=()
+        for dir in {params.wrkdir}/*/; do
+            [[ ${{dir}} != *_virusall_datatable_files/ ]] && filtered_directories+=("${{dir}}")
+        done && \
+        for path in "${{filtered_directories[@]}}"; do
+            reads=("${{path}}"*read_names*)
+            contigs=("${{path}}"*contig_names*)
+            if [[ -f "${{reads[0]}}" ]]; then
+                read_file="${{reads[0]}}"
+                name=${{read_file%_read_names.txt}}
+                name=${{name##*/}}
+                zcat {input.R1} | grep -F -A 3 --no-group-separator -f "${{read_file}}" | gzip > "${{path}}${{name}}_reads_R1.fastq.gz"
+                zcat {input.R2} | grep -F -A 3 --no-group-separator -f "${{read_file}}" | gzip > "${{path}}${{name}}_reads_R2.fastq.gz"
+            fi
+            if [[ -f "${{contigs[0]}}" ]]; then
+                contig_file="${{contigs[0]}}"
+                cut -f 1 "${{contig_file}}" > "${{contig_file}}temp.txt"
+                seqkit grep -f "${{contig_file}}temp.txt" {input.contigfile} > "${{path}}${{name}}_contigs.fasta"
+            fi
         done && \
         touch {output.finished}
         """

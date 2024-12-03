@@ -17,7 +17,7 @@ library(viridis)
 library(hrbrthemes)
 library(reshape2)
 library(scales)
-
+library(data.table)
 
 
 
@@ -48,6 +48,7 @@ intablespath <- paste0(basepath,inputdir)
 # combined figure generation.
 
 
+save.image("testing_combined_graphs_generation_fp.Rdata")
   
   summaryreturnedhitsfromcontigs <- list.files(path = intablespath, pattern = "summarycontighits_assigned_assembly_including_blastn_false_positive_check", all.files = FALSE,
                                                full.names = TRUE, recursive = FALSE,
@@ -63,7 +64,9 @@ virlist <- list()
 
 for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
   
-  Resultstable <- read.table(summaryreturnedhitsfromcontigs[i],header = TRUE,sep = "\t")
+
+  Resultstable <- fread(summaryreturnedhitsfromcontigs[i],header = TRUE,sep = "\t",quote="")
+  Resultstable <- as.data.frame(Resultstable)
   sampname <- gsub(".*\\/" , x=summaryreturnedhitsfromcontigs[i],replacement="")
   sampname <- gsub("_summarycontig.*",x=sampname,replacement="")
   Resultstable <- subset(Resultstable, !(is.na(Resultstable$contigassignment) & is.na(Resultstable$blastn_alternate_superkingdom_id)))
