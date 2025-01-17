@@ -430,11 +430,7 @@ if ( docontigfalsepos == 'yes') {
 	Diamondhitsfp$pident <- as.numeric(Diamondhitsfp$pident)
 	Diamondhitsfp$length<- as.numeric(Diamondhitsfp$length)
 	Diamondhitsfp$qcovhsp<- as.numeric(Diamondhitsfp$qcovhsp)
-   
-
-	 Diamondhitsfp <- Diamondhitsfp%>% 
-      		mutate(length = length * 3)
-    
+       
     
   }
   if (length(Diamondpresencefp) ==0) {

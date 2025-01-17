@@ -291,7 +291,7 @@ rule align_all_returned_LSU:
         then 
         mkdir -p {params.tempqueryDBlocation} 
         fi && \
-        length=(`grep -c -v "^@" {input.samposnohead}`) && \
+        length=$(grep -c -v "^@" {input.samposnohead} 2>/dev/null || echo 0) && \
         if [ ${{length}} -ge 1 ]
         then
         seqtk sample -s2468 {input.R1spos} 100000 > {output.R1poshitssub} && \
@@ -346,9 +346,9 @@ rule align_all_returned_SSU:
         then 
         mkdir -p {params.tempqueryDBlocation} 
         fi && \
-        length=(`grep -c -v "^@" {input.samposnohead}`) && \
-        if [ ${{length}} -ge 1 ]
-        then
+        length=$(grep -c -v "^@" {input.samposnohead} 2>/dev/null || echo 0) && \
+        if [ ${{length}} -ge 1 ] 
+        then 
         seqtk sample -s2468 {input.R1spos} 100000 > {output.R1poshitssub} && \
         seqtk sample -s2468 {input.R2spos} 100000 > {output.R2poshitssub} && \
         mmseqs createdb {output.R1poshitssub} {output.R1poshitssub} {params.tempqueryDBfile} --dbtype 2 && \
@@ -356,10 +356,10 @@ rule align_all_returned_SSU:
             -s 1.0 --max-seqs 65 --threads {threads} --search-type 3 --tax-lineage 1 --split 2 --split-memory-limit 20G --remove-tmp-files 1 && \
         mmseqs createtsv {params.tempqueryDBfile} {params.taxresult} {output.taxresulttsv} && \
         mmseqs taxonomyreport {params.SSUgenome} {params.taxresult} {output.taxresultkraken} --threads {threads} && \
-        rm -r {params.tempqueryDBlocation}
+        rm -r {params.tempqueryDBlocation} 
         fi && \
-        if [ ${{length}} -eq 0 ]
-        then
+        if [ ${{length}} -eq 0 ] 
+        then 
         echo " No hits were found for this barcode marker region. This may indicate there is insufficient information to determine host from just barcode markers and manual inspection of results is recommended. Pipeline will still attempt host identification but consider the likely accuracy of the chosen host "
         fi && \
         touch {output.R1poshitssub} && \
@@ -434,10 +434,21 @@ rule Generate_figures_LSU_mapping:
     threads: 1
     shell:
         """
+        length=(`wc -l {input.taxresultkraken}`) && \
+        if [ ${{length}} -ge 1 ]
+        then
         Rscript {config[program_dir]}scripts/Generate_LCAs_barcode_markers.R \
             --inputtax {input.taxresultkraken} --name {params.samplename} --outputpath {params.wrkdir} \
             --programdir {params.basedir} --marker {params.marker} \
-            --host {params.nHost} && \
+            --host {params.nHost} 
+        fi && \
+        if [ ${{length}} -eq 0 ]
+        then
+        Rscript {config[program_dir]}scripts/emptyLCAs.R \
+            --inputtax {input.taxresultkraken} --name {params.samplename} --outputpath {params.wrkdir} \
+            --programdir {params.basedir} --marker {params.marker} \
+            --host {params.nHost} 
+        fi && \
         touch {output.sampfinished}
         """
 
@@ -465,10 +476,21 @@ rule Generate_figures_SSU_mapping:
     threads: 1
     shell:
         """
+        length=(`wc -l {input.taxresultkraken}`) && \
+        if [ ${{length}} -ge 1 ]
+        then
         Rscript {config[program_dir]}scripts/Generate_LCAs_barcode_markers.R \
             --inputtax {input.taxresultkraken} --name {params.samplename} --outputpath {params.wrkdir} \
             --programdir {params.basedir} --marker {params.marker} \
-            --host {params.nHost} && \
+            --host {params.nHost} 
+        fi && \
+        if [ ${{length}} -eq 0 ]
+        then
+        Rscript {config[program_dir]}scripts/emptyLCAs.R \
+            --inputtax {input.taxresultkraken} --name {params.samplename} --outputpath {params.wrkdir} \
+            --programdir {params.basedir} --marker {params.marker} \
+            --host {params.nHost} 
+        fi && \
         touch {output.sampfinished}
         """
 
