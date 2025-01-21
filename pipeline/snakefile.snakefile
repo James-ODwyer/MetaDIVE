@@ -51,6 +51,7 @@ include: os.path.join(rules_dir, "assembly_analysis.smk")
 if config["Host_filter"] == 'yes':
     rule_all_input_list.extend(rule_all_host_removal)
     include: os.path.join(rules_dir, "identify_host_sp.smk")
+    include: os.path.join(rules_dir, "Microbiome_advanced.smk")
     print("The host species will be identified and filtered out before main analysis")
 
 if DNA_analysis == 'yes':
