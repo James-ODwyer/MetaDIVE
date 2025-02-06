@@ -1,36 +1,23 @@
 #!/bin/bash 
-#SBATCH --account=OD-229285
-#SBATCH --job-name TaxonKit_IDs
-#SBATCH --nodes 1
-#SBATCH --ntasks-per-node 1
-#SBATCH --cpus-per-task 1
-#SBATCH --mem 1G
-#SBATCH --time 1:00:00
 
 
-
-while getopts 'a:i:o:' c
+while getopts 'a:i:o:p:' c
 do
   case $c in
     a) diamond_output=$OPTARG ;;
     i) taxonkit_db=$OPTARG ;;
     o) updated_output=$OPTARG ;;
+    p) threads=$OPTARG ;;
   esac
 done
 
 
 
 # Script to add missing taxids into correct spots using TaxonKit
+current_date_time="`date "+%Y-%m-%d %H:%M:%S"`";
+echo " starting first stage of identification $current_date_time "
 
 
-# Note, still need to confirm argparse is downloaded in RdataplottingS3.
-# Note,  will need to touch an output file at the end of the script and generate a while wait loop inside the snakemake rule.
-# Define file paths (Note, still need to incorporate the snakemake variables to be imported into the script)
-# Need 1. The diamond output file
-# 2. The filepath to the TaxonKit database (just the names and nodes.dmp files extracted directly from NCBI using 
-#wget -c ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz 
-#tar -zxvf taxdump.tar.gz
-# 3. The output file (note Will need to replace this with the snakemake output file names)
 
 # Components of the Diamond output that are important 
 # column 2=sseqid code 
@@ -78,49 +65,46 @@ done < "$processed_output"
 # Step 2: Extract and collect unique species names
 cut -f1 "$species_file" | sort | uniq > "$species_file.uniq"
 
-# Step 3: Search NCBI database (through TaxonKit) once for each unique species name
-# TaxonKit appears to be quite slow (~3 seconds per index search)
-# Taxonomizer in R is <1 second per search marking a significant speed boost likely due to the optimised sql indexing of the reference database. So will just determine taxID's in this script and leave wider taxonomy to importing into R.
-while read -r species; do
+
+# Step 3: Parallelized TaxonKit search
+export taxonkit_db
+
+process_species() {
+    local species="$1"
     new_taxid=$(echo "$species" | taxonkit name2taxid --data-dir "$taxonkit_db" | cut -f2)
     if [ -n "$new_taxid" ]; then
-        (IFS=$'\t'; echo -e "$species\t$new_taxid") >> "$taxid_map_file"
+        echo -e "$species\t$new_taxid"
     fi
-done < "$species_file.uniq"
+}
 
-# Create dictionary array from taxid_map_file
+export -f process_species
+
+parallel --jobs $threads process_species {} "$taxonkit_db" :::: "$species_file.uniq" >> "$taxid_map_file"
+
+# Step 4: Create dictionary array from taxid_map_file
 declare -A taxid_map
 while IFS=$'\t' read -r species taxid; do
     taxid_map["$species"]="$taxid"
 done < "$taxid_map_file"
 
-# Step 4: Apply TaxonKit results to relevant rows
+# Step 5: Apply TaxonKit results to relevant rows
 while IFS=$'\t' read -r species old_taxid row_num rest_of_line; do
     IFS=$'\t' read -r -a fields <<< "$rest_of_line"
     if [ -n "${taxid_map["$species"]}" ]; then
         taxid="${taxid_map["$species"]}"
         fields+=("$taxid")
-        # Reconstruct the line with tabs
         (IFS=$'\t'; echo "${fields[*]}") >> "$temp_output"
         ((new_taxid_count++))
-#    else
-#        fields+=("NoTaxIDFound") 
-#        # Reconstruct the line with tabs
-#        (IFS=$'\t'; echo "${fields[*]}") >> "$temp_output"
     fi
 done < "$species_file"
-# Need to ignore the rows already identified above. 
-# Handle rows that had valid TaxID initially
+
+# Handle rows that already had valid TaxID initially
 while IFS=$'\t' read -r -a line; do
     taxid="${line[6]}"
     if [[ "$taxid" =~ ^([0-9]+(:[0-9]+)*)(;[0-9]+(:[0-9]+)*)*$ ]]; then
         line+=("$taxid")
         (IFS=$'\t'; echo "${line[*]}") >> "$temp_output"
-#    else
-#        line+=("NoTaxIDFound")
     fi
-    # Reconstruct the line with tabs
-
 done < "$processed_output"
 
 # Move the temporary file to the final output
@@ -133,10 +117,8 @@ rm "$species_file" "$species_file.uniq" "$taxid_map_file" "$processed_output"
 echo "Number of new TaxIDs added: $new_taxid_count"
 echo "Updated Diamond output written to $updated_output"
 
-
-
-
-
+current_date_time="`date "+%Y-%m-%d %H:%M:%S"`";
+echo "Finished first stage of identification: $current_date_time"
 
 
 

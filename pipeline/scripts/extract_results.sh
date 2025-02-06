@@ -169,3 +169,21 @@ cp -r "$programdir"/99_SUMMARY_RESULTS_RAWS_ADDED_TABLES/*/ "$programdir"/Summar
 
 fi
 
+
+# Path to the Snakemake config file
+CONFIG_FILE="config.yaml"
+
+# Extract Delete_inter_files variable from the config
+DELETE_INTER_FILES=$(grep -oP '(?<=Delete_inter_files: ")[^"]*' "$CONFIG_FILE" || echo "no")
+
+# Conditional statement to check value
+if [[ "$DELETE_INTER_FILES" == "yes" ]]; then
+    echo "Deleting intermediary files..."
+    #rm -rf ./path/to/intermediary/files/*
+elif [[ "$DELETE_INTER_FILES" == "no" ]]; then
+    echo "No intermediary files will be deleted."
+else
+    echo "No intermediary files will be deleted (invalid value in config)."
+fi
+
+

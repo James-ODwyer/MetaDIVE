@@ -61,6 +61,8 @@ def Diamond_memrawMB(wildcards):
     if config["Sensitivity"] == "Ultra_low":
         return "24000"
 
+
+
 rule unmapped_reads_diamond:
     message:
         """
@@ -77,6 +79,7 @@ rule unmapped_reads_diamond:
         databasenr = config["diamond_database"],
         unalignedreads1_prior = config["sub_dirs"]["raws_to_contigs"] + "/{sample}_R1.fastq.gz",
         unalignedreads2_prior = config["sub_dirs"]["raws_to_contigs"] + "/{sample}_R2.fastq.gz",
+        vironly = config["Diamondrawviralfiltonly"],
         diamondmem = Diamond_memraw
     log:
         "logs/" + config["sub_dirs"]["diamond_raws"] + "/{sample}.txt"
@@ -90,36 +93,72 @@ rule unmapped_reads_diamond:
     shell:
         """
         length=(`wc -l {input.unalignedreads1}`) && \
-        if [ ${{length}} -ge 1 ]
-        then        
-        seqfu ilv -1 {input.unalignedreads1} -2 {input.unalignedreads2} -o {output.interleavedfiles} && \
-        diamond blastx --db {params.databasenr} \
-            --query {output.interleavedfiles} \
-            --fast \
-            --max-target-seqs 1 \
-            -f 6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp \
-            --evalue 0.00001 \
-            --threads {threads} \
-            -o {output.diamondfile} \
-            --memory-limit {params.diamondmem} \
-            --masking 0 \
-            2> {log}
-        fi  && \
-        if [ ${{length}} -eq 0 ]
-        then
-        seqfu ilv -1 {params.unalignedreads1_prior} -2 {params.unalignedreads2_prior} -o {output.interleavedfiles} && \
-        diamond blastx --db {params.databasenr} \
-            --query {output.interleavedfiles} \
-            --fast \
-            --max-target-seqs 1 \
-            -f 6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp \
-            --evalue 0.00001 \
-            --threads {threads} \
-            -o {output.diamondfile} \
-            --memory-limit {params.diamondmem} \
-            --masking 0 \
-            2> {log}
-        fi        
+        if [ "{params.vironly}" == "yes" ]; then
+            if [ ${{length}} -ge 1 ]
+            then        
+            seqfu ilv -1 {input.unalignedreads1} -2 {input.unalignedreads2} -o {output.interleavedfiles} && \
+            diamond blastx --db {params.databasenr} \
+                --query {output.interleavedfiles} \
+                --fast \
+                --taxonlist 10239 \
+                --max-target-seqs 1 \
+                -f 6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp \
+                --evalue 0.00001 \
+                --threads {threads} \
+                -o {output.diamondfile} \
+                --memory-limit {params.diamondmem} \
+                --masking 0 \
+                2> {log}
+            fi  && \
+            if [ ${{length}} -eq 0 ]
+            then
+            seqfu ilv -1 {params.unalignedreads1_prior} -2 {params.unalignedreads2_prior} -o {output.interleavedfiles} && \
+            diamond blastx --db {params.databasenr} \
+                --query {output.interleavedfiles} \
+                --fast \
+                --taxonlist 10239 \
+                --max-target-seqs 1 \
+                -f 6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp \
+                --evalue 0.00001 \
+                --threads {threads} \
+                -o {output.diamondfile} \
+                --memory-limit {params.diamondmem} \
+                --masking 0 \
+                2> {log}
+            fi
+        fi && \
+        if [ "{params.vironly}" != "yes" ]; then
+            if [ ${{length}} -ge 1 ]
+            then
+            seqfu ilv -1 {input.unalignedreads1} -2 {input.unalignedreads2} -o {output.interleavedfiles} && \
+            diamond blastx --db {params.databasenr} \
+                --query {output.interleavedfiles} \
+                --fast \
+                --max-target-seqs 1 \
+                -f 6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp \
+                --evalue 0.00001 \
+                --threads {threads} \
+                -o {output.diamondfile} \
+                --memory-limit {params.diamondmem} \
+                --masking 0 \
+                2> {log}
+            fi  && \
+            if [ ${{length}} -eq 0 ]
+            then
+            seqfu ilv -1 {params.unalignedreads1_prior} -2 {params.unalignedreads2_prior} -o {output.interleavedfiles} && \
+            diamond blastx --db {params.databasenr} \
+                --query {output.interleavedfiles} \
+                --fast \
+                --max-target-seqs 1 \
+                -f 6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp \
+                --evalue 0.00001 \
+                --threads {threads} \
+                -o {output.diamondfile} \
+                --memory-limit {params.diamondmem} \
+                --masking 0 \
+                2> {log}
+            fi
+        fi
         """
 
 rule analyse_diamond_hits_raws:
@@ -144,7 +183,7 @@ rule analyse_diamond_hits_raws:
     log:
         "logs/" + config["sub_dirs"]["contigs_assigned_raw"] + "/{sample}.txt"
     conda: "Rdataplotting"
-    threads: 1
+    threads: 4
     priority: 20
     benchmark:
         "benchmarks/" + config["sub_dirs"]["contigs_assigned_raw"] + "/{sample}.txt"
@@ -152,7 +191,7 @@ rule analyse_diamond_hits_raws:
         mem_mb=6000
     shell:
         """
-        bash {config[program_dir]}scripts/get_taxIDs.sh -a {input.diamondfile} -i {params.NCBI_nodes} -o {output.diamondfileupdated} && \
+        bash {config[program_dir]}scripts/get_taxIDs.sh -a {input.diamondfile} -i {params.NCBI_nodes} -o {output.diamondfileupdated} -p {threads} && \
         Rscript {config[program_dir]}scripts/extract_blastx_best_hits_HPC_raws.R \
             --inputdiamond {output.diamondfileupdated} --name {params.samplename} \
             --threads {threads} --Accnode {params.namenodedatabase} --output {output.contigsassigned} --abundances {params.abundances} && \

@@ -1,10 +1,10 @@
 #!/bin/bash 
-#SBATCH --account=OD-229285              # Required for CSIRO HPC. You need to specify your account. To see yours, write into a terminal (putty or other) get_project_codes
-#SBATCH --job-name Nextseq_69_AIV      # named whatever you would like but I usually name it related to what I'm analysing 
+#SBATCH --account=XXXXXXX              # Required for CSIRO HPC. You need to specify your account. To see yours, write into a terminal (putty or other) get_project_codes
+#SBATCH --job-name SampleX      # named whatever you would like but I usually name it related to what I'm analysing 
 #SBATCH --nodes 1                        # nodes to use on the hpc, 1 node= max 64CPUs so leave as 1. 
 #SBATCH --ntasks-per-node 1              # ntasks per node (not needed to play around with for the pipeline. the pipeline will allocate all resources as best needed)
-#SBATCH --cpus-per-task 32               # total number of CPUs to allocate. depending on size of data and urgency, 12-48  
-#SBATCH --mem 90G                       # Total memory. Can require a lot particularly if you want to run trinity! between 80 and 180 depending on complexity of data
+#SBATCH --cpus-per-task 48               # total number of CPUs to allocate. depending on size of data and urgency, 12-48  
+#SBATCH --mem 100G                       # Total memory. Can require a lot particularly if you want to run trinity! between 80 and 180 depending on complexity of data
 #SBATCH --time 48:00:00                 # Time requirements hh/mm/ss would recommend around 100 hours for large datasets. if it doesn't complete you can always launch the script again
 
 # Need to activate conda through source when running a slurm script

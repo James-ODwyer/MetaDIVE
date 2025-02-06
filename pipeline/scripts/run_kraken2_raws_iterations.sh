@@ -22,8 +22,8 @@ closest_krakenout=""
 closest_krakenreport=""
 
 # Set combinations for --minimum-hit-groups and --confidence
-hit_groups=("default" "3" "4" "5")
-confidences=("default" "0.3" "0.5")
+hit_groups=("default" "3" "5")
+confidences=("default" "0.5")
 
 # Function to run Kraken2 with specific parameters
 run_kraken() {

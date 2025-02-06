@@ -28,6 +28,9 @@ library("foreach")
 library("doParallel")
 #library("tidyverse")
 library(seqinr)
+library(phylotools)
+library("readr")
+library(future.apply)
 
 #args <- commandArgs(TRUE)
 parser <- ArgumentParser(description= 'Informing Diamond blast')
@@ -82,7 +85,7 @@ outtablespath <- paste0(outtablespath1,outtablespath2)
 AccessionNamenode <- xargs$Accnode
 
 NAMES <- xargs$name
-n.cores <- xargs$threads
+ncores <- xargs$threads
 
 
 assigned_contigs1 <- xargs$programdir
@@ -94,6 +97,7 @@ svcontigname <-xargs$savcontig
 
 log <- xargs$Log
 
+plan(multisession, workers = ncores)
 
 # Set to correct directory.
 # sink all cats and prints to the snakemake log files 
@@ -280,48 +284,41 @@ taxidsunique$V1 <- contigsassignedunique$staxidreduced
 taxids$V2 <- Diamond_output$sseqid
 taxidsunique$V2 <- contigsassignedunique$sseqid
 
-cat(paste0(" Starting taxonomizr getTaxonomy known taxids ", "\n"))
 
-for (i in c(1:nrow(contigsassignedunique))) {
+
+
+cat(paste0(" Starting taxonomizr getTaxonomy known taxids ", "\n"))
+process_row <- function(i) {
+  row <- list()
+  # assign taxid to row variable
+  row[1] <- contigsassignedunique$staxidreduced[i]
+  # Get standard taxonomy
+  row[2:8] <- taxonomizr::getTaxonomy(contigsassignedunique$staxidreduced[i], sqlFile = AccessionNamenode)
   
-  taxidsunique[i,2:8] <- taxonomizr::getTaxonomy(contigsassignedunique$staxidreduced[i], sqlFile=AccessionNamenode)
+  # Check for subspecies allocation
+  values <- taxonomizr::getRawTaxonomy(contigsassignedunique$staxidreduced[i], sqlFile = AccessionNamenode)
+  row[9] <- if (!is.null(values[[1]][1])) values[[1]][1] else row[8]
   
-  values <- taxonomizr::getRawTaxonomy(contigsassignedunique$staxidreduced[i], sqlFile=AccessionNamenode)
-  
-  if (!is.null(values[[1]][1])) {
-    values[[1]][1] -> taxidsunique[i,9]
-  }
-  if (is.null(values[[1]][1])) {
-    taxidsunique[i,8] -> taxidsunique[i,9]
-  }
-  
-  
-  if (is.na(taxidsunique[i,8])) {
-    
+  # Handle missing taxid
+  if (is.na(row[2])) {
     spname <- str_extract_all(contigsassignedunique$stitle[i], "\\[(.*?)\\]")[[1]]
     spname2 <- str_replace_all(spname, "\\[|\\]", "")
-    value <- taxonomizr::getId(spname2, sqlFile=AccessionNamenode)
+    value <- taxonomizr::getId(spname2, sqlFile = AccessionNamenode)
     
-    if (!is.na(value[1])) {
-      
-      taxidsunique[i,2:8] <- taxonomizr::getTaxonomy(value, sqlFile=AccessionNamenode)
-      
-      values <- taxonomizr::getRawTaxonomy(value, sqlFile=AccessionNamenode)
-    }
-  if (!is.null(values[[1]][1])) {
-    values[[1]][1] -> taxidsunique[i,9]
-  }
-  if (is.null(values[[1]][1])) {
-    taxidsunique[i,8] -> taxidsunique[i,9]
-  }
+    row[2:8] <- taxonomizr::getTaxonomy(value, sqlFile = AccessionNamenode)
     
-    
+    values <- taxonomizr::getRawTaxonomy(value, sqlFile = AccessionNamenode)
+    row[9] <- if (!is.null(values[[1]][1])) values[[1]][1] else row[8]
   }
   
-  
-  
+  return(unlist(row))
 }
 
+# Apply the Function in Parallel
+taxidsunique <- future_lapply(1:nrow(contigsassignedunique), process_row)
+
+# Combine Results into Data Frame
+taxidsunique <- do.call(rbind, taxidsunique)
 
 d <- Sys.time()
 

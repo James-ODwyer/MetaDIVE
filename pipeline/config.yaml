@@ -4,99 +4,99 @@
 # These are read by snakemake as a list 
 samples:
   Sample0:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample0_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample0_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample0_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample0_R2.fastq.gz
   Sample1:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample1_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample1_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample1_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample1_R2.fastq.gz
   Sample2:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample2_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample2_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample2_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample2_R2.fastq.gz
   Sample3:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample3_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample3_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample3_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample3_R2.fastq.gz
   Sample4:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample4_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample4_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample4_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample4_R2.fastq.gz
   Sample5:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample5_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample5_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample5_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample5_R2.fastq.gz
   Sample6:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample6_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample6_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample6_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample6_R2.fastq.gz
   Sample7:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample7_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample7_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample7_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample7_R2.fastq.gz
   Sample8:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample8_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample8_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample8_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample8_R2.fastq.gz
   Sample9:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample9_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample9_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample9_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample9_R2.fastq.gz
   Sample10:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample10_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample10_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample10_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample10_R2.fastq.gz
   Sample11:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample11_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample11_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample11_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample11_R2.fastq.gz
   Sample12:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample12_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample12_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample12_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample12_R2.fastq.gz
   Sample13:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample13_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample13_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample13_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample13_R2.fastq.gz
   Sample14:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample14_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample14_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample14_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample14_R2.fastq.gz
   Sample15:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample15_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample15_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample15_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample15_R2.fastq.gz
   Sample16:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample16_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample16_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample16_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample16_R2.fastq.gz
   Sample17:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample17_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample17_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample17_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample17_R2.fastq.gz
   Sample18:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample18_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample18_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample18_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample18_R2.fastq.gz
   Sample19:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample19_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample19_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample19_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample19_R2.fastq.gz
   Sample20:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample20_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample20_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample20_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample20_R2.fastq.gz
   Sample21:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample21_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample21_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample21_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample21_R2.fastq.gz
   Sample22:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample22_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample22_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample22_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample22_R2.fastq.gz
   Sample23:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample23_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample23_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample23_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample23_R2.fastq.gz
   Sample24:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample24_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample24_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample24_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample24_R2.fastq.gz
   Sample25:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample25_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample25_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample25_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample25_R2.fastq.gz
   Sample26:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample26_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample26_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample26_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample26_R2.fastq.gz
   Sample27:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample27_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample27_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample27_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample27_R2.fastq.gz
   Sample28:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample28_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample28_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample28_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample28_R2.fastq.gz
   Sample29:
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample29_R1.fastq.gz
-    - /scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/raws/Sample29_R2.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample29_R1.fastq.gz
+    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample29_R2.fastq.gz
 
 
 # Program directory (working directory to output results and where the rules/scripts folders are along with the snakefiles and config files)
-program_dir: "/scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/pipeline/"
+program_dir: "/filepath/to/raw/reads/MetaDIVE/pipeline/"
 
 
 
@@ -126,8 +126,16 @@ min_qual_filter_avg_read: 19
 min_qual_window: 20
 
 
-# Not currently implemented in scripts ## TODO: Add in parameter for NCBI API key to downloadgenome.sh and download_variety_genomes_high_completion_viruses.sh
-NCBI_API_KEY: 'b81d4cea18edf2ff96dd6aeb096d6eb56009'
+# Not currently implemented in scripts fully. Scripts require an API key to work. TODO: go into scripts and set something like below in all download scripts
+
+#if [[ "$NCBI_API_KEY" != "NONE" ]]; then
+#    URL="${BASE_URL}&api_key=${NCBI_API_KEY}"
+#else
+#    URL="${BASE_URL}"
+#fi
+
+
+NCBI_API_KEY: 'NONE'
 
 
 # Assembly choices
@@ -224,7 +232,7 @@ Viral_genome_tree_building: 'no'
 Genomad_detect: 'no'
 
 
-# Whether to run analyses on the raws reads that were not aligned to a contig (requires a long time)
+# Whether to run analyses on the raws reads that were not aligned to a contig (requires a long time but can be significantly reduced if Diamond raw viral filt only is set to yes)
 # Turn both this and diamond blast to no or to yes together (legacy setting from when multiple raws analysis methods were used, will remove over time)
 # 'yes/no'
 run_raws: 'yes'
@@ -236,11 +244,18 @@ run_raws: 'yes'
 # an expected low-medium viral count, 5000-50000 reads will likely be all potential viral reads and the samples which contain more, reads are first prioritised by how likely
 # the read is to be viral (based on Kraken assignment scores)
 Raw_reads_max_kraken: 10000
-Raw_reads_max: 50000
+Raw_reads_max: 20000
 
-# Whether to do diamond blast on the raws (very long, probably around 15-25% of the whole pipeline) Set to yes with the run_raws or set both to no.
+# Whether to do diamond blast on the raws (very long, probably around 15-20% of the whole pipeline, but setting Diamond raw viral filt only significantly reduces this time down to 5-10% of whole pipeline)) Set to yes with the run_raws or set both to no.
 #'yes/no'
 dodiamond_blast_raws: 'yes'
+
+# Whether to run Diamond blast for raw reads using only a viral reference database within Diamond. Will greatly speed up the analysis of single reads. May lead 
+# to an increased rate of false positives but all new false positives are likely to be filtered out at the blastn stage afterward leading to little overall impact
+# NOTE: This requires you to have a Diamond database which was built with TaxID information present. 
+# Valies are yes/no
+Diamondrawviralfiltonly: 'yes'
+
 
 # whether summary results files should be generated. This is required for all additional modules to generate their final results files.
 # 'yes/no'
@@ -250,6 +265,10 @@ generate_results_summary: 'yes'
 # Higher values will result in more likely viruses to be detected but may miss more low frequency viruses
 # recommended between 3 and 20 depending on the purpose of the analysis. 
 readcountthresh: 3
+
+# This setting will delete all intermediary files except for the final summaries, reports, returned reads, and quality score reports once the pipeline has finished.  
+# To keep all outputs write "no" To delete everything write "yes"
+Delete_inter_files: "no"
 
 
 # Databases and other filepaths (once updated during the first time, these will remain static). All have been tarred and compressed on github or will be built on the spot except the Diamond and blastn databases.
@@ -263,37 +282,37 @@ readcountthresh: 3
 # Choose a spot which allows for lots of files to be written (you can usually see how much space you have on a shared HPC system with the command `quota -s` ) 
 
 
-Trinitytemppath: "/scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/Trinity_temp/"
+Trinitytemppath: "/filepath/to/raw/reads/MetaDIVE/Trinity_temp/"
 
 # all below datasets are saved in the databases tar. Update once file is untarred in new location. TODO: If I make a script to untar and unpack at the required destination I could try and auto update here.
 # by using the set variable from the unpack script and a generic sed replacement.
 
 # Illumina generic adapters for adapter removal.
 
-Illumina_adapters: "/scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/databases/adapters/trueseq_PE_adaptors_shortlist.fa"
+Illumina_adapters: "/filepath/to/adapterfile/MetaDIVE/databases/adapters/trueseq_PE_adaptors_shortlist.fa"
 
 #PhiX filter. Saved into databases tar. 
-PhiX_genome_index: "/scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/databases/Phix_reference/Phix_reference_idx"
+PhiX_genome_index: "/filepath/to/phix/MetaDIVE/databases/Phix_reference/Phix_reference_idx"
 
 # CO1 genomes Bowtie indexed
-CO1_genome_index: "/scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/databases/bowtie2/CO1/CO1_reference_idx"
+CO1_genome_index: "/filepath/to/Co1index/MetaDIVE/databases/bowtie2/CO1/CO1_reference_idx"
 
 # CO1 genomes mmseqs2 indexed
-CO1_genome_index_mmseq: "/scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/databases/CO1/CO1_DB"
+CO1_genome_index_mmseq: "/filepath/to/Co1index2/MetaDIVE/databases/CO1/CO1_DB"
 
 
 #LSU genomes Bowtie indexed.
-LSU_genome_index: "/scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/databases/bowtie2/LSU/LSU_reference_idx"
+LSU_genome_index: "/filepath/to/LSUindex/MetaDIVE/databases/bowtie2/LSU/LSU_reference_idx"
 
 # LSU taxonomy map mmseq2 indexed
-LSU_genome_index_mmseq: "/scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/databases/LSU/LSU_DB"
+LSU_genome_index_mmseq: "/filepath/to/LSUindex2/MetaDIVE/databases/LSU/LSU_DB"
 
 # Silva LSU taxonomy map
-SSU_genome_index: "/scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/databases/bowtie2/SSU/SSU_reference_idx"
+SSU_genome_index: "/filepath/to/SSUindex/MetaDIVE/databases/bowtie2/SSU/SSU_reference_idx"
 
 
 # SSU taxonomy map mmseq2
-SSU_genome_index_mmseq: "/scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/databases/SSU/SSU_DB"
+SSU_genome_index_mmseq: "/filepath/to/SSUindex2/MetaDIVE/databases/SSU/SSU_DB"
 
 
 # Diamond nr database Currently set to general DB on Petrichor HPC CSIRO
@@ -303,21 +322,21 @@ diamond_database: "/data/bioref/diamond_db/nr.dmnd"
 blast_nucleotide_database: "/data/bioref/blast/ncbi/nt"
 
 # Kraken database for kraken viral assignment
-Kraken_database: "/scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/databases/krakendb/"
+Kraken_database: "/filepath/to/krakendb/MetaDIVE/databases/krakendb/"
 
 #MMseq database Currently set to general DB on Petrichor HPC CSIRO (Also I think this is redundant now, double check if this is needed after mmseqs2 was removed from nucleotide blast step. 
 MMSeq_nucleotide_database: "/path/Irrelevant"
 
 # Accessiontaxa file
 # Points to the sql file containing names and Nodes information for use in rapid Taxonomy assignments in R
-Accession_allnamenode: "/scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/databases/taxonomy/nameNode.sqlite"
+Accession_allnamenode: "/filepath/to/Accessions/MetaDIVE/databases/taxonomy/nameNode.sqlite"
 
 # Points to the names and nodes dmp files for use in taxonomizr to insert missing taxids in BLASTs before importing into R
-NCBI_reference_dir: "/scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/databases/taxonomy"
+NCBI_reference_dir: "/filepath/to/taxonomy/MetaDIVE/databases/taxonomy"
 
 
 
-Genomaddb: "/scratch3/odw014/analysis/MetaDIVE_benchmarking/CAMISIM_MAIN1/MetaDIVE/databases/genomad/genomad_db"
+Genomaddb: "/filepath/to/Genomad/MetaDIVE/databases/genomad/genomad_db"
 
 ############################################################################################
 ############################################################################################

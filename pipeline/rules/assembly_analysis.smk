@@ -360,7 +360,6 @@ rule generate_kraken_contigs:
             {params.krakendb} {threads} {output.krakenreport} {output.krakenout} {input} {output.readslist} {log}
         """
 
-# I had iterate on in the bash script but it appears the function was only introduced in 2.0.9. the latest anaconda version of Diamond is 2.0.8 
 rule Diamond_blast:
     message:
         """
@@ -388,7 +387,8 @@ rule Diamond_blast:
         """
         diamond blastx --db {params.databasenr} \
             --query {input} \
-            --fast \
+            --iterate \
+            --mid-sensitive \
             --memory-limit {params.diamondmem} \
             -f 6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp \
             --evalue 0.001 \
@@ -430,15 +430,15 @@ rule analyse_diamond_hits:
         "logs/" + config["sub_dirs"]["contigs_assigned"] + "/abundances/{sample}.log"
     benchmark:
         "benchmarks/" + config["sub_dirs"]["contigs_assigned"] + "/abundances/{sample}.txt"
-    threads: 1
+    threads: 6
     conda: "Rdataplotting"
     resources:
-         mem_mb=3000
+         mem_mb=6000
     priority: 10
     shell:
         """
         if [ ! -d {params.full_prot_host_id_path} ]; then mkdir -p {params.full_prot_host_id_path}; fi && \
-        bash {config[program_dir]}scripts/get_taxIDs.sh -a {input.diamondfile} -i {params.NCBI_nodes} -o {output.diamondfileupdated} && \
+        bash {config[program_dir]}scripts/get_taxIDs.sh -a {input.diamondfile} -i {params.NCBI_nodes} -o {output.diamondfileupdated} -p {threads} && \
         Rscript {config[program_dir]}scripts/extract_blastx_best_hits_HPC.R \
             --inputdiamond {output.diamondfileupdated} --inputcontig {input.contigfile} --name {params.samplename} --programdir {params.basedir} \
             --threads {threads} --Accnode {params.namenodedatabase} --output {output.contigsunassigned} --abundances {params.abundances} --Log {log} \
@@ -490,7 +490,7 @@ rule align_raws_to_contigs:
             --al-conc-gz {params.alignedreads} \
             -p {threads} \
             -S {output.samoutput} \
-            --fast \
+            --very-fast \
             2> {log} && \
         samtools view -F 4 {output.samoutput} > {output.samoutputhits} && \
         cut -f 1-3 {output.samoutputhits} > {output.samoutputhits2} && \

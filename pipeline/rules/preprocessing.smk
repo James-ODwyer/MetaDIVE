@@ -16,6 +16,19 @@ rule record_start:
 def get_raw_fastqs(wildcards):
     return config["samples"][wildcards.sample]
 
+
+"""
+This rule performs quality filtering and adapter trimming on paired-end reads using `fastp`.
+
+Steps included:
+1. Filters reads based on minimum quality and average quality thresholds.
+2. Removes low-complexity reads using a specified complexity threshold.
+3. Trims low-quality bases from the front and back of reads using a sliding window approach.
+4. Performs adapter trimming using a custom adapter FASTA file.
+5. Conducts overrepresentation analysis to identify highly repetitive sequences.
+6. Outputs quality reports in JSON and HTML formats for further analysis.
+"""
+
 rule filter_fastp:
     message:
         """
@@ -68,6 +81,20 @@ rule filter_fastp:
             2> {log}
         """
 
+"""
+This rule uses `bowtie2` to align paired-end reads against a reference genome (e.g., phiX).
+
+Steps included:
+1. Aligns paired-end reads (`{input.R1}` and `{input.R2}`) to the reference genome (`{params.Phixgenome}`).
+2. Outputs:
+   - Unaligned reads in gzip format (`{params.unalignedreads}`).
+   - Aligned reads in gzip format (`{params.alignedreads}`).
+   - SAM file containing alignment results (`{output.samoutput}`).
+3. Uses the `--fast` option for faster alignment at the cost of reduced sensitivity.
+4. Creates empty files (`{output.R1}` and `{output.R2}`) as placeholders after successful completion.
+5. Logs alignment statistics and errors to `{log}`.
+"""
+
 rule filter_phiX:
     message:
         """
@@ -101,9 +128,25 @@ rule filter_phiX:
             -S {output.samoutput} \
             --fast \
             2> {log} && \
-        touch {output.R1} && \
-        touch {output.R2}
+        touch {output.R1} {output.R2}
         """
+
+"""
+This rule aligns paired-end reads to a CO1 reference genome using `bowtie2`, filters alignments with `samtools`, and extracts unaligned reads.
+
+Steps included:
+1. Aligns reads (`{input.R1}` and `{input.R2}`) to the CO1 reference genome (`{params.CO1genome}`).
+2. Outputs:
+   - Aligned reads in gzip format (`{params.alignedreads}`).
+   - A SAM file with all alignments (`{output.samoutput}`).
+3. Processes the SAM file:
+   - Extracts reads that are aligned (`-F 4`) into `{output.samoutputhits}`.
+   - Extracts reads that are unaligned (`-f 4`) into `{output.samoutputunaligned}`.
+4. Converts unaligned reads to FASTQ format using `samtools fastq`, saving:
+   - Paired unaligned reads in `{output.unalignedreadsall1}` and `{output.unalignedreadsall2}`.
+   - Single-end unaligned reads in `{output.unalignedsingles}`.
+5. Logs alignment and processing statistics/errors to `{log}`.
+"""
 
 rule filter_CO1:
     message:
@@ -147,6 +190,23 @@ rule filter_CO1:
         samtools fastq -@ {threads} -1 {output.unalignedreadsall1} -2 {output.unalignedreadsall2} -s {output.unalignedsingles} -n {output.samoutputunaligned} > /dev/null 2>&1
         """
 
+"""
+This rule aligns paired-end reads to an LSU (large subunit ribosomal RNA) reference genome using `bowtie2`, filters alignments with `samtools`, and extracts unaligned reads.
+
+Steps included:
+1. Aligns paired-end reads (`{input.R1}` and `{input.R2}`) to the LSU reference genome (`{params.LSUgenome}`).
+2. Outputs:
+   - Aligned reads in gzip format (`{params.alignedreads}`).
+   - A SAM file with all alignments (`{output.samoutput}`).
+3. Processes the SAM file:
+   - Extracts aligned reads (`-F 4`) into `{output.samoutputhits}`.
+   - Extracts unaligned reads (`-f 4`) into `{output.samoutputunaligned}`.
+4. Converts unaligned reads to FASTQ format using `samtools fastq`, saving:
+   - Paired unaligned reads in `{output.unalignedreadsall1}` and `{output.unalignedreadsall2}`.
+   - Single-end unaligned reads in `{output.unalignedsingles}`.
+5. Logs alignment and processing statistics/errors to `{log}`.
+"""
+
 rule filter_LSU:
     message:
         """
@@ -188,6 +248,24 @@ rule filter_LSU:
         samtools view -@ {threads} -f 4 -h {output.samoutput} > {output.samoutputunaligned} && \
         samtools fastq -@ {threads} -1 {output.unalignedreadsall1} -2 {output.unalignedreadsall2} -s {output.unalignedsingles} -n {output.samoutputunaligned} > /dev/null 2>&1
         """
+
+"""
+This rule aligns paired-end and single-end reads to an SSU (small subunit ribosomal RNA) reference genome using `bowtie2`, processes alignments with `samtools`, and manages unaligned reads.
+
+Steps included:
+1. Aligns paired-end reads (`{input.R1}` and `{input.R2}`) and unaligned single-end reads (`{input.unalignedsingles}`) to the SSU reference genome (`{params.SSUgenome}`).
+2. Outputs:
+   - Aligned reads in gzip format (`{params.alignedreads}`).
+   - A SAM file with all alignments (`{output.samoutput}`).
+3. Processes the SAM file:
+   - Extracts aligned reads (`-F 4`) into `{output.samoutputhits}`.
+   - Extracts unaligned reads (`-f 4`) into `{output.samoutputunaligned}`.
+4. Converts unaligned reads to FASTQ format using `samtools fastq`, saving:
+   - Paired unaligned reads in `{output.unalignedreadsall1}` and `{output.unalignedreadsall2}`.
+   - Single-end unaligned reads in `{output.unalignedsingles}`.
+5. Combines unaligned single-end reads with the original paired unaligned reads into `{output.unalignedreadsall_singlesadded}` and `{output.unalignedreadsall2_singlesadded}`.
+6. Logs alignment and processing statistics/errors to `{log}`.
+"""
 
 rule filter_SSU:
     message:

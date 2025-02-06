@@ -547,7 +547,7 @@ rule Blast_CO1_contigs:
             -db {params.blastdb} \
             -evalue 0.00001 \
             -max_target_seqs 1 \
-            -word_size 17 \
+            -word_size 22 \
             -max_hsps 1 \
             -outfmt '6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp' \
             -num_threads {threads} \
@@ -596,7 +596,7 @@ rule Blast_LSU_contigs:
             -evalue 0.00001 \
             -max_target_seqs 1 \
             -max_hsps 1 \
-            -word_size 19 \
+            -word_size 22 \
             -outfmt '6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp' \
             -num_threads {threads} \
             -out {output.matchesfile} \
@@ -643,7 +643,7 @@ rule Blast_SSU_contigs:
             -db {params.blastdb} \
             -evalue 0.00001 \
             -max_target_seqs 1 \
-            -word_size 19 \
+            -word_size 22 \
             -max_hsps 1 \
             -outfmt '6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp' \
             -num_threads {threads} \

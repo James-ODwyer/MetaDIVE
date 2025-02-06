@@ -97,22 +97,35 @@ complexity_scores <- seqComplexity(sequences, kmerSize=3)
 fasta_names <- names(sequences)
 
 
-# Create a dataframe
+
 readcomplexity_stats <- data.frame(Name = fasta_names,
                                    Complexity_score = complexity_scores)
 
 
 readcomplexity_stats$Name <- sub(" .*", "", readcomplexity_stats$Name)
 
-for (i in c(1:nrow(readcomplexity_stats))) {
-  
-  
-  grep(pattern=readcomplexity_stats$Name[i],x=viruses_input_confirmed$qseqid) -> idx
-  
-  
-  viruses_input_confirmed$complexityscore[idx] <- readcomplexity_stats$Complexity_score[i]
-  
-}
+# Update on 30/1/2025 Replace grep for loop with a sort then match method (~ 10000X faster)
+ 
+# Step 1: Sort both dataframes by Name/qseqid
+readcomplexity_stats <- readcomplexity_stats[order(readcomplexity_stats$Name), ]
+viruses_input_confirmed <- viruses_input_confirmed[order(viruses_input_confirmed$qseqid), ]
+
+# Step 2: Use match() to find first occurrences of matches
+matched_idx <- match(readcomplexity_stats$Name, viruses_input_confirmed$qseqid, nomatch = 0)
+
+# Step 3: Filter out non-matching indices
+valid_matches <- matched_idx[matched_idx > 0]
+valid_scores <- readcomplexity_stats$Complexity_score[matched_idx > 0]
+
+# Step 4: Assign values directly (vectorized operation)
+viruses_input_confirmed$complexityscore[valid_matches] <- valid_scores
+
+# Step 5: Propagate complexity scores to duplicated qseqid values
+viruses_input_confirmed <- viruses_input_confirmed %>%
+  group_by(qseqid) %>%
+  mutate(complexityscore = first(na.omit(complexityscore))) %>%
+  ungroup()
+
 
 
 viruses_input_confirmed_freqs <- viruses_input_confirmed %>%

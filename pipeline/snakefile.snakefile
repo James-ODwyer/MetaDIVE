@@ -53,7 +53,7 @@ if config["Host_filter"] == 'yes':
     include: os.path.join(rules_dir, "identify_host_sp.smk")
     include: os.path.join(rules_dir, "Microbiome_advanced.smk")
     print("The host species will be identified and filtered out before main analysis")
-
+# remove mmseq2 from DNA analysis stage
 if DNA_analysis == 'yes':
 
     rule_all_input_list.extend(rule_all_DNA_analysis)
@@ -141,3 +141,9 @@ if diamondraw  == 'yes':
 rule all:
     input:
         data = rule_all_input_list
+    output:
+        finished = config["program_dir"] + "All_samples_finished_analysis.txt"
+    shell:
+        """
+        touch {output.finished}
+        """

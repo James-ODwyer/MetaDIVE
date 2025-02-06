@@ -4,6 +4,8 @@ channels:
   - conda-forge
   - bioconda
   - defaults
+  - https://repo.anaconda.com/pkgs/main
+  - https://repo.anaconda.com/pkgs/r
 dependencies:
   - _libgcc_mutex=0.1=conda_forge
   - _openmp_mutex=4.5=2_gnu
@@ -24,7 +26,7 @@ dependencies:
   - bwidget=1.9.14=ha770c72_1
   - bzip2=1.0.8=h7f98852_4
   - c-ares=1.18.1=h7f98852_0
-  - ca-certificates=2024.2.2=hbcca054_0
+  - ca-certificates=2025.1.31=hbcca054_0
   - cairo=1.16.0=ha61ee94_1014
   - configargparse=1.5.3=pyhd8ed1ab_0
   - curl=7.86.0=h2283fc2_0
@@ -87,10 +89,10 @@ dependencies:
   - libzlib=1.2.13=h166bdaf_4
   - make=4.3=hd18ef5c_1
   - ncurses=6.3=h27087fc_1
-  - openssl=3.3.0=h4ab18f5_3
+  - openssl=3.3.1=h4bc722e_2
   - pandoc=2.19.2=h32600fe_1
   - pango=1.50.11=h382ae3d_0
-  - parallel=20160622=1
+  - parallel=20241222=ha770c72_0
   - pcre2=10.37=hc3806b6_1
   - perl=5.32.1=2_h7f98852_perl5
   - perl-threaded=5.32.1=hdfd78af_1
@@ -159,12 +161,15 @@ dependencies:
   - r-fs=1.5.2=r40h7525677_1
   - r-futile.logger=1.4.3=r40hc72bb7e_1003
   - r-futile.options=1.0.1=r40hc72bb7e_1002
+  - r-future=1.28.0=r40hc72bb7e_0
+  - r-future.apply=1.9.1=r40hc72bb7e_0
   - r-gdtools=0.2.4=r40h42e24d8_0
   - r-gert=1.5.0=r40h163148b_2
   - r-ggplot2=3.3.6=r40hc72bb7e_0
   - r-gh=1.3.1=r40hc72bb7e_0
   - r-git2r=0.30.1=r40hf72769b_0
   - r-gitcreds=0.1.2=r40hc72bb7e_0
+  - r-globals=0.16.1=r40hc72bb7e_0
   - r-glue=1.6.2=r40h06615bd_0
   - r-gridbase=0.4_7=r40hc72bb7e_1003
   - r-gridextra=2.3=r40hc72bb7e_1003
@@ -191,6 +196,7 @@ dependencies:
   - r-lattice=0.20_45=r40hcfec24a_0
   - r-lazyeval=0.2.2=r40hcfec24a_2
   - r-lifecycle=1.0.2=r40hc72bb7e_0
+  - r-listenv=0.8.0=r40hc72bb7e_1
   - r-magrittr=2.0.3=r40h06615bd_0
   - r-maps=3.4.0=r40hcfec24a_0
   - r-markdown=1.1=r40hcfec24a_1
@@ -205,6 +211,7 @@ dependencies:
   - r-numderiv=2016.8_1.1=r40hc72bb7e_3
   - r-openssl=2.0.3=r40h1f3e0c5_0
   - r-optimparallel=1.0_2=r40hc72bb7e_0
+  - r-parallelly=1.32.1=r40hc72bb7e_0
   - r-pavian=1.2.0=r40_0
   - r-phangorn=2.7.1=r40h6dc32e9_0
   - r-phylotools=0.2.2=r40hc72bb7e_0
