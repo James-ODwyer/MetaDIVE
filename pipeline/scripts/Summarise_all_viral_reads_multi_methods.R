@@ -319,6 +319,40 @@ if (BOTHMISSING =="NO") {
   virus_all$length <- as.numeric(virus_all$length)
   
 
+  # Rename 'staxidreduced' to 'taxid' in Combined_assigned_contigs_viruses_only so that left joins work 
+  Combined_assigned_contigs_viruses_only <- Combined_assigned_contigs_viruses_only %>%
+    rename(taxid = staxidreduced) %>%
+    mutate(taxid = as.character(taxid))  # Convert taxid to character
+
+  # Ensure taxid column exists in virus_all and is character
+  colnames(virus_all) <- make.unique(colnames(virus_all))
+
+  virus_all <- virus_all %>%
+    mutate(taxid = as.character(NA))
+
+  # Make sure everything is the same object class
+  remaining_raws <- remaining_raws %>%
+    mutate(taxid = as.character(taxid))
+
+  # left joins grab the taxids from both the contig and the raws dfs
+  virus_all <- virus_all %>%
+    left_join(Combined_assigned_contigs_viruses_only %>% select(subspecies, taxid), by = "subspecies", suffix = c("", "_contigs")) %>%
+    left_join(remaining_raws %>% select(subspecies, taxid), by = "subspecies", suffix = c("", "_raws")) %>%
+    mutate(taxid = coalesce(taxid, taxid_contigs, taxid_raws)) %>%  # Fill taxid in priority order
+    select(-taxid_contigs, -taxid_raws)  # Remove extra columns
+
+  virus_all <- virus_all %>%
+    distinct(subspecies, .keep_all = TRUE)
+
+  virus_all <- virus_all %>%
+    mutate(taxid = sub("[:;].*", "", taxid))
+
+
+  virus_all <- virus_all %>%
+    arrange(desc(total_reads_assigned))
+
+
+
 
 
   colourise <- function(value, column) {
@@ -547,14 +581,36 @@ if (BOTHMISSING =="NO") {
   
   confidence_order <- c("High", "Medium-High", "Medium", "Low")
   
-  
+
+
+
   virus_all$confidence_of_assignment_as_virus <- factor(virus_all$confidence_of_assignment_as_virus, levels = confidence_order)
-  virus_all <- virus_all[order(virus_all$confidence_of_assignment_as_virus), ]
-  coloured_data$confidence_of_assignment_as_virus <- factor(coloured_data$confidence_of_assignment_as_virus, levels = confidence_order)
-  coloured_data <- coloured_data[order(coloured_data$confidence_of_assignment_as_virus), ]
+
   
+
+
+
+
+  virus_all <- virus_all %>%
+    select(
+      reads_assigned_through_contigs, superkingdom, phylum, class, order, family, genus, species, subspecies, 
+      taxid, everything()
+    )
+
+
+  # For diverged read and contig detection I want to make sure a good numer of reads/contigs were detected already (set as 10) to minimise FP, plus I want to subset to only 
+  # species where average idents are below 95% as working with something about that suggests that the detected species is a species/strain match to the reference and therefore
+  # introducing divergent reads analysis is disproportionately likely to generate false positives.   
+  virus_all2 <- subset(virus_all,virus_all$total_reads_assigned>10 & (virus_all$average_percent_ident <95 | virus_all$mean_identity_of_raw_reads <95))
+
   
-  
+  coloured_data <- coloured_data %>%
+    select(
+      reads_assigned_through_contigs, superkingdom, phylum, class, order, family, genus, species, subspecies, 
+      taxid, everything()
+    )
+
+
   
   coloured_datatable <- datatable(coloured_data, escape = FALSE)
   
@@ -717,6 +773,8 @@ names(split_dfcontigs) <- gsub("/", "_", names(split_dfcontigs))
   
   
   write.csv(virus_all, file=paste0(outtablespathcompile,NAMES,"_virusall_sums.csv"), row.names = FALSE)
+
+  write.table(virus_all2$taxid, file = paste0(outtablespathcompile, NAMES, "_detected_viral_taxids.csv"), row.names = FALSE, col.names = FALSE, quote = FALSE, sep = ",")
   
   datatable(coloured_data, escape = FALSE) %>%
     saveWidget(file = paste0(outtablespathcompile,NAMES,"_virusall_datatable.html"), selfcontained = TRUE)
@@ -728,6 +786,7 @@ if (BOTHMISSING =="YES") {
   
   file.create(file = paste0(outtablespathcompile,NAMES,"_virusall_datatable.html"))
   file.create(file=paste0(outtablespathcompile,NAMES,"_virusall_sums.csv"))
+  file.create(file=paste0(outtablespathcompile,NAMES,"_detected_viral_taxids.csv"))
   
 }
 
@@ -736,5 +795,5 @@ if (BOTHMISSING =="YES") {
 # For the reads, grep -A 4 will work as the reads are all 4line. For the contigs I hope it will work, but if not I may need to use something
 #like seqkt to do it
 
-
+#save.image(file=paste0(outtablespathcompile,NAMES,"_output_results_R_env.Rdata"))
 

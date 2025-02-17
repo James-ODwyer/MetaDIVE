@@ -36,7 +36,7 @@ intablespath <- paste0(basepath,inputdir)
 readsfilterthreshold <- xargs$minreadthreshold
 
 
-  summary_returned_csv <- list.files(path = intablespath, pattern = ".*/*csv", all.files = FALSE,
+  summary_returned_csv <- list.files(path = intablespath, pattern = ".*/*_virusall_sums.csv", all.files = FALSE,
                                                full.names = TRUE, recursive = TRUE,
                                                ignore.case = FALSE, include.dirs = FALSE)
 

@@ -21,5 +21,11 @@ snakemake -s snakefile.snakefile -j ${SLURM_CPUS_PER_TASK} --keep-going --use-co
 
 # this is how to get the full summary results. I haven't incorporated this in fully yet so after the run has completed you will need to run these two lines in the terminal with your working directory 
 
-#cp scripts/extract_results.sh .
-#bash extract_results.sh
+
+if [ -f "All_samples_finished_analysis.txt" ]
+then
+
+cp scripts/extract_results.sh .
+bash extract_results.sh
+
+fi

@@ -168,6 +168,28 @@ Assembly_size: '301'
 
 
 
+# Diamond sensitivity settings. This setting strongly influences how long the entire pipeline takes as the highest sensitivity levels can result in the single Diamond contig blastx 
+# taking the same length as all other steps in the pipeline combined. 
+# Based on the approximations from the Diamond manual page. 
+# fast= >90% amino acid identity hits
+# mid-sensitive is partway between fast and sensitive e.g., ~60%.
+# sensitive is for >40% amino acid sensitivity
+# more-sensitive is the same as sensitive but with no masking so repeat sequences are better captured 
+# very-sensitive is for sequences <40% amino acid sensitivity
+# ultra-sensitive is more sensitive than very-sensitive. 
+# If you are in a rush and after only known, pathogenic viruses, fast is sufficient. 
+# If you are working with species where fewer viruses are classified but it is likely you are looking at viruses from a genus that is known I would recommend mid-sensitive 
+# If you are looking to detect very divergent viruses from either poorly classified genera/families, or unclassified viruses I would recommend sensitive. 
+# For anything more diverged, I would recommend running geNomad instead as this has a lower false positive chance and is more efficient/faster than very-sensitive Diamond blastx 
+# while having the advantage of picking up far more novel viruses. 
+# options are 
+# 'fast' 'mid-sensitive', 'sensitive', 'more-sensitive', 'very-sensitive', 'ultra-sensitive'
+
+Diamond_sensitivity_setting: 'mid-sensitive'
+
+
+
+#Below settings not implemented yet. Pipeline only identifies top host species for depletion.
 # Is more than 1 species expected in the host reduction?
 # Set as categorical variable with values either "Single" or "Multiple".
 # Single is used when only the host species is of interest.
@@ -253,8 +275,23 @@ dodiamond_blast_raws: 'yes'
 # Whether to run Diamond blast for raw reads using only a viral reference database within Diamond. Will greatly speed up the analysis of single reads. May lead 
 # to an increased rate of false positives but all new false positives are likely to be filtered out at the blastn stage afterward leading to little overall impact
 # NOTE: This requires you to have a Diamond database which was built with TaxID information present. 
-# Valies are yes/no
+# Values are yes/no
 Diamondrawviralfiltonly: 'yes'
+
+# Whether to attempt to run a much more sensitive Diamond blastx (~40%+ similarity) search on the unassigned reads and contigs targeting previously identified viral species. 
+# Currently, contigs are detected at ~50-80% amino acid similarity to a reference depending on diamond settings and reads are detected at ~90% amino acid similarity to reference
+# This step will run at sensitive settings using a taxid subset of the blast database which only contains the previously matched against viral species. This approach will cut down
+# analysis time for this step by >99.99% but can introduce false positives. This will allow for all single reads to potentially be detected in diverged viruses where previously nothing 
+# outside of contigs would normally be found. It also allows for slightly more diverged contigs to be detected e.g., if only an RdRPat 55% similarity was found for a viral species 
+# in the first Diamond blast but no other genes were this will allow for potentially less conserved genes from that virus to be detected alongside the RdRP. 
+# values are 'yes'/'no'
+Divergent_reads_and_contigs_search: 'yes'
+
+
+# sensitivity settings for the viral species specific diamond blastx. If you want to potentially return more contigs set to more sensitive than the earlier diamond sensitivity
+# Recommend you use anything as sensitive or more sensitive than the option 'sensitive' e.g., 'sensitive', 'more-sensitive', 'very-sensitive', 'ultra-sensitive'
+# values are  'fast' 'mid-sensitive', 'sensitive', 'more-sensitive', 'very-sensitive', 'ultra-sensitive'
+Divergent_reads_and_contigs_sensitivity: 'ultra-sensitive'
 
 
 # whether summary results files should be generated. This is required for all additional modules to generate their final results files.
@@ -270,7 +307,6 @@ readcountthresh: 3
 # To keep all outputs write "no" To delete everything write "yes"
 Delete_inter_files: "no"
 
-
 # Databases and other filepaths (once updated during the first time, these will remain static). All have been tarred and compressed on github or will be built on the spot except the Diamond and blastn databases.
 # Diamond and blastn databases were not included as these are very large databases (>100GB each usually) and it is recommended these are installed on an HPC (high performance computer cluster) in a location everyone can access. They are also very common so will likely be present somewhere if routine bioinformatics work
 # has been done on your HPC before. 
@@ -280,7 +316,6 @@ Delete_inter_files: "no"
 # Trinity temp path.
 # This is incredibly important because even a single Trinity run can hit a disk file number quota maximum. Trinity produces large numbers of near empty files during analysis (from 10k-500k per sample depending on reads analysed)
 # Choose a spot which allows for lots of files to be written (you can usually see how much space you have on a shared HPC system with the command `quota -s` ) 
-
 
 Trinitytemppath: "/filepath/to/raw/reads/MetaDIVE/Trinity_temp/"
 
@@ -395,6 +430,8 @@ sub_dirs:
   Genomad_viral_binning_prep: "24_METABAT_BINNING_PREP"
   Genomad_viral_binning_metabat: "25_METABAT_BINNING_RESULTS"
   Genomad_metabat_sorted: "26_METABAT_BINS_SORTED"
+  Viral_diamond_sensitive_check: "27_DIAMOND_SEARCH_TARGET_VIRUSES"
+  Viral_diamond_sensitive_summary: "28_DIAMOND_SUMMARY_TARGET_VIRUSES"
   host_detect_CO1: "03_CO1_FILTER/HOSTREMOVAL/01_STRONG_ALIGN"
   host_detect_LSU: "04_LSU_FILTER/HOSTREMOVAL/01_STRONG_ALIGN"
   host_detect_SSU: "05_SSU_FILTER/HOSTREMOVAL/01_STRONG_ALIGN"

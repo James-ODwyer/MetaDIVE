@@ -466,7 +466,6 @@ rule Compile_shared_graphs_raws_incl:
         touch {output.output_table}
         """
 
-
 rule extract_reads_and_contigs:
     message:
         """

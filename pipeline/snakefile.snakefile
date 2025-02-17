@@ -20,8 +20,10 @@ genomad_run = config["Genomad_detect"]
 
 analyse_raws = config["run_raws"]
 diamondraw = config["dodiamond_blast_raws"]
+divergent_reads_and_contigs = config["Divergent_reads_and_contigs_search"]
 
 summary = config["generate_results_summary"]
+
 """
 # Define the base rule all plus the rule all's for each specific branch of the analysis (e.g., host mapping).
 # This is the proper final one
@@ -35,6 +37,8 @@ rule_all_advanced_microbiome_contigs=expand(config["sub_dirs"]["progress_barcode
 rule_all_genomad=expand(config["sub_dirs"]["Genomad_metabat_sorted"] + "/{sample}/finished.txt", sample=config["samples"])
 
 rule_all_diamond_raws=expand(config["sub_dirs"]["compiled_summary"] + "/{sample}/finished_extracting_reads.txt",sample=config["samples"])
+rule_all_diamond_raws_contigs_diverged=expand(config["sub_dirs"]["compiled_summary"] + "/{sample}/finished_extracting_reads_diverged.txt",sample=config["samples"])
+
 rule_all_viral_genome_building=expand(config["sub_dirs"]["Viral_genomes_present_refined_genomes"] + "/{sample}/finished2.txt", sample=config["samples"])
 rule_all_viral_genome_trees=expand(config["sub_dirs"]["Viral_genomes_present_iqtree"] + "/{sample}/finished.txt", sample=config["samples"])
 rule_all_blastn_false_positive_check=expand(config["sub_dirs"]["finished"] + "/{sample}_finished_blastn_false_positive_check", sample=config["samples"])
@@ -137,6 +141,13 @@ else:
 if diamondraw  == 'yes':
     rule_all_input_list.extend(rule_all_diamond_raws)
     print("Raw sequences will be analysed using Diamond protein blast")
+
+
+if divergent_reads_and_contigs  == 'yes':
+    rule_all_input_list.extend(rule_all_diamond_raws_contigs_diverged)
+    include: os.path.join(rules_dir, "Diverged_read_detection_viruses.smk")
+    print("Taxids of detected viruses will be used to perform an more sensitive viral search on reads and contigs for previously detected viruses")
+
 
 rule all:
     input:

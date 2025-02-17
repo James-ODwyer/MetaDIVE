@@ -373,6 +373,7 @@ rule Diamond_blast:
         matchesfilefinished = config["sub_dirs"]["diamond_dir"] +"/{sample}_finished.txt"
     params:
         databasenr = config["diamond_database"],
+        diamondsensitivity = config["Diamond_sensitivity_setting"],
         diamondmem = diamond_memtot
     log:
         "logs/" + config["sub_dirs"]["diamond_dir"] + "/{sample}.log"
@@ -388,10 +389,10 @@ rule Diamond_blast:
         diamond blastx --db {params.databasenr} \
             --query {input} \
             --iterate \
-            --mid-sensitive \
+            --{params.diamondsensitivity} \
             --memory-limit {params.diamondmem} \
             -f 6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp \
-            --evalue 0.001 \
+            --evalue 0.0001 \
             --threads {threads} \
             -o {output.matchesfile} \
             --max-target-seqs 10 \
