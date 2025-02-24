@@ -333,7 +333,7 @@ rule analyse_blastn_raws:
     conda: "Rdataplotting"
     threads: 1
     resources:
-        mem_mb=12000
+        mem_mb=6000
     shell:
         """
         lengthblast=(`wc -l {input.blastfile}`) && \
@@ -375,7 +375,7 @@ rule summarise_raws:
     conda: "R4_2_dada"
     threads: 1
     resources:
-        mem_mb=3000
+        mem_mb=6000
     shell:
         """
         lengthunassigned=(`wc -l {input.viralreads}`) && \
@@ -424,7 +424,7 @@ rule compile_raws_and_contigs:
     conda: "R4_2_dada"
     threads: 1
     resources:
-        mem_mb=3000
+        mem_mb=8000
     shell:
         """
         Rscript {config[program_dir]}scripts/Summarise_all_viral_reads_multi_methods.R \

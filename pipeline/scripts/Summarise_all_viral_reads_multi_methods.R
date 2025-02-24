@@ -192,6 +192,8 @@ if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
   
 }
 
+
+
 viral_raws_complexity_summary <- subset(viral_raws_complexity_summary,viral_raws_complexity_summary$superkingdom=="Viruses")
 
 viral_raws_complexity_summary$subspecies <- as.character(viral_raws_complexity_summary$subspecies)
@@ -651,61 +653,61 @@ Diamondrawhitsvirus <- Diamondrawhitsvirus2
   colnames(combined_virus_reads) <- c("Reads","Species")
   combined_virus_contigs <- as.data.frame(matrix(nrow=0,ncol=2))
   colnames(combined_virus_contigs) <- c("Contigs","Species")
+  virus_all_uniqsp <- virus_all %>% distinct(species, .keep_all = TRUE)
+
+
+for (i in c(1:nrow(virus_all_uniqsp))) {
   
-  for (i in c(1:nrow(virus_all))) {
-    
-    
-    # Start with contigs
-    workingcontigs <- subset(allassignedfreqsvirus,allassignedfreqsvirus$species==virus_all$species[i])
-    
-    contigsdf <- as.data.frame(matrix(nrow=nrow(workingcontigs),ncol=2))
-    contigsdf$V1 <- workingcontigs[,1]
-    
-    if (nrow(contigsdf) >=1){
-      contigsdf$V2 <- virus_all$species[i]
-    }
-    colnames(contigsdf) <- c("Contigs","Species")
-    
-    patterns <- unique(workingcontigs$contig)
-    
-    if (length(patterns)>=1) {
-      pattern_regex <- paste(patterns, collapse = "|")
-      grep(pattern=pattern_regex,x=reads_contigs_virus$contig) ->idx2
-      
-    }
-    if (length(patterns)<1) {
-      idx2 <- NULL 
-    }
-    reads_contigs <- as.data.frame(matrix(nrow=length(idx2),ncol=2))
-    reads_contigs$V1 <- reads_contigs_virus[idx2,1]
-    
-    if (nrow(reads_contigs) >=1){
-      reads_contigs$V2 <- virus_all$species[i]
-    }
-    
-    colnames(reads_contigs) <- c("Reads","Species")
-    
-    # Now do raws
-    grep(pattern=virus_all$species[i],x=Diamondrawhitsvirus$species) ->idx
-    
-    reads_raws <- as.data.frame(matrix(nrow=length(idx),ncol=2))
-    reads_raws$V1 <- Diamondrawhitsvirus[idx,1]
-    
-    if (nrow(reads_raws) >=1){
-      reads_raws$V2 <- virus_all$species[i]
-    }
-    colnames(reads_raws) <- c("Reads","Species")
-    
-    reads_combined_singlevirus <- rbind(reads_contigs,reads_raws)
-    
-    combined_virus_reads <- rbind(combined_virus_reads,reads_combined_singlevirus)
-    
-    combined_virus_contigs <- rbind(combined_virus_contigs,contigsdf)
+  
+  # Start with contigs
+  workingcontigs <- subset(allassignedfreqsvirus,allassignedfreqsvirus$species==virus_all_uniqsp$species[i])
+  
+  contigsdf <- as.data.frame(matrix(nrow=nrow(workingcontigs),ncol=2))
+  contigsdf$V1 <- workingcontigs[,1]
+  
+  if (nrow(contigsdf) >=1){
+    contigsdf$V2 <- virus_all_uniqsp$species[i]
+  }
+  colnames(contigsdf) <- c("Contigs","Species")
+  
+  patterns <- unique(workingcontigs$contig)
+  
+  if (length(patterns)>=1) {
+    pattern_regex <- paste(patterns, collapse = "|")
+    grep(pattern=pattern_regex,x=reads_contigs_virus$contig) ->idx2
     
   }
+  if (length(patterns)<1) {
+    idx2 <- NULL 
+  }
+  reads_contigs <- as.data.frame(matrix(nrow=length(idx2),ncol=2))
+  reads_contigs$V1 <- reads_contigs_virus[idx2,1]
   
+  if (nrow(reads_contigs) >=1){
+    reads_contigs$V2 <- virus_all_uniqsp$species[i]
+  }
   
+  colnames(reads_contigs) <- c("Reads","Species")
   
+  # Now do raws
+  grep(pattern=virus_all_uniqsp$species[i],x=Diamondrawhitsvirus$species) ->idx
+  
+  reads_raws <- as.data.frame(matrix(nrow=length(idx),ncol=2))
+  reads_raws$V1 <- Diamondrawhitsvirus[idx,1]
+  
+  if (nrow(reads_raws) >=1){
+    reads_raws$V2 <- virus_all_uniqsp$species[i]
+  }
+  colnames(reads_raws) <- c("Reads","Species")
+  
+  reads_combined_singlevirus <- rbind(reads_contigs,reads_raws)
+  
+  combined_virus_reads <- rbind(combined_virus_reads,reads_combined_singlevirus)
+  
+  combined_virus_contigs <- rbind(combined_virus_contigs,contigsdf)
+  
+}  
+
   # So there is a minor issue with the above (more about pair read data in general). This returns duplicates of each read in the pair
   #as the read 2:N:0 or 1:N:0 is cut off
   # This is solved by removing duplicates but in the scenario that one read of a pair assigned as virus but not the other, this will carry over the non virus read to

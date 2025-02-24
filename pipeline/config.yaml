@@ -99,7 +99,6 @@ samples:
 program_dir: "/filepath/to/raw/reads/MetaDIVE/pipeline/"
 
 
-
 # This section onwards will define key variables that influence the analysis pipeline directions and rules called
 
 # Sensitivity setting. Acts as a proxy for how much memory avaliable for the analysis. This is the amount of memory passed to snakemake in the run_snakemake script
@@ -109,7 +108,7 @@ program_dir: "/filepath/to/raw/reads/MetaDIVE/pipeline/"
 # Medium = 90-130GB 
 # Medium-Low = 60-90GB
 # Low = 40-60 GB # Note this pipeline currently has had limited testing at such low memory, large read datasets e.g., Nextseq/novaseq require far more memory than this to analyse. Many programs used in metagenomics require more than 40GB to run for just one sample. Running with so little may cause progams within the pipeline to crash
-# Ultra_low = <40GB   # Note this pipeline currently isn't tested at such low memory. Many individual programs used in metagenomics require more than 40GB to run for just one sample. Running with so little memory may cause progams within the pipeline to crash
+# Ultra_low = <40GB   # Note this pipeline currently isn't tested at such low memory. Many individual programs used in metagenomics require more than 40GB to run for just one sample. Running with so little memory may cause programs within the pipeline to crash
 
 Sensitivity: 'Medium'
 
@@ -120,22 +119,14 @@ complexity_threshold: 10
 front_window_cutsize: 4
 # base quality score min (phred score)
 min_qual_filter: 16
-# min average quality read filter. 
+# min average quality read filter.
 min_qual_filter_avg_read: 19
 # required minimum running average quality score for the 4 base window
 min_qual_window: 20
 
 
-# Not currently implemented in scripts fully. Scripts require an API key to work. TODO: go into scripts and set something like below in all download scripts
-
-#if [[ "$NCBI_API_KEY" != "NONE" ]]; then
-#    URL="${BASE_URL}&api_key=${NCBI_API_KEY}"
-#else
-#    URL="${BASE_URL}"
-#fi
-
-
-NCBI_API_KEY: 'NONE'
+# Not currently implemented in scripts ## TODO: Add in parameter for NCBI API key to downloadgenome.sh and download_variety_genomes_high_completion_viruses.sh
+NCBI_API_KEY: 'XYZ'
 
 
 # Assembly choices
@@ -165,7 +156,6 @@ Memory_directory_location: $MEMDIR
 # Assembly contig minimum size: This is the minimum size in base pairs for assembled genome fragments created from the paired end reads (smaller size allows for more reads to be assembled
 # but smaller size requires significantly more memory and extends analysis time. Lastly very small sized contigs can lead to increased false positives).
 Assembly_size: '301'
-
 
 
 # Diamond sensitivity settings. This setting strongly influences how long the entire pipeline takes as the highest sensitivity levels can result in the single Diamond contig blastx 

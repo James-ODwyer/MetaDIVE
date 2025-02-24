@@ -32,8 +32,7 @@ mkdir "$programdir"/Summarised_results/Reference_guided_viral_genomes/finished_t
 mkdir "$programdir"/Summarised_results/Summary_results_per_sample_contigs
 mkdir "$programdir"/Summarised_results/Summary_results_combined_figures_and_tables_contigs
 mkdir "$programdir"/Summarised_results/raw_assemblies
-mkdir "$programdir"/Summarised_results/Metabat_binned_contigs
-mkdir "$programdir"/Summarised_results/combined_raw_reads_and_contigs_viruses
+
 
 
 # Need to update for future pipelines as the blastn '/' error is fixed now so the results are saved to 04n sub directory
@@ -143,13 +142,13 @@ fi
 
 
 # summary per sample results copy
-cp "$programdir"/99_SUMMARY_RESULTS/*.txt "$programdir"/Summarised_results/Summary_results_per_sample_contigs
+cp "$programdir"/99_SUMMARY_RESULTS_INDIVIDUAL_SAMPLES/*.txt "$programdir"/Summarised_results/Summary_results_per_sample_contigs
 
 # Don't want the raw diamonds table (they are a few GB on big runs and superfluous stats anyway 
 find "$programdir/Summarised_results" -type f -name '*_raw_diamond_hits.txt' -exec rm -f {} \;
 
 # summary all samples results copy 
-cp "$programdir"/99_SUMMARY_RESULTS_COMBINED_GRAPHS/* "$programdir"/Summarised_results/Summary_results_combined_figures_and_tables_contigs
+cp "$programdir"/99_SUMMARY_RESULTS_COMBINED_SAMPLES_GRAPHS/* "$programdir"/Summarised_results/Summary_results_combined_figures_and_tables_contigs
 
 # raw assemblies for initial megahit/trinity assembly
 cp "$programdir"/06_CONTIG_ASSEMBLY/* "$programdir"/Summarised_results/raw_assemblies
@@ -157,15 +156,15 @@ cp "$programdir"/06_CONTIG_ASSEMBLY/* "$programdir"/Summarised_results/raw_assem
 
 
 Metabatresults="$programdir/26_METABAT_BINS_SORTED/*"
-if ls $Metabatresults1> /dev/null 2>&1; then
-
+if ls $Metabatresults> /dev/null 2>&1; then
+mkdir "$programdir"/Summarised_results/Metabat_binned_contigs
 cp -r "$programdir"/26_METABAT_BINS_SORTED/*/ "$programdir"/Summarised_results/Metabat_binned_contigs
 fi
 
-raw_contigs_sort="$programdir/99_SUMMARY_RESULTS_RAWS_ADDED_TABLES/*"
+raw_contigs_sort="$programdir/99_SUMMARY_RESULTS_INDIVIDUAL_SAMPLES_RETURNED_INDIVIDUAL_READS/*"
 if ls $raw_contigs_sort> /dev/null 2>&1; then
-
-cp -r "$programdir"/99_SUMMARY_RESULTS_RAWS_ADDED_TABLES/*/ "$programdir"/Summarised_results/combined_raw_reads_and_contigs_viruses
+mkdir "$programdir"/Summarised_results/combined_raw_reads_and_contigs_viruses
+cp -r "$programdir"/99_SUMMARY_RESULTS_INDIVIDUAL_SAMPLES_RETURNED_INDIVIDUAL_READS/*/ "$programdir"/Summarised_results/combined_raw_reads_and_contigs_viruses
 
 fi
 
