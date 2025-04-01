@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+
+<html lang="English" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>MetaDIVE Overview &#8212; MetaDIVE 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=80cc54d1"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation guide" href="Installation_guide.html" />
+    <link rel="prev" title="Welcome to MetaDIVE&#39;s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="metadive-overview">
+<h1>MetaDIVE Overview<a class="headerlink" href="#metadive-overview" title="Link to this heading">¶</a></h1>
+<p><strong>MetaDIVE</strong> is a metagenomics analysis pipeline which specialises in the high accuracy and low false negative detection.
+of both <strong>known</strong> and highly <strong>novel</strong> viruses.</p>
+<p>For a description of the pipelines performance see (Reference here for paper).</p>
+<p>MetaDIVE is designed to assist with viral identification in a variety of circumstances ranging from broad viral discovery to scenarios where high precision and low false positive assignments are required.
+To achieve this goal, MetaDIVE utilises multiple checks to decrease the likelihood of any viruses being incorrectly assigned or missed. MetaDIVE is highly accurate for all virus types excluding phages where it is
+limited based on the potential of accidental phage embedding in the diversity of bacterial genomes sequenced as references already.</p>
+<p>The ethos of MetaDIVE is to provide the user with clear and concise findings first and foremost but to also complement every finding with a way for the user to manually inspect the results so that confidence and certainty
+can be achieved. To help with this, MetaDIVE reports on many additional statistics which can help inform on assignment accuracy and provides reads/contigs as sorted results files to their assigned species for easy manual inspection.</p>
+<p>The goal of accurate metagenomic analysis of both known and novel viruses is a complex one however, and as such to help users only investigate the analyses most relevant to their research
+MetaDIVE has been structured with a <strong>modular design</strong> where certain analysis can be turned on or off depending on the goal, the speed required, and the dataset type.</p>
+<p>Below are two examples of the MetaDIVE workflow. The first image shows the workflow of MetaDIVE with every module activated</p>
+<a class="reference internal image-reference" href="_images/metadive_pipeline_dag_whole.png"><img alt="MetaDIVE logo" class="align-center" src="_images/metadive_pipeline_dag_whole.png" style="width: 600px;" />
+</a>
+<p>The second, shows MetaDIVE with the core module activated.</p>
+<a class="reference internal image-reference" href="_images/metadive_pipeline_dag_core.png"><img alt="MetaDIVE logo" class="align-center" src="_images/metadive_pipeline_dag_core.png" style="width: 600px;" />
+</a>
+<p>As can be seen in the above figures, almost all of the analyses MetaDIVE can perform are optional allowing for great versatility and flexability of the pipeline.</p>
+<p>Here we will document each module specifically and provide a summary usecase to assist with whether the module is best for the user.
+Note: MetaDIVE uses a wide range of software to run. A full list of software and relevant citations can be found in <a class="reference internal" href="References.html"><span class="doc">References</span></a></p>
+<section id="core-module-module-1-data-filtering-assembly-and-viral-classification">
+<h2><strong>Core Module (Module 1): Data filtering, assembly, and viral classification</strong><a class="headerlink" href="#core-module-module-1-data-filtering-assembly-and-viral-classification" title="Link to this heading">¶</a></h2>
+<section id="components">
+<h3>Components<a class="headerlink" href="#components" title="Link to this heading">¶</a></h3>
+<p>The core module performs:
+<strong>Data preprocessing:</strong> fastp (Chen et al., 2018) for adaptor and quality trimming, Bowtie2 (Langmead &amp; Salzberg, 2012) for depletion of phiX, cytochrome oxidase I (CO1), and ribosomal RNA (rRNA).</p>
+<p><strong>Contig assembly:</strong> Trinity (Grabherr et al., 2011) or Megahit (D. Li et al., 2015).</p>
+<p><strong>Viral classification:</strong> Kraken2 (Wood et al., 2019), DIAMOND BLASTx (Buchfink et al., 2021), and confirmatory BLASTn using BLAST+ (Camacho et al., 2009).</p>
+<p><strong>Taxonomic classification:</strong> TaxonKit (Shen &amp; Ren, 2021) and TaxonomizeR (Sherrill-Mix, 2020).</p>
+</section>
+<section id="results-produced">
+<h3>Results produced:<a class="headerlink" href="#results-produced" title="Link to this heading">¶</a></h3>
+<p>This module will produce a variety of different summary graphs and tables describing the overall run quality as well as the proportion of reads assigned to different groups of organisms</p>
+<p>Key results include</p>
+<ol class="arabic simple">
+<li><p>Graph/table of assignment of all reads from QC failed to taxa group assignments</p></li>
+<li><p>Detailed tables/figures of top assigned Viruses/Bacteria/Eukaryotes and the BLAST results for how well each spp was assigned.</p></li>
+<li><p>Assembled contigs file per sample (Megahit/Trinity results)</p></li>
+</ol>
+</section>
+<section id="use-cases">
+<h3>Use cases:<a class="headerlink" href="#use-cases" title="Link to this heading">¶</a></h3>
+<p>This module is relatively fast to run and provides an accurate assessment of what viruses are present/absent in each sample. It also provides insights into the composition of reads for each sample
+e.g., if the sample was majority rRNA or poor quality reads etc. This module lacks some more in depth analyses and does not collate results contigs/reads by species for manual inspection. It is
+best used for a quick but comprehensive understanding of what viruses are in a sample.</p>
+</section>
+</section>
+<section id="module-2-microbiome-classification">
+<h2><strong>Module 2: Microbiome Classification</strong><a class="headerlink" href="#module-2-microbiome-classification" title="Link to this heading">¶</a></h2>
+<section id="id1">
+<h3>Components<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<p>The identified rRNA and CO1 reads undergo stringent filtering with Bowtie2, last common ancestor analysis with MMseqs2 (Steinegger &amp; Soding, 2017), assembly of rRNA contigs with Megahit, and BLASTn for species inference.</p>
+</section>
+<section id="id2">
+<h3>Results produced:<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<p>This module will produce a number of more comprehensive results specifically analysing the rRNA and CO1 regions of organisms in the sample. This allows for a more in depth and accurate analysis
+of bacterial communities and Eukaryote spp.</p>
+<p>Key results include:</p>
+<ol class="arabic simple">
+<li><p>LCA graphs of read assignments to all species for the CO1 region, LSU regions and SSU regions.</p></li>
+<li><p>Assembled contigs of the CO1 region, LSU regions and SSU regions and BLASTn results for their taxonomic assignments resulting in partial or complete regions for high abundance species.</p></li>
+</ol>
+</section>
+<section id="id3">
+<h3>Use cases:<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<p>This module is very fast and helps complement the bacterial and Eukaryote based limitations of other modules. As other modules are BLASTx first, they are prone to false positives and negatives in Bacterial/Eukaryote
+assignment in non coding regions. This module allows for more reliable assignments of the most abundant non viral species present with very low false positive rates due to assembling larger contigs of marker genes. Use this
+module if you are after some additional information on non viral spp. but don't need to assemble significant portions of bacterial/Eukaryote genomes.</p>
+</section>
+</section>
+<section id="module-3-dynamic-host-identification-and-depletion">
+<h2><strong>Module 3: Dynamic Host Identification and Depletion</strong><a class="headerlink" href="#module-3-dynamic-host-identification-and-depletion" title="Link to this heading">¶</a></h2>
+<section id="id4">
+<h3>Components<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<p>Host species identification is performed using CO1 and rRNA reads, with the best matching whole genome downloaded via Entrez Direct (Kans, 2024). Reads are then aligned and depleted against the host genome using Bowtie2.</p>
+</section>
+<section id="id5">
+<h3>Results produced:<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<p>This module will allow for final read assignments to include a specific host species section allowing for a better understanding of the distribution of reads.
+This module also greatly speeds up analysis by removing host reads prior to assembly and taxonomic assignments and can reduce the chance of false positive assignments through endogenous elements.</p>
+</section>
+<section id="id6">
+<h3>Use cases:<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<p>This module is useful in nearly all cases purely for its ability to speed up all downstream analyses at no cost to accuracy. In some rare cases it may cause endogenous viruses to be filtered out
+e.g., FeLV but this typically only occurs when the virus is at ultra low abundance (a handful of reads total) and is rare even in those circumstances.</p>
+</section>
+</section>
+<section id="module-4-single-reads-analysis">
+<h2><strong>Module 4: Single Reads Analysis</strong><a class="headerlink" href="#module-4-single-reads-analysis" title="Link to this heading">¶</a></h2>
+<section id="id7">
+<h3>Components<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<p>For reads not forming contigs, less stringent DIAMOND BLASTx and Kraken2 analyses are conducted. Viral-positive reads are clustered with CD-HIT (Fu et al., 2012), and representative reads are analysed with BLASTn.</p>
+</section>
+<section id="id8">
+<h3>Results produced:<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<p>This module produces several additional results summary files as well as a more detailed sample specific breakdown of results and subsets all reads to species specific folders allowing for manual inspection</p>
+<p>Key results include:</p>
+<ol class="arabic simple">
+<li><p>Expanded summary results tables to include single reads in final read counts</p></li>
+<li><p>interactive html tables/csv file showing read assignments, read complexity metrics and identity scores of matches of contigs/reads to each virus identified.</p></li>
+<li><p>Individual folders per viral spp identified which contain all reads and contigs assigned to each virus for quick manual inspection</p></li>
+</ol>
+</section>
+<section id="id9">
+<h3>Use cases:<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
+<p>This module is useful for any situation where multiple viral species are expected (not sequencing specific viral isolates). It helps assign more reads to every virus helping build up generated viral genomes
+and can identify ultra low abundant viruses (those which are so low abundance they don't form contigs).</p>
+</section>
+</section>
+<section id="module-5-diverged-read-contig-detection">
+<h2><strong>Module 5: Diverged read/contig detection</strong><a class="headerlink" href="#module-5-diverged-read-contig-detection" title="Link to this heading">¶</a></h2>
+<section id="id10">
+<h3>Components<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
+<p>All previously detected species within the pipeline with identities &lt;95% to a reference genome are used to subset a DIAMOND database by species for rapid detection of ultra diverged reads and contigs through utilising the most sensitive detection settings in DIAMOND BLASTx (requires Diamond database to be built with TaxID information).</p>
+</section>
+<section id="id11">
+<h3>Results produced:<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
+<p>This module builds on Module 4 and specifically targets more diverged viruses. It detects all reads to viruses which were too diverged to be detected by Module 4.</p>
+<p>Key results include:</p>
+<ol class="arabic simple">
+<li><p>csv file showing read assignments, read complexity metrics and identity scores of matches of contigs/reads to each virus identified updated to include additional diverged reads found.</p></li>
+<li><p>additional reads and contigs added to each viral spp folder generated in Module 4.</p></li>
+</ol>
+</section>
+<section id="id12">
+<h3>Use cases:<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h3>
+<p>This module is most useful when novel viral species are present in relatively low abundance (the whole genome isn't assembled). When the user is investigating understudied metagenomic samples e.g., environmental samples,
+viromes of understudied eukaryotes, this module will provide additional useful information at only small increases to run time and compute resources.</p>
+</section>
+</section>
+<section id="module-6-adaptive-viral-reference-mapping">
+<h2><strong>Module 6: Adaptive Viral Reference Mapping</strong><a class="headerlink" href="#module-6-adaptive-viral-reference-mapping" title="Link to this heading">¶</a></h2>
+<section id="id13">
+<h3>Components<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h3>
+<p>For viruses with sufficient reads and high pairwise similarity, up to 100 viral genomes are downloaded. Reads are mapped to these genomes using Bowtie2 for reference-guided assembly and high-accuracy De-novo assembly using SPAdes (Bankevich et al., 2012) is performed.</p>
+</section>
+<section id="id14">
+<h3>Results produced:<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h3>
+<p>This module produces additional reference guided and targetted de-novo assemblies of specific viral spp.</p>
+<p>Key results include:</p>
+<ol class="arabic simple">
+<li><p>Reference guided genome consensus of higher abundance viruses</p></li>
+<li><p>Direct mapping of idividual reads to targeted species reducing potential contamination and in some cases resulting in higher read assignments</p></li>
+<li><p>Generation of de-novo assembly of reads mapping to individual viruses</p></li>
+</ol>
+</section>
+<section id="id15">
+<h3>Use cases:<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h3>
+<p>This module is useful for when the target viral sp/spp being investigated are known species with good references on NCBI. The generation of a local aligned consensus genome and de-novo assembly
+allow for quick manual comparison to look for the presence of moderately sized indels in a genome and can help speed the process of high quality genome assembly up significantly.</p>
+</section>
+</section>
+<section id="module-7-adaptive-viral-tree-building">
+<h2>Module 7: Adaptive Viral Tree Building<a class="headerlink" href="#module-7-adaptive-viral-tree-building" title="Link to this heading">¶</a></h2>
+<section id="id16">
+<h3>Components<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h3>
+<p>De novo and reference-guided assemblies are aligned with downloaded viral genomes using MAFFT (Katoh et al., 2002), trimmed with trimAl (Capella-Gutierrez et al., 2009), and analysed with IQ-TREE (Nguyen et al., 2015) to generate phylogenetic trees.</p>
+</section>
+<section id="id17">
+<h3>Results produced:<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h3>
+<p>This module produces additional results from the Module 6 results. This module produces a quick phylogenetic tree of each viral spp which includes references of the viral species and both the reference guided consensus and the
+de-novo assembly.</p>
+</section>
+<section id="id18">
+<h3>Use cases:<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h3>
+<p>This module is useful to gain a quick understanding of what the phylogeny of the virus detected is (although this is a fast and preliminary estimate and it is recommended that a second analysis
+is run manually with paramaters and references specific to the viral spp and research goal).</p>
+</section>
+</section>
+<section id="module-8-adaptive-viral-contig-clustering">
+<h2><strong>Module 8: Adaptive Viral Contig Clustering</strong><a class="headerlink" href="#module-8-adaptive-viral-contig-clustering" title="Link to this heading">¶</a></h2>
+<section id="id19">
+<h3>Components<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h3>
+<p>Divergent/fragmented viruses are identified using geNomad (Camargo et al., 2024) and clustered into genomes with MetaBAT2 (Kang et al., 2019).</p>
+</section>
+<section id="id20">
+<h3>Results produced:<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h3>
+<p>This module can produce additional results which first can identify highly novel viral contigs, and second cluster these contigs together as the same novel species regardless of whether a close enough reference
+exists for the novel species on NCBI.</p>
+<p>Key results include:</p>
+<ol class="arabic simple">
+<li><p>New folder of MetaBat binned contigs sorted by species</p></li>
+</ol>
+</section>
+<section id="id21">
+<h3>Use cases:<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h3>
+<p>This module is useful for when the user is interested in ultra diverged viral spp at the &lt;40% Amino acid similarity to any existing reference. It requires relatively good coverage of the viruses to bin and so is not effective for ultra low abundance viruses.
+It can also assist with clustering contigs from moderately diverged species where some contigs may assign directly to different species but are actually a single diverged species.</p>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">MetaDIVE</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">MetaDIVE Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#core-module-module-1-data-filtering-assembly-and-viral-classification"><strong>Core Module (Module 1): Data filtering, assembly, and viral classification</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#components">Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#results-produced">Results produced:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#use-cases">Use cases:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-2-microbiome-classification"><strong>Module 2: Microbiome Classification</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Results produced:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">Use cases:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-3-dynamic-host-identification-and-depletion"><strong>Module 3: Dynamic Host Identification and Depletion</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id4">Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id5">Results produced:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id6">Use cases:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-4-single-reads-analysis"><strong>Module 4: Single Reads Analysis</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id7">Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id8">Results produced:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id9">Use cases:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-5-diverged-read-contig-detection"><strong>Module 5: Diverged read/contig detection</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id10">Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id11">Results produced:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id12">Use cases:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-6-adaptive-viral-reference-mapping"><strong>Module 6: Adaptive Viral Reference Mapping</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id13">Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id14">Results produced:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id15">Use cases:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-7-adaptive-viral-tree-building">Module 7: Adaptive Viral Tree Building</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id16">Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id17">Results produced:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id18">Use cases:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-8-adaptive-viral-contig-clustering"><strong>Module 8: Adaptive Viral Contig Clustering</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id19">Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id20">Results produced:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id21">Use cases:</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Installation_guide.html">Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Run_setup.html">Run setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Results.html">Interpreting results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Desc_envs.html">Detailed Conda environments used</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Desc_databases.html">Detailed databases information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Desc_scripts.html">Detailed description of scripts files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Desc_rules.html">Detailed description of rules files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Troubleshooting.html">Common issues and troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="References.html">Software references</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to MetaDIVE's documentation!</a></li>
+      <li>Next: <a href="Installation_guide.html" title="next chapter">Installation guide</a></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, James O'Dwyer.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/Overview.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
