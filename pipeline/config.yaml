@@ -36,63 +36,6 @@ samples:
   Sample10:
     - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample10_R1.fastq.gz
     - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample10_R2.fastq.gz
-  Sample11:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample11_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample11_R2.fastq.gz
-  Sample12:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample12_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample12_R2.fastq.gz
-  Sample13:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample13_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample13_R2.fastq.gz
-  Sample14:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample14_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample14_R2.fastq.gz
-  Sample15:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample15_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample15_R2.fastq.gz
-  Sample16:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample16_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample16_R2.fastq.gz
-  Sample17:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample17_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample17_R2.fastq.gz
-  Sample18:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample18_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample18_R2.fastq.gz
-  Sample19:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample19_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample19_R2.fastq.gz
-  Sample20:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample20_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample20_R2.fastq.gz
-  Sample21:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample21_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample21_R2.fastq.gz
-  Sample22:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample22_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample22_R2.fastq.gz
-  Sample23:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample23_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample23_R2.fastq.gz
-  Sample24:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample24_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample24_R2.fastq.gz
-  Sample25:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample25_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample25_R2.fastq.gz
-  Sample26:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample26_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample26_R2.fastq.gz
-  Sample27:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample27_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample27_R2.fastq.gz
-  Sample28:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample28_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample28_R2.fastq.gz
-  Sample29:
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample29_R1.fastq.gz
-    - /filepath/to/raw/reads/MetaDIVE/pipeline/raws/Sample29_R2.fastq.gz
 
 
 # Program directory (working directory to output results and where the rules/scripts folders are along with the snakefiles and config files)
@@ -125,8 +68,7 @@ min_qual_filter_avg_read: 19
 min_qual_window: 20
 
 
-# Not currently implemented in scripts ## TODO: Add in parameter for NCBI API key to downloadgenome.sh and download_variety_genomes_high_completion_viruses.sh
-NCBI_API_KEY: 'XYZ'
+
 
 
 # Assembly choices
@@ -179,28 +121,47 @@ Diamond_sensitivity_setting: 'mid-sensitive'
 
 
 
-#Below settings not implemented yet. Pipeline only identifies top host species for depletion.
-# Is more than 1 species expected in the host reduction?
-# Set as categorical variable with values either "Single" or "Multiple".
-# Single is used when only the host species is of interest.
-# Multiple is used in a number of settings where there is other relevant data from other species in the sample. e.g., 
-# When diet based metagenomics alongside this pathway (detect prey), detect vector host activity (e.g., mosquitos and blood meals). 
-# Or detect parasitic interactions.
-# Multiple will return up to 10 different species from different genera.
-# Note, Taxonomy id steps are currently written to detect animals not other kingdoms. 
-# Inspect host as yes or any other value
+# Whether or not to run a false positive check on the contigs assigned to viruses using BLASTn 
+Blastn_viral_contig_false_positive_check: 'yes'
+
+
+# Whether to return all contigs generated which Diamond blast matched to a virus or only those which passed the false positive check for final reads 
+# and contigs files generated. This will also change the names of viral assignments to match blastn results preferrentially over blastx results. 
+# 'all'/'confirmed'
+Final_contigs_returned: 'confirmed'
+
+
+# Not currently implemented in scripts ## TODO: Add in parameter for NCBI API key to downloadgenome.sh and download_variety_genomes_high_completion_viruses.sh
+NCBI_API_KEY: 'none'
+
+
+# This setting will delete all intermediary files except for the final summaries, reports, returned reads, and quality score reports once the pipeline has finished.  
+# To keep all outputs write "no" To delete everything write "yes"
+Delete_inter_files: "no"
+
+# Databases and other filepaths (once updated during the first time, these will remain static). All have been tarred and compressed on github or will be built on the spot except the Diamond and blastn databases.
+# Diamond and blastn databases were not included as these are very large databases (>100GB each usually) and it is recommended these are installed on an HPC (high performance computer cluster) in a location everyone can access. They are also very common so will likely be present somewhere if routine bioinformatics work
+# has been done on your HPC before. 
+# Have a look around the HPC and potentially contact your HPC admin to see where they are before downloading them yourself. (note this last part to download the diamond and blastn databases isn't made yet and I may not at all) Otherwise,run Diamond_download.sh, and Diamond_download.sh
+
+
+
+
+
+
+
 
 #'yes'/'no'
 inspecthost: 'yes'
-#Single/Multiple
-Hostdetect: 'Single'
+
 
 # Whether to filter out host reads. 
 #'yes'/'no'
 Host_filter: 'yes'
-# Does the analysis require a rapid host identification. Will subset LSU and SSU hits for rapid classification of host to then allow for all further analyses to be run
-# without host DNA yes/no
-Rapid_host_id: 'no'
+
+# testing advanced microbiome analysis for rRNA. 
+#'yes/no'.
+Microbiome_classification: 'yes'
 
 # Weights given to host assignments. This allows for scaling of the results for host identification taking into account a specific marker may not be as resolving for
 # one species as it is for another (requires a general understanding of the expected species/genus/family that the host might be to use most effectively). I have 
@@ -220,17 +181,9 @@ SSUweight: 2
 DNA_assign_blastn: 'no'
 
 
-# Whether or not to run a false positive check on the contigs assigned to viruses using BLASTn 
-Blastn_viral_contig_false_positive_check: 'yes'
 
-# Whether to return all contigs generated which Diamond blast matched to a virus or only those which passed the false positive check for final reads 
-# and contigs files generated. This will also change the names of viral assignments to match blastn results preferrentially over blastx results. 
-# 'all'/'confirmed'
-Final_contigs_returned: 'confirmed'
 
-# testing advanced microbiome analysis for rRNA. 
-#'yes/no'.
-Microbiome_classification: 'yes'
+
 
 
 # Whether or not to build viral genomes (consensus with reference) from returned assigned viral genes
@@ -249,6 +202,10 @@ Genomad_detect: 'no'
 # 'yes/no'
 run_raws: 'yes'
 
+# Whether to do diamond blast on the raws (very long, probably around 15-20% of the whole pipeline, but setting Diamond raw viral filt only significantly reduces this time down to 5-10% of whole pipeline)) Set to yes with the run_raws or set both to no.
+#'yes/no'
+dodiamond_blast_raws: 'yes'
+
 # Whether to subset the blastn raws to save time (strongly recommended if you have a big dataset of fragmented genomes typical of complex environmental samples. 
 # Set to 50000 so a maximum of 50000 raw reads after they have been compressed in cdhit will have blastn run on them. I would recommend not putting this above 100000
 # This setting does not mean only 50000 raw reads will be analysed. All raw reads will be analysed with BLASTx (Diamond blastx) if run_raws is set
@@ -258,9 +215,7 @@ run_raws: 'yes'
 Raw_reads_max_kraken: 10000
 Raw_reads_max: 20000
 
-# Whether to do diamond blast on the raws (very long, probably around 15-20% of the whole pipeline, but setting Diamond raw viral filt only significantly reduces this time down to 5-10% of whole pipeline)) Set to yes with the run_raws or set both to no.
-#'yes/no'
-dodiamond_blast_raws: 'yes'
+
 
 # Whether to run Diamond blast for raw reads using only a viral reference database within Diamond. Will greatly speed up the analysis of single reads. May lead 
 # to an increased rate of false positives but all new false positives are likely to be filtered out at the blastn stage afterward leading to little overall impact
@@ -284,33 +239,19 @@ Divergent_reads_and_contigs_search: 'yes'
 Divergent_reads_and_contigs_sensitivity: 'ultra-sensitive'
 
 
-# whether summary results files should be generated. This is required for all additional modules to generate their final results files.
-# 'yes/no'
-generate_results_summary: 'yes'
 
 # Final read count threshold. The final combined raws and contigs reads table will be filtered to this minimum read count
 # Higher values will result in more likely viruses to be detected but may miss more low frequency viruses
 # recommended between 3 and 20 depending on the purpose of the analysis. 
 readcountthresh: 3
 
-# This setting will delete all intermediary files except for the final summaries, reports, returned reads, and quality score reports once the pipeline has finished.  
-# To keep all outputs write "no" To delete everything write "yes"
-Delete_inter_files: "no"
 
-# Databases and other filepaths (once updated during the first time, these will remain static). All have been tarred and compressed on github or will be built on the spot except the Diamond and blastn databases.
-# Diamond and blastn databases were not included as these are very large databases (>100GB each usually) and it is recommended these are installed on an HPC (high performance computer cluster) in a location everyone can access. They are also very common so will likely be present somewhere if routine bioinformatics work
-# has been done on your HPC before. 
-# Have a look around the HPC and potentially contact your HPC admin to see where they are before downloading them yourself. (note this last part to download the diamond and blastn databases isn't made yet and I may not at all) Otherwise,run Diamond_download.sh, and Diamond_download.sh
 
 
 # Trinity temp path.
 # This is incredibly important because even a single Trinity run can hit a disk file number quota maximum. Trinity produces large numbers of near empty files during analysis (from 10k-500k per sample depending on reads analysed)
 # Choose a spot which allows for lots of files to be written (you can usually see how much space you have on a shared HPC system with the command `quota -s` ) 
-
 Trinitytemppath: "/filepath/to/raw/reads/MetaDIVE/Trinity_temp/"
-
-# all below datasets are saved in the databases tar. Update once file is untarred in new location. TODO: If I make a script to untar and unpack at the required destination I could try and auto update here.
-# by using the set variable from the unpack script and a generic sed replacement.
 
 # Illumina generic adapters for adapter removal.
 
@@ -325,7 +266,6 @@ CO1_genome_index: "/filepath/to/Co1index/MetaDIVE/databases/bowtie2/CO1/CO1_refe
 # CO1 genomes mmseqs2 indexed
 CO1_genome_index_mmseq: "/filepath/to/Co1index2/MetaDIVE/databases/CO1/CO1_DB"
 
-
 #LSU genomes Bowtie indexed.
 LSU_genome_index: "/filepath/to/LSUindex/MetaDIVE/databases/bowtie2/LSU/LSU_reference_idx"
 
@@ -335,10 +275,8 @@ LSU_genome_index_mmseq: "/filepath/to/LSUindex2/MetaDIVE/databases/LSU/LSU_DB"
 # Silva LSU taxonomy map
 SSU_genome_index: "/filepath/to/SSUindex/MetaDIVE/databases/bowtie2/SSU/SSU_reference_idx"
 
-
 # SSU taxonomy map mmseq2
 SSU_genome_index_mmseq: "/filepath/to/SSUindex2/MetaDIVE/databases/SSU/SSU_DB"
-
 
 # Diamond nr database Currently set to general DB on Petrichor HPC CSIRO
 diamond_database: "/data/bioref/diamond_db/nr.dmnd"
@@ -353,13 +291,10 @@ Kraken_database: "/filepath/to/krakendb/MetaDIVE/databases/krakendb/"
 MMSeq_nucleotide_database: "/path/Irrelevant"
 
 # Accessiontaxa file
-# Points to the sql file containing names and Nodes information for use in rapid Taxonomy assignments in R
 Accession_allnamenode: "/filepath/to/Accessions/MetaDIVE/databases/taxonomy/nameNode.sqlite"
 
 # Points to the names and nodes dmp files for use in taxonomizr to insert missing taxids in BLASTs before importing into R
 NCBI_reference_dir: "/filepath/to/taxonomy/MetaDIVE/databases/taxonomy"
-
-
 
 Genomaddb: "/filepath/to/Genomad/MetaDIVE/databases/genomad/genomad_db"
 
@@ -462,7 +397,7 @@ sub_dirs:
   finished: "samples_finished"
 
 
-#Unchangable settings
+#Unchangable settings (these are deprecated, please ignore) 
 
 # Blast method to use for blastn. Initially had MMseqs2 as well but the memory requirement was 2-5X blastn so dropped given the other high memory steps. 
 
@@ -477,8 +412,19 @@ Blast_method: 'blast'
 # Superflous code to remove after streamlined module selections
 # Whether to do KRaken viral classification on the raw sequences 
 doviral_raws_classification: 'no' # REMOVE as will be removing Kraken from the pipeline so only one raws analysis is available # need to remove from summary R script first. 
-kraken_database: "/scratch3/odw014/analysis/databases/Kraken/" # REMOVE
-virus_protein_database: "/scratch3/odw014/analysis/databases/Complete_viral/Viral_proteinsdb" # REMOVE
+#kraken_database: "/scratch3/odw014/analysis/databases/Kraken/" # REMOVE
+#virus_protein_database: "/scratch3/odw014/analysis/databases/Complete_viral/Viral_proteinsdb" # REMOVE
 
 
 
+# Does the analysis require a rapid host identification. Will subset LSU and SSU hits for rapid classification of host to then allow for all further analyses to be run
+# without host DNA yes/no
+Rapid_host_id: 'no'
+
+# Currently not implemented, its purpose is to allow for multiple hosts to be detected simultaneously. Right now only single is viable within the pipeline
+#Single/Multiple
+Hostdetect: 'Single'
+
+# whether summary results files should be generated. This is required for all additional modules to generate their final results files.
+# 'yes/no'
+generate_results_summary: 'yes'

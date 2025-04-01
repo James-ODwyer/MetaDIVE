@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+
+<html lang="English" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Run setup &#8212; MetaDIVE 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=80cc54d1"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Interpreting results" href="Results.html" />
+    <link rel="prev" title="Installation guide" href="Installation_guide.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="run-setup">
+<h1>Run setup<a class="headerlink" href="#run-setup" title="Link to this heading">¶</a></h1>
+<section id="pipeline-folder">
+<h2>pipeline folder<a class="headerlink" href="#pipeline-folder" title="Link to this heading">¶</a></h2>
+<p>To prepare for a MetaDIVE run we need to give the program some preferred settings for how to run and what analyses to perform.</p>
+<p>To begin we will change from the location of the MetaDIVE base directory into the <strong>pipeline</strong> directory:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>pipeline
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="_images/Pipeline_folder.png"><img alt="MetaDIVE pipeline folder" class="align-center" src="_images/Pipeline_folder.png" style="width: 600px;" />
+</a>
+<p>This folder has two main folders and three files of relevance here which are covered in greater detail in other sections</p>
+<ol class="arabic simple">
+<li><p>The folder <strong>rules</strong> contains the location of all rules files used to run MetaDIVE. The rules used are dependent on the parameters set for MetaDIVE and what modules are selected. For standard runs, no file in this folder needs to be changed but see <a class="reference internal" href="Desc_rules.html"><span class="doc">Rules files</span></a> for additional information on individual rules files.</p></li>
+<li><p>The folder <strong>scripts</strong> contains the location of all scripts files used to run MetaDIVE. The scripts used are dependent on the parameters set for MetaDIVE and what modules are selected. For standard runs, no file in this folder needs to be changed</p></li>
+<li><p>The file <strong>run_snakemake.sh</strong> is the master run script. We will be running this to start the analysis shortly.</p></li>
+<li><p>The file <strong>snakefile.snakefile</strong> contains information about how MetaDIVE chooses which rules/scripts files to run. This file can be left alone indefinitely.</p></li>
+<li><p>The file <strong>config.yaml</strong> is where all settings and parameters for running MetaDIVE are kept. We will go into detail on what each setting does below</p></li>
+</ol>
+</section>
+<section id="config-file">
+<h2>config file<a class="headerlink" href="#config-file" title="Link to this heading">¶</a></h2>
+<p>The <strong>config.yaml</strong> file is a text file which is read by MetaDIVE to determine what analyses to run and under what settings. The below will breakdown what every setting does and recommendations
+for how to run each. For reading the text file it is recommended you use a program like notepad++ or something like a file viewer in Winscp but you can also view the file and make edits via command line
+if you prefer.</p>
+<section id="samples-to-run">
+<h3>Samples to run<a class="headerlink" href="#samples-to-run" title="Link to this heading">¶</a></h3>
+<p>MetaDIVE reads sample names and sample paths as paired end data from the config.yaml file. As many samples as wanted can be added to a run (minimum 2 samples currently) but they need to follow
+a specific format to be read correctly. This format can be seen in the below two images (First, spacing characters hidden, second with spacing characters specified).
+But the general pattern is as shown.
+samples:</p>
+<p>[space][space]SampleX:
+[space][space][space][space]-[space]/filepath/sampleX_R1.fastq.gz
+[space][space][space][space]-[space]/filepath/sampleX_R2.fastq.gz</p>
+<p>[space][space]SampleY:
+[space][space][space][space]-[space]/filepath/sampleY_R1.fastq.gz
+[space][space][space][space]-[space]/filepath/sampleY_R2.fastq.gz</p>
+<a class="reference internal image-reference" href="_images/Config_samples.png"><img alt="Sample layout in the config file" class="align-center" src="_images/Config_samples.png" style="width: 600px;" />
+</a>
+<a class="reference internal image-reference" href="_images/Config_samples_spacing.png"><img alt="Sample layout in the config file (spaces shown)" class="align-center" src="_images/Config_samples_spacing.png" style="width: 600px;" />
+</a>
+<p>Populate this file with the names and paths to the samples you want to analyse.</p>
+</section>
+<section id="working-program-directory">
+<h3>Working program directory<a class="headerlink" href="#working-program-directory" title="Link to this heading">¶</a></h3>
+<p>At ~line 42 the working directory of where to run snakemake is given</p>
+<p>e.g.,</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">program_dir: &quot;/filepath/to/raw/reads/MetaDIVE/pipeline/&quot;</span>
+</pre></div>
+</div>
+<p>This is automatically updated to the correct pathway when you run the installation scripts but if you copy and paste the snakemake analysis scripts for quick running a second analysis
+this will need to be updated manually (See :ref:` &lt;metadive-rerun&gt;`)</p>
+</section>
+<section id="run-memory-requirements">
+<h3>Run memory requirements<a class="headerlink" href="#run-memory-requirements" title="Link to this heading">¶</a></h3>
+<p>Metagenomics pipelines can require <strong>large amounts of memory</strong> to run efficiently. This is because certain programs can require up to 100GB to run alone and whole pipelines often require
+running multiple programs simultaneously</p>
+<p>To help optimise MetaDIVE, the pipeline uses a sensitivity setting to let the user specify how much memory they are able to give the pipeline.</p>
+<dl>
+<dt>The  Recommended memory ranges per settings are as described as below:</dt><dd><p><strong>VHigh</strong> = 180GB or more</p>
+<p><strong>High</strong> = 130-180GB</p>
+<p><strong>Medium</strong> = 90-130GB</p>
+<p><strong>Medium-Low</strong> = 60-90GB</p>
+<p><strong>Low</strong> = 40-60 GB  Note this pipeline currently has had limited testing at such low memory, large read datasets e.g., Nextseq/novaseq require far more memory than this to analyse. Many programs used in metagenomics require more than 40GB to run for just one sample. Running with so little may cause progams within the pipeline to crash</p>
+<p><strong>Ultra_low</strong> = &lt;40GB   Note this pipeline currently isn't tested at such low memory. Many individual programs used in metagenomics require more than 40GB to run for just one sample. Running with so little memory may cause programs within the pipeline to crash</p>
+</dd>
+</dl>
+<p>Set the sensitivity to match the range of memory you are able to devote to the run
+e.g., on line ~56 of the config.yaml file write 'Medium' to tell MetaDIVE you will be allocating between 90-130GB of memory.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Sensitivity: &#39;Medium&#39;</span>
+</pre></div>
+</div>
+<p>You will then need to specify how much memory you want to run when you submit the <strong>run_snakemake.sh</strong> script (See :ref:` &lt;metadive-runscript&gt;` for how to prepare the run_snakemake.sh script)</p>
+</section>
+<section id="core-module-program-specific-settings">
+<h3>Core module program specific settings<a class="headerlink" href="#core-module-program-specific-settings" title="Link to this heading">¶</a></h3>
+<p>MetaDIVE utilises multiple programs to run its analysis. A number of key settings are made changeable in the config.yaml file. Here we will break them down</p>
+<p>Starting with Fastp filtering and trimming (~Lines 58-68 of the config file)
+the following settings are given</p>
+<p><strong>minimum_length_filter_fastp</strong> for the minimum read length a read has to reach to be included (reads smaller than this are filtered out)</p>
+<p><strong>complexity_threshold</strong> is the minimum read complexity of reads see Fastp documentation for specifics but in general, this setting filters out more redundant reads
+(reads with excessive numbers of bases repeated e.g, AAAAAAAAAAAAAAAATTTTTTTTTTTTTTCCCCCCCCCCCCCGGGGGGGGGGGGGGG. A complexity filter of ~10 will remove most completely and near completely redundant
+reads but if you are interested in viruses with rich repeat regions like herpesviruses a threshold of 5 may be more appropriate.</p>
+<p><strong>front_window_cutsize</strong> is the size of the sliding window for minimum base quality. Together with <strong>min_qual_window</strong> this will trim the start and finish of the read to remove low quality sequence</p>
+<p><strong>min_qual_filter</strong> is the minimum single base quality filter. e.g., any base with a Phred score &lt;16 will be filtered</p>
+<p><strong>min_qual_filter_avg_read</strong> is the minimum quality filter the whole read needs to pass to not be filtered.</p>
+<p>Below is how each value should be written in the config.yaml file</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">minimum_length_filter_fastp: 85</span>
+
+<span class="go">complexity_threshold: 10</span>
+
+<span class="go">front_window_cutsize: 4</span>
+
+<span class="go">min_qual_filter: 16</span>
+
+<span class="go">min_qual_filter_avg_read: 19</span>
+
+<span class="go">min_qual_window: 20</span>
+</pre></div>
+</div>
+<p><strong>Next</strong> is the choice of assembler to use (~ Line 78).</p>
+<p>Trinity and Megahit are available as options to create contigs when running MetaDIVE. Each has advantages and negatives. If you have limited memory e.g., are running with the sensitivity of Medium-Low or lower.
+it is recommended you use Megahit, however.</p>
+<p>Write either 'Megahit' or 'Trinity'</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Assembly_choice: &#39;Megahit&#39;</span>
+</pre></div>
+</div>
+<p>The other setting of relevance for contig generation is minimum contig size (<strong>Assembly_size</strong>) (~line 100). This will instruct either program what the minimum size of contigs to return should be. Lower
+values result in longer run times, and may have a slight increase in false positives if set too low. It is recommended to set above the size of your read pairs together. e.g., two 150bp reads
+the minimum size should be at least 301.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Assembly_size: &#39;301&#39;</span>
+</pre></div>
+</div>
+<p>Two additional settings are available for <strong>Trinity only</strong> (lines 92-93). These are designed to assist with running Trinity more efficiently. As part of running, Trinity can create
+up to hundreds of thousands of small temporary files which can overload small-medium sized compute clusters. These settings allow the user to shift file creation to a temporary position in
+active memory. This requires your HPC system to be able to allow users to specify dedicated memory as a static/symbolic location and so may not work for all clusters.
+This setting will cause Trinity to use significantly more memory (5-50GB more per sample) but can decrease the run time of Trinity by up to 95%.
+To run set the following settings.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Use_memory_as_storage: &#39;yes&#39;</span>
+</pre></div>
+</div>
+<p>(the &quot;Memory_directory_location&quot; is the path to your linked memory where you will be 'storing' the files instead of writing them to disk)</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Memory_directory_location: $MEMDIR</span>
+</pre></div>
+</div>
+<p><strong>Next</strong> is the choice of how to run <strong>Diamond blastx</strong>
+This setting strongly influences how long the entire pipeline takes as the highest sensitivity levels can result in the single Diamond contig blastx
+taking the same length as all other steps in the pipeline combined.</p>
+<p>Based on the approximations from the Diamond manual page.</p>
+<p>fast= &gt;90% amino acid identity hits</p>
+<p>mid-sensitive is partway between fast and sensitive e.g., ~65%.</p>
+<p>sensitive is for &gt;40% amino acid sensitivity</p>
+<p>more-sensitive is the same as sensitive but with no masking so repeat sequences are better captured</p>
+<p>very-sensitive is for sequences &lt;40% amino acid sensitivity</p>
+<p>ultra-sensitive is more sensitive than very-sensitive.</p>
+<p>If you are in a rush and after only known, pathogenic viruses, fast is sufficient.
+If you are working with species where fewer viruses are classified but it is likely you are looking at viruses from a genus that is known I would recommend mid-sensitive
+If you are looking to detect very divergent viruses from either poorly classified genera/families, or unclassified viruses I would recommend sensitive.
+For anything more diverged, I would recommend running geNomad module as well as this has a lower false positive chance and is more efficient/faster than very-sensitive Diamond blastx
+while having the advantage of picking up far more novel viruses.</p>
+<p>options for this setting are:</p>
+<p><strong>'fast'</strong> <strong>'mid-sensitive'</strong>, <strong>'sensitive'</strong>, <strong>'more-sensitive'</strong>, <strong>'very-sensitive'</strong>, <strong>'ultra-sensitive'</strong></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Diamond_sensitivity_setting: &#39;mid-sensitive&#39;</span>
+</pre></div>
+</div>
+<p><strong>Next</strong> is a setting to describe how to generate final results for contig assignments. This setting allows you to pick whether BLASTn is run on viral contigs identified through BLASTx. This
+has two benefits, first it allows for a reduction in accidental false assignments, and second in scenarios where there are few references of a virus on NCBI for a virus detected, the secondary BLASTn step can result it
+fewer strains/similar species being assigned and a closer overal matching species found. This setting is strongly recommended
+Options for this setting are <strong>'yes/no'</strong></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Blastn_viral_contig_false_positive_check: &#39;yes&#39;</span>
+</pre></div>
+</div>
+<p><strong>Next</strong> there is the setting &quot;Final_contigs_returned&quot;. This lets you choose whether Dimond BLASTx matches to all viruses should be returned or contigs which were identified as not viruses by BLASTn should be removed from the
+virus lists. If set to 'confirmed' this will also update the assignments of virus species to be that of the BLASTn results and not the BLASTx.
+It is recommended to have this setting set to 'confirmed' for most cases but in very rare cases when searching for specific phages or endogenous viruses it may be better to have set to 'all'
+Options are <strong>'all/confirmed'</strong></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Final_contigs_returned: &#39;confirmed&#39;</span>
+</pre></div>
+</div>
+<p><strong>Next</strong> as many modules in MetaDIVE utilise NCBI datasets and are updated in realtime an NCBI_API_KEY is recommended to speed up downloads (you can generate an API key just for having a free NIH account)
+If you have a key, add it here, if not, write 'none'</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">NCBI_API_KEY: &#39;none&#39;</span>
+</pre></div>
+</div>
+<p><strong>Lastly</strong>, MetaDIVE generates a lot of intermediary files when running analyses. These can be kept or can be deleted when the final summary files are being generated.
+A setting has been provided to delete all other files if you want.
+Options are <strong>'yes/no'</strong></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Delete_inter_files: &quot;no&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="module-settings">
+<h3>Module settings<a class="headerlink" href="#module-settings" title="Link to this heading">¶</a></h3>
+<p>MetaDIVE has many modular components that are optional and help focus the pipeline on specific research goals (See <a class="reference internal" href="Overview.html"><span class="doc">the MetaDIVE overview for a referesher of the pipeline structure</span></a> )</p>
+<p>Here we will detail how to activate/deactivate specific modules and in the case of some modules change some settings to allow for better customisation of the pipeline to specific tasks.  (Note, while testing has been done on most common
+combinations of modules, there are up to 5000 possible combinations of the pipeline and so if a specific module pairing doesn't work please create an issue tag so it can be investigated)</p>
+<section id="host-detection-and-filtering-plus-microbiome-analysis">
+<h4>Host detection and filtering plus microbiome analysis<a class="headerlink" href="#host-detection-and-filtering-plus-microbiome-analysis" title="Link to this heading">¶</a></h4>
+<p>The host detection and microbiome modules run in tandem with the host detection requiring the part of the results of the microbiome analyses but the specifics of both can be adjusted for speed.</p>
+<p>The inspecthost setting will tell MetaDIVE whether or not you want to try to identify the host animal species of the dataset. In scenarios where there are multiple spp, it will identify the most abundant
+it has the values <strong>'yes'/'no'</strong></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">inspecthost: &#39;yes&#39;</span>
+</pre></div>
+</div>
+<p>The Host_filter setting will tell MetaDIVE whether or not you want to remove all reads identified as host (this will greatly speed up the MetaDIVE pipeline, and may in some cases also decrease false positive assignments)
+it has the values <strong>'yes'/'no'</strong></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Host_filter: &#39;yes&#39;</span>
+</pre></div>
+</div>
+<p>The Microbiome_classification setting will tell MetaDIVE whether or not you want to generate microbiome classifications using CO1 and rRNA reads found in each sample.
+it has the values <strong>'yes'/'no'</strong></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Microbiome_classification: &#39;yes&#39;</span>
+</pre></div>
+</div>
+<p>As the host species is identified via CO1, LSU and SSU similarities some markers may be more informative than others. If you think you know roughly what type of host organism is present, e.g., mammal vs insect vs bird you can up or down
+scale the weighted score for each marker used to identify the likely host species. e.g., in the below example. CO1 gene is 3 times more important than LSU and 1.5 times more important than SSU</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">CO1weight: 3</span>
+<span class="go">LSUweight: 1</span>
+<span class="go">SSUweight: 2</span>
+</pre></div>
+</div>
+</section>
+<section id="assign-unclassified-contigs-using-blastn">
+<h4>Assign unclassified contigs using BLASTn<a class="headerlink" href="#assign-unclassified-contigs-using-blastn" title="Link to this heading">¶</a></h4>
+<p>For contigs that were not assigned to any species using Diamond BlastX you can attempt assignment using BLASTn. This is very slow and can take longer than every other step of the pipeline combined. I recommend only running this
+on very small datasets.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">DNA_assign_blastn: &#39;no&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="adaptive-viral-reference-mapping">
+<h4>Adaptive Viral Reference Mapping<a class="headerlink" href="#adaptive-viral-reference-mapping" title="Link to this heading">¶</a></h4>
+<p>This module allows for the a reference assembled viral genome to be assembled. This module will download multiple reference genomes of any viruses detected in MetaDIVE and align all unassembled reads directly to the references to identify the
+closest matchnig reference and generate a reference guided assembly helping fill small gaps in the viral genome that may have been missed using standard de-novo assembly methods. This module works best for viruses in your sample that are &gt;85%
+similar to at least one complete reference genome. This setting is limiated in functionality when segmented viruses are investigated.
+Options are <strong>'yes/no'</strong></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Viral_genome_build: &#39;no&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="adaptive-viral-tree-building">
+<h4>Adaptive Viral Tree Building<a class="headerlink" href="#adaptive-viral-tree-building" title="Link to this heading">¶</a></h4>
+<p>This module will use the assembled genomes from the Adaptive Viral reference mapping module as well as the identified reference species already downloaded to generate nucleotide sequence alignments and phylogenetic trees of each genome
+to get a quick idea of how diverged the identified virus is from other known references of that species.
+Options are <strong>'yes/no'</strong></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Viral_genome_tree_building: &#39;no&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="adaptive-viral-contig-clustering">
+<h4>Adaptive Viral Contig Clustering<a class="headerlink" href="#adaptive-viral-contig-clustering" title="Link to this heading">¶</a></h4>
+<p>This module will use geNomad to attempt to identify more diverged viruses (&lt;40% AA similarity) as well as cluster contigs together which may be from the same diverged species despite assigning to different reference species e.g., low identity
+matches to two separate parvo viruses when your sample has a third different species of the virus with no reference genome available in NCBI.</p>
+<p>Options are <strong>'yes/no'</strong></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Genomad_detect: &#39;no&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="single-reads-analysis">
+<h4>Single Reads Analysis<a class="headerlink" href="#single-reads-analysis" title="Link to this heading">¶</a></h4>
+<p>This module will allow for the classification of single reads which didn't form larger contigs. This setting can greatly improve the number of viruses detected when viral concentration is expected to be very low in the sample.
+It will greatly increase the time it takes for MetaDIVE to run, however. There are two settings that need to be set to yes to run this module both with yes/no options
+Options are <strong>'yes/no'</strong></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">run_raws: &#39;yes&#39;</span>
+<span class="go">dodiamond_blast_raws: &#39;yes&#39;</span>
+</pre></div>
+</div>
+<p>The single reads analysis uses both kraken and Diamond BLASTx and the number of viral reads returned from both can be set to reduce how long the single reads analysis takes. We recommend that the number of kraken reads stays below the total
+number of reads. We also recommend that Raw_reads_max is &lt;50000. The majority of time spent running this module is spent confirming the identified viral reads through BLASTn after Diamond BLASTx/Kraken2 identification.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Raw_reads_max_kraken: 10000</span>
+<span class="go">Raw_reads_max: 20000</span>
+</pre></div>
+</div>
+<p>One way to greatly speed up this module is to restrict the Diamond database to only include viruses. This requires the Diamond database to have been built with taxonomic information. If the Diamond database has not been built with
+taxIDs assigned to sequences set this setting to 'no'
+Options are <strong>'yes/no'</strong></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Diamondrawviralfiltonly: &#39;yes&#39;</span>
+</pre></div>
+</div>
+<p>For the Single Reads Analysis, there is also an option to set a threshold for how many reads are required before a virus is reported in summary tables and figures.</p>
+<p>This is recommended to be between 3 and 50 depending on the purpose of the analysis.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">readcountthresh: 3</span>
+</pre></div>
+</div>
+</section>
+<section id="diverged-read-contig-detection">
+<h4>Diverged read/contig detection<a class="headerlink" href="#diverged-read-contig-detection" title="Link to this heading">¶</a></h4>
+<p>Single read analysis is limited to detecting sequences that are at least 85% similar to a known virus. The diverged read/contig detection module allows for the detection of reads as diverged as 30-50% from viral references with a relatively small
+increase in run time. This module requires at least 1 contig or 3 reads to be assigned to a virus before diverged read detection occurs.
+<strong>This setting also requires that Diamondrawviralfiltonly is set to 'yes'</strong>
+Options are <strong>'yes/no'</strong></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Divergent_reads_and_contigs_search: &#39;yes&#39;</span>
+</pre></div>
+</div>
+<p>The Diverged read/contig detection will detected more diverged reads based on the Diamond BLASTx settings provided here.</p>
+<p>We recommend you use anything as sensitive or more sensitive.
+Options are <strong>'fast'</strong>, <strong>'mid-sensitive'</strong>, <strong>'sensitive'</strong>, <strong>'more-sensitive'</strong>, <strong>'very-sensitive'</strong>, <strong>'ultra-sensitive'</strong></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Divergent_reads_and_contigs_sensitivity: &#39;ultra-sensitive&#39;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="database-paths">
+<h3>Database paths<a class="headerlink" href="#database-paths" title="Link to this heading">¶</a></h3>
+<p>Almost all databases in MetaDIVE are updated automatically. There are 3 exceptions that you will need to update manually.</p>
+<p>The <strong>Trinitytemppath:</strong> setting needs to point to where you would like Trinity files to be generated. This pathway has to be an existing folder. This is automatically set to the MetaDIVE folder but you may want to set it somewhere else
+which is capable of storing all the temporary files Trinity needs</p>
+<p>The <strong>diamond_database:</strong> needs to point to where your Diamond database is located on your HPC system</p>
+<p>The <strong>blast_nucleotide_database:</strong> needs to point to where your Blastn database is located on your HPC system.</p>
+<a class="reference internal image-reference" href="_images/Config_databases.png"><img alt="MetaDIVE config databases" class="align-center" src="_images/Config_databases.png" style="width: 600px;" />
+</a>
+</section>
+</section>
+<section id="running-metadive">
+<span id="metadive-runscript"></span><h2>Running MetaDIVE<a class="headerlink" href="#running-metadive" title="Link to this heading">¶</a></h2>
+<p>Once you have updated settings to what you would like you are ready to run the analysis.</p>
+<p>To do this first open the file in the pipeline directory titled</p>
+<p><strong>run_snakemake.sh</strong></p>
+<p>and change the number of CPUs, memory and time you want to allocate to the analysis. These resources will then be divided by MetaDIVE to allow for the parallel running of multiple samples. The exact labels that need to be changed here
+are dependent on what HPC system you have but for a SLURM system the settings to change are</p>
+<p>#SBATCH --cpus-per-task 48               # total number of CPUs to allocate. depending on size of data and urgency, 12-48</p>
+<p>#SBATCH --mem 100G                       # Total memory. Can require a lot particularly if you want to run trinity! between 80 and 180 depending on complexity of data</p>
+<p>#SBATCH --time 48:00:00                 # Time requirements hh/mm/ss would recommend around 100 hours for large datasets. If it doesn't complete you can always run the run_snakemake.sh script again and it will pick up where it last left off.</p>
+<p>once these settings are updated save the file and now you can run the file with your HPC batch system.</p>
+<p>e.g.,  if you are in the MetaDVIE folder and have a slurm system you can run</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">sbatch ./pipeline/run_snakemake.sh</span>
+</pre></div>
+</div>
+</section>
+<section id="rerunning-metadive-running-on-new-datasets">
+<span id="metadive-rerun"></span><h2>Rerunning MetaDIVE/running on new datasets<a class="headerlink" href="#rerunning-metadive-running-on-new-datasets" title="Link to this heading">¶</a></h2>
+<p>Running MetaDIVE on multiple datasets is very easy. Once it has been run once, all databases are set up and subsequent runs will be much simpler.</p>
+<p>To run a second or more time the easiest way to do this is to copy the following files and folders in the <strong>pipeline</strong> folder from your earlier run and paste them into a new folder</p>
+<ol class="arabic simple">
+<li><p>The folder <strong>rules</strong></p></li>
+<li><p>The folder <strong>scripts</strong></p></li>
+<li><p>The file <strong>run_snakemake.sh</strong></p></li>
+<li><p>The file <strong>snakefile.snakefile</strong></p></li>
+<li><p>The file <strong>config.yaml</strong></p></li>
+</ol>
+<p>Then open the config.yaml file and update the <strong>samples</strong> and the <strong>program_dir:</strong> to your new samples and folder path.</p>
+<p>After that you can change any settings you think would be better for this new dataset and run the pipeline by running run_snakemake.sh</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">MetaDIVE</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Overview.html">MetaDIVE Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Installation_guide.html">Installation guide</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Run setup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pipeline-folder">pipeline folder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#config-file">config file</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#samples-to-run">Samples to run</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#working-program-directory">Working program directory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-memory-requirements">Run memory requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core-module-program-specific-settings">Core module program specific settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-settings">Module settings</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#host-detection-and-filtering-plus-microbiome-analysis">Host detection and filtering plus microbiome analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#assign-unclassified-contigs-using-blastn">Assign unclassified contigs using BLASTn</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#adaptive-viral-reference-mapping">Adaptive Viral Reference Mapping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#adaptive-viral-tree-building">Adaptive Viral Tree Building</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#adaptive-viral-contig-clustering">Adaptive Viral Contig Clustering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#single-reads-analysis">Single Reads Analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#diverged-read-contig-detection">Diverged read/contig detection</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#database-paths">Database paths</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#running-metadive">Running MetaDIVE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rerunning-metadive-running-on-new-datasets">Rerunning MetaDIVE/running on new datasets</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Results.html">Interpreting results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Desc_envs.html">Detailed Conda environments used</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Desc_databases.html">Detailed databases information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Desc_scripts.html">Detailed description of scripts files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Desc_rules.html">Detailed description of rules files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Troubleshooting.html">Common issues and troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="References.html">Software references</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="Installation_guide.html" title="previous chapter">Installation guide</a></li>
+      <li>Next: <a href="Results.html" title="next chapter">Interpreting results</a></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, James O'Dwyer.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/Run_setup.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
