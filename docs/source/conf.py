@@ -5,11 +5,10 @@
 # ??? BUILD COMMANDS:
 # ------------------------------------------------------------------------------
 # ?? Build locally (for testing or file:// viewing):
-# sphinx-build -b html
+# sphinx-build -b html docs/source docs/
 #
 # ?? Build for GitHub Pages (relative path safe under /MetaDIVE/):
-# GITHUB_PAGES=1 sphinx-build -b html docs/source docs/html
-# cp -r docs/html/* docs/
+# GITHUB_PAGES=1 sphinx-build -b html docs/source docs/
 # ==============================================================================
 
 import os

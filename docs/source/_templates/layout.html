@@ -1,0 +1,8 @@
+{% extends "!layout.html" %}
+
+{% block extrahead %}
+  {% if "_static" in pathto("_static") %}
+    <base href="/MetaDIVE/">
+  {% endif %}
+  {{ super() }}
+{% endblock %}
