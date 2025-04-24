@@ -11,6 +11,8 @@
 
 # Internet access is needed
 
+cd ./envs
+
 conda_path=$(conda info --base)
 
 conda config --set channel_priority flexible

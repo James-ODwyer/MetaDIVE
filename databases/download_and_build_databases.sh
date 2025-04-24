@@ -14,6 +14,8 @@ eval "$(conda shell.bash hook)"
 conda activate snakemake7
 
 
+cd ./databases/
+
 sbatch download_kraken_DBs.sh
 
 databasedir=$(pwd)
