@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --account=OD-229285 
+#SBATCH --account=OD-229285
 #SBATCH --job-name snakemake_genome_download
-#SBATCH --nodes 1 
-#SBATCH --ntasks-per-node 1 
+#SBATCH --nodes 1
+#SBATCH --ntasks-per-node 1
 #SBATCH --cpus-per-task 1
 #SBATCH --mem 1G
 #SBATCH --time 2:00:00
@@ -30,7 +30,10 @@ do
 done
 
 
-export NCBI_API_KEY="$API_KEY"
+if [[ ! "$API_KEY" =~ ^([Nn][Oo][Nn][Ee]?|NA)$ ]]; then
+  export NCBI_API_KEY="$API_KEY"
+fi
+
 
 
 # Input 2 is the taxid file. Need to update rule still with the argpass call.

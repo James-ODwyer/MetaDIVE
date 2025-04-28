@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --account=OD-229285 
+#SBATCH --account=OD-229285
 #SBATCH --job-name snakemake_genome_download
-#SBATCH --nodes 1 
-#SBATCH --ntasks-per-node 1 
+#SBATCH --nodes 1
+#SBATCH --ntasks-per-node 1
 #SBATCH --cpus-per-task 1
 #SBATCH --mem 2G
 #SBATCH --time 1:00:00
@@ -34,8 +34,9 @@ echo "output file   : $output"
 echo "output directory : $outdir"
 echo "Program directory   : $programdir"
 
-# api key here, but should make it a variable in the config file and feed it in in future.
-export NCBI_API_KEY="$API_KEY"
+if [[ ! "$API_KEY" =~ ^([Nn][Oo][Nn][Ee]?|NA)$ ]]; then
+  export NCBI_API_KEY="$API_KEY"
+fi
 
 
 

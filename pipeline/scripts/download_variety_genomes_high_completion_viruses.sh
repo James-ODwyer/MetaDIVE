@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --account=OD-229285 
+#SBATCH --account=OD-229285
 #SBATCH --job-name snakemake_genome_download_multi
-#SBATCH --nodes 1 
-#SBATCH --ntasks-per-node 1 
+#SBATCH --nodes 1
+#SBATCH --ntasks-per-node 1
 #SBATCH --cpus-per-task 4
 #SBATCH --mem 12G
 #SBATCH --time 24:00:00
@@ -36,7 +36,10 @@ echo " sample name: $samplename "
 echo " program dir: $programdir "
 
 
-export NCBI_API_KEY="$API_KEY"
+if [[ ! "$API_KEY" =~ ^([Nn][Oo][Nn][Ee]?|NA)$ ]]; then
+  export NCBI_API_KEY="$API_KEY"
+fi
+
 
 
 # Edited version. New pathway takes taxid's from identified genomes with minimum 100 hits to the genome. 
