@@ -74,6 +74,7 @@ rule prep_contigs_plus_reads_rediamond:
     input:
         unalignedreads1 = raws_after_hostR1,
         unalignedreads2 = raws_after_hostR2,
+        readsextracted = config["sub_dirs"]["compiled_summary"] + "/{sample}/finished_extracting_reads.txt",
         unalignedcontigs = config["sub_dirs"]["contigs_assigned"] + "/{sample}_matches_unassigned.fa",
         identified_raws = config["sub_dirs"]["raws_blastn_r"] + "/{sample}_readnames_virus_confirmed.txt",
         output_datatable = config["sub_dirs"]["compiled_summary"] + "/{sample}/{sample}_virusall_datatable.html"

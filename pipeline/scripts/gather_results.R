@@ -172,82 +172,77 @@ summary_reads_table$percentage_rem_QC  <- percentremain
 # 3. CO1 hits removed. Also adding in the Phix removal step here based on loss from prior fastp and total inputted into CO1 (can actually read on Phix if needed but its usually <10000 reads (<0.1%)
 # and such a small component)
 
-
-
+# --- PhiX ---
 reads_line_index <- grep("reads; of these:", phixlogfile)
-
-# Extract the line containing the reads information
 reads_line <- phixlogfile[reads_line_index]
 
-# Use a regular expression to extract the number before "reads"
 total_readpairs_prePhixfilter <- as.numeric(sub("([0-9]+) reads;.*", "\\1", reads_line))
-total_reads_prePhixfilter <- (total_readpairs_prePhixfilter *2)
+if (length(total_readpairs_prePhixfilter) == 0) total_readpairs_prePhixfilter <- 0
+
+total_reads_prePhixfilter <- total_readpairs_prePhixfilter * 2
 
 
-
+# --- CO1 ---
 reads_line_index <- grep("reads; of these:", bowtieCO1file)
-
-# Extract the line containing the reads information
 reads_line <- bowtieCO1file[reads_line_index]
 
-# Use a regular expression to extract the number before "reads"
 total_readpairs_preCO1filter <- as.numeric(sub("([0-9]+) reads;.*", "\\1", reads_line))
-total_reads_preCO1filter <- (total_readpairs_preCO1filter *2)
+if (length(total_readpairs_preCO1filter) == 0) total_readpairs_preCO1filter <- 0
+
+total_reads_preCO1filter <- total_readpairs_preCO1filter * 2
 
 
-
+# --- LSU ---
 reads_line_index <- grep("reads; of these:", bowtieLSUfile)
-# Extract the line containing the reads information
 reads_line <- bowtieLSUfile[reads_line_index]
 
-# Use a regular expression to extract the number before "reads"
 total_readpairs_preLSUfilter <- as.numeric(sub("([0-9]+) reads;.*", "\\1", reads_line))
-total_reads_preLSUfilter <- (total_readpairs_preLSUfilter *2)
+if (length(total_readpairs_preLSUfilter) == 0) total_readpairs_preLSUfilter <- 0
 
+total_reads_preLSUfilter <- total_readpairs_preLSUfilter * 2
 # SSU is a bit weird because I have thrown the unassigned single reads back into the filter so they can be grabbed by a later raw reads check if required. 
 # Ths means the total reads is not = 2* reads in first line of the log. 
 
 
+# Get paired reads
 reads_line_index <- grep(" were paired; of these", bowtieSSUfile)
-# Extract the line containing the reads information
 reads_line <- bowtieSSUfile[reads_line_index]
 
-# Use a regular expression to extract the number before "reads"
 total_readpairs_preSSUfilter1 <- as.numeric(sub("^\\s*([0-9]+) \\(.*", "\\1", reads_line))
-total_reads_preSSUfilter1a <- (total_readpairs_preSSUfilter1 *2)
+if (length(total_readpairs_preSSUfilter1) == 0) total_readpairs_preSSUfilter1 <- 0
 
+total_reads_preSSUfilter1a <- total_readpairs_preSSUfilter1 * 2
+
+# Get unpaired reads
 reads_line_index <- grep(" were unpaired", bowtieSSUfile)
-# Extract the line containing the reads information
 reads_line <- bowtieSSUfile[reads_line_index]
 
-# Use a regular expression to extract the number before "reads"
+# --- Extract total unpaired SSU reads ---
 total_reads_preSSUfilter2 <- as.numeric(sub("^\\s*([0-9]+) \\(.*", "\\1", reads_line))
-total_reads_preSSUfilter <- (total_reads_preSSUfilter1a + total_reads_preSSUfilter2)
+if (length(total_reads_preSSUfilter2) == 0) total_reads_preSSUfilter2 <- 0
 
+# Combine paired and unpaired SSU reads
+total_reads_preSSUfilter <- total_reads_preSSUfilter1a + total_reads_preSSUfilter2
 
-
+# --- Unaligned paired reads ---
 mates_line_index <- grep("mates make up the pairs", bowtieSSUfile)
-
-# The target line is the one immediately after this line
 target_line <- bowtieSSUfile[mates_line_index + 1]
 
-# Use a regular expression to extract the first number in the target line
 readsunalignedSSU1a <- as.numeric(sub("^\\s*([0-9]+) \\(.*", "\\1", target_line))
+if (length(readsunalignedSSU1a) == 0) readsunalignedSSU1a <- 0
 
-
+# --- Unaligned unpaired reads ---
 mates_line_index <- grep(" were unpaired; of these", bowtieSSUfile)
-
-# The target line is the one immediately after this line
 target_line <- bowtieSSUfile[mates_line_index + 1]
 
-# Use a regular expression to extract the first number in the target line
 readsunalignedSSU1b <- as.numeric(sub("^\\s*([0-9]+) \\(.*", "\\1", target_line))
+if (length(readsunalignedSSU1b) == 0) readsunalignedSSU1b <- 0
 
-readsunalignedSSU <- (readsunalignedSSU1a +readsunalignedSSU1b)
+# --- Total unaligned reads ---
+readsunalignedSSU <- readsunalignedSSU1a + readsunalignedSSU1b
 
-
-readsalignedSSU <- (total_reads_preSSUfilter - readsunalignedSSU )
-
+# --- Aligned reads = total - unaligned ---
+readsalignedSSU <- total_reads_preSSUfilter - readsunalignedSSU
 
 
 alignment_rate_index <- grep("overall alignment rate", bowtieSSUfile)

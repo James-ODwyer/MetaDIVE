@@ -90,8 +90,6 @@ if (nrow(viruses_reads_threshold)<10) {
 
 
 
-
-
 viruses_top10$total_reads_assigned <- as.numeric(as.character(viruses_top10$total_reads_assigned))
 
 

@@ -613,6 +613,17 @@ if (BOTHMISSING =="NO") {
     )
 
 
+
+coloured_data <- coloured_data %>%
+  rename(mean_contig_alignment_length = length)
+
+
+virus_all <- virus_all %>%
+  rename(mean_contig_alignment_length = length)
+
+virus_all2 <- virus_all2 %>%
+  rename(mean_contig_alignment_length = length)
+
   
   coloured_datatable <- datatable(coloured_data, escape = FALSE)
   
