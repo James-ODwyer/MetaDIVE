@@ -109,3 +109,33 @@ Rscript install_d3Tree.R
 
 conda deactivate
 
+
+condarc_files=$(conda config --show-sources | grep -oP '(?<=^==> ).*?(?= <==)')
+
+# Loop over each .condarc and patch envs_dirs and pkgs_dirs if needed
+for file in $condarc_files; do
+    echo "Updating .condarc: $file"
+
+    # Ensure file exists
+    touch "$file"
+
+    # Insert envs_dirs if missing
+    if ! grep -q "^envs_dirs:" "$file"; then
+        echo -e "\nenvs_dirs:\n  - ${conda_base}\n  - ${conda_base}/envs" >> "$file"
+        echo " Added envs_dirs to $file"
+    else
+        grep -q "  - ${conda_base}" "$file" || sed -i "/^envs_dirs:/a \  - ${conda_base}" "$file"
+        grep -q "  - ${conda_base}/envs" "$file" || sed -i "/^envs_dirs:/a \  - ${conda_base}/envs" "$file"
+    fi
+
+    # Insert pkgs_dirs if missing
+    if ! grep -q "^pkgs_dirs:" "$file"; then
+        echo -e "\npkgs_dirs:\n  - ${conda_base}/pkgs" >> "$file"
+        echo " Added pkgs_dirs to $file"
+    else
+        grep -q "  - ${conda_base}/pkgs" "$file" || sed -i "/^pkgs_dirs:/a \  - ${conda_base}/pkgs" "$file"
+    fi
+done
+
+
+exit
