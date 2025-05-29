@@ -1,11 +1,11 @@
-#!/bin/bash 
-#SBATCH --account=OD-229285                         # If account info is needed
-#SBATCH --job-name building_conda_environments     # named whatever you would like 
-#SBATCH --nodes 1                        # nodes to use on the hpc 
+#!/bin/bash
+#SBATCH --account=OD-229285
+#SBATCH --job-name building_conda_environments     # named whatever you would like
+#SBATCH --nodes 1                        # nodes to use on the hpc
 #SBATCH --ntasks-per-node 1              # ntasks per node (not needed to play around with for the pipeline. the pipeline will allocate all resources as best needed)
-#SBATCH --cpus-per-task 1               # total number of CPUs to allocate  
-#SBATCH --mem 4G                       # Total memory. 
-#SBATCH --time 2:00:00                 # Time requirements hh/mm/ss 
+#SBATCH --cpus-per-task 1               # total number of CPUs to allocate
+#SBATCH --mem 4G                       # Total memory.
+#SBATCH --time 2:00:00                 # Time requirements hh/mm/ss
 #SBATCH --partition io                # If a particular download node is required
 
 
@@ -78,7 +78,33 @@ echo "Conda environment created at: $env_path"
 echo "Conda environment kraken2 fully installed"
 
 
+# Collect all .condarc paths from config show-sources
+condarc_files=$(conda config --show-sources | awk '/^==> / {print $2}')
 
+# Loop over all discovered .condarc files
+for file in $condarc_files; do
+    echo " Updating .condarc: $file"
+
+    # Make sure the file exists (it should, but for safety)
+    [ -f "$file" ] || touch "$file"
+
+    # Patch envs_dirs
+    if ! grep -q "^envs_dirs:" "$file"; then
+        echo -e "\nenvs_dirs:\n  - ${conda_base}\n  - ${conda_base}/envs" >> "$file"
+        echo "  Added envs_dirs to $file"
+    else
+        grep -q "  - ${conda_base}" "$file" || sed -i "/^envs_dirs:/a \  - ${conda_base}" "$file"
+        grep -q "  - ${conda_base}/envs" "$file" || sed -i "/^envs_dirs:/a \  - ${conda_base}/envs" "$file"
+    fi
+
+    # Patch pkgs_dirs
+    if ! grep -q "^pkgs_dirs:" "$file"; then
+        echo -e "\npkgs_dirs:\n  - ${conda_base}/pkgs" >> "$file"
+        echo "  Added pkgs_dirs to $file"
+    else
+        grep -q "  - ${conda_base}/pkgs" "$file" || sed -i "/^pkgs_dirs:/a \  - ${conda_base}/pkgs" "$file"
+    fi
+done
 
 mkdir -p "$conda_path"/envs/Rdataplotting
 
@@ -108,34 +134,3 @@ conda activate Rdataplotting
 Rscript install_d3Tree.R
 
 conda deactivate
-
-
-condarc_files=$(conda config --show-sources | grep -oP '(?<=^==> ).*?(?= <==)')
-
-# Loop over each .condarc and patch envs_dirs and pkgs_dirs if needed
-for file in $condarc_files; do
-    echo "Updating .condarc: $file"
-
-    # Ensure file exists
-    touch "$file"
-
-    # Insert envs_dirs if missing
-    if ! grep -q "^envs_dirs:" "$file"; then
-        echo -e "\nenvs_dirs:\n  - ${conda_base}\n  - ${conda_base}/envs" >> "$file"
-        echo " Added envs_dirs to $file"
-    else
-        grep -q "  - ${conda_base}" "$file" || sed -i "/^envs_dirs:/a \  - ${conda_base}" "$file"
-        grep -q "  - ${conda_base}/envs" "$file" || sed -i "/^envs_dirs:/a \  - ${conda_base}/envs" "$file"
-    fi
-
-    # Insert pkgs_dirs if missing
-    if ! grep -q "^pkgs_dirs:" "$file"; then
-        echo -e "\npkgs_dirs:\n  - ${conda_base}/pkgs" >> "$file"
-        echo " Added pkgs_dirs to $file"
-    else
-        grep -q "  - ${conda_base}/pkgs" "$file" || sed -i "/^pkgs_dirs:/a \  - ${conda_base}/pkgs" "$file"
-    fi
-done
-
-
-exit
