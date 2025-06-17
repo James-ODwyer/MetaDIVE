@@ -6,6 +6,7 @@
 #SBATCH --cpus-per-task 48               # total number of CPUs to allocate. depending on size of data and urgency, 12-48  
 #SBATCH --mem 100G                       # Total memory. Can require a lot particularly if you want to run trinity! between 80 and 180 depending on complexity of data
 #SBATCH --time 48:00:00                 # Time requirements hh/mm/ss would recommend around 100 hours for large datasets. if it doesn't complete you can always launch the script again
+#SBATCH --partition compute
 
 # Need to activate conda through source when running a slurm script
 
