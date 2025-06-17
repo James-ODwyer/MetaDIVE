@@ -14,7 +14,7 @@
 cd ./envs
 
 conda_path=$(conda info --base)
-
+conda_base=$(conda info --base)
 conda config --set channel_priority flexible
 
 mkdir -p "$conda_path"/envs/snakemake7
