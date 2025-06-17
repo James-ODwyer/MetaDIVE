@@ -50,51 +50,46 @@ replace_param_names() {
     local is_download_script="$2"
     local new_partition
 
-    # Strip known prefix
-    line_no_prefix=$(echo "$line" | sed -E 's/^#(SBATCH|PBS|BSUB|\$|CUSTOM)\s+//')
+    # Strip any known prefix (e.g., #SBATCH, #PBS)
+    line=$(echo "$line" | sed -E 's/^#(SBATCH|PBS|BSUB|\$|CUSTOM)[[:space:]]+//')
 
-    # Determine correct partition
+    # Decide which partition to use
     if [[ "$DOWNLOAD_PARTITION" != "none" && "$is_download_script" == "true" ]]; then
         new_partition="$DOWNLOAD_PARTITION"
     else
         new_partition="$PARTITION"
     fi
 
+    # Rewrite resource parameter names for each batch system
     case $BATCH_STYLE in
         slurm)
-            if [[ "$line_no_prefix" =~ --partition= ]]; then
-                line_no_prefix=$(echo "$line_no_prefix" | sed -E "s/--partition=[^ ]*/--partition=$new_partition/")
-            fi
-            if [[ "$line_no_prefix" =~ --account= ]]; then
-                line_no_prefix=$(echo "$line_no_prefix" | sed -E "s/--account=[^ ]*/--account=$ACCOUNT/")
-            fi
-            # Do not add if not present – only update
+            line=$(echo "$line" | sed -E "s/--partition[ =][^ ]*/--partition=$new_partition/")
+            [[ -n $ACCOUNT ]] && line=$(echo "$line" | sed -E "s/--account[ =][^ ]*/--account=$ACCOUNT/")
             ;;
         pbs)
-            # Only update matching patterns
-            [[ "$line_no_prefix" =~ --cpus-per-task= ]] && line_no_prefix=$(echo "$line_no_prefix" | sed -E "s/--cpus-per-task=([0-9]+)/-l nodes=1:ppn=\1/")
-            [[ "$line_no_prefix" =~ --mem= ]] && line_no_prefix=$(echo "$line_no_prefix" | sed -E "s/--mem=([0-9A-Za-z]+)/-l mem=\1/")
-            [[ "$line_no_prefix" =~ --partition= ]] && line_no_prefix=$(echo "$line_no_prefix" | sed -E "s/--partition=[^ ]*/-q $new_partition/")
-            [[ "$line_no_prefix" =~ --account= ]] && line_no_prefix=$(echo "$line_no_prefix" | sed -E "s/--account=[^ ]*/-A $ACCOUNT/")
+            line=$(echo "$line" | sed -E "s/--cpus-per-task[ =]([0-9]+)/-l nodes=1:ppn=\1/")
+            line=$(echo "$line" | sed -E "s/--mem[ =]([0-9A-Za-z]+)/-l mem=\1/")
+            line=$(echo "$line" | sed -E "s/--partition[ =][^ ]*/-q $new_partition/")
+            [[ -n $ACCOUNT ]] && line=$(echo "$line" | sed -E "s/--account[ =][^ ]*/-A $ACCOUNT/")
             ;;
         lsf)
-            [[ "$line_no_prefix" =~ --cpus-per-task= ]] && line_no_prefix=$(echo "$line_no_prefix" | sed -E "s/--cpus-per-task=([0-9]+)/-n \1/")
-            [[ "$line_no_prefix" =~ --mem= ]] && line_no_prefix=$(echo "$line_no_prefix" | sed -E "s/--mem=([0-9A-Za-z]+)/-R \"rusage[mem=\1]\"/")
-            [[ "$line_no_prefix" =~ --partition= ]] && line_no_prefix=$(echo "$line_no_prefix" | sed -E "s/--partition=[^ ]*/-q $new_partition/")
-            [[ "$line_no_prefix" =~ --account= ]] && line_no_prefix=$(echo "$line_no_prefix" | sed -E "s/--account=[^ ]*/-P $ACCOUNT/")
+            line=$(echo "$line" | sed -E "s/--cpus-per-task[ =]([0-9]+)/-n \1/")
+            line=$(echo "$line" | sed -E "s/--mem[ =]([0-9A-Za-z]+)/-R \"rusage[mem=\1]\"/")
+            line=$(echo "$line" | sed -E "s/--partition[ =][^ ]*/-q $new_partition/")
+            [[ -n $ACCOUNT ]] && line=$(echo "$line" | sed -E "s/--account[ =][^ ]*/-P $ACCOUNT/")
             ;;
         sge)
-            [[ "$line_no_prefix" =~ --cpus-per-task= ]] && line_no_prefix=$(echo "$line_no_prefix" | sed -E "s/--cpus-per-task=([0-9]+)/-pe smp \1/")
-            [[ "$line_no_prefix" =~ --mem= ]] && line_no_prefix=$(echo "$line_no_prefix" | sed -E "s/--mem=([0-9A-Za-z]+)/-l mem_free=\1/")
-            [[ "$line_no_prefix" =~ --partition= ]] && line_no_prefix=$(echo "$line_no_prefix" | sed -E "s/--partition=[^ ]*/-q $new_partition/")
-            [[ "$line_no_prefix" =~ --account= ]] && line_no_prefix=$(echo "$line_no_prefix" | sed -E "s/--account=[^ ]*/-A $ACCOUNT/")
+            line=$(echo "$line" | sed -E "s/--cpus-per-task[ =]([0-9]+)/-pe smp \1/")
+            line=$(echo "$line" | sed -E "s/--mem[ =]([0-9A-Za-z]+)/-l mem_free=\1/")
+            line=$(echo "$line" | sed -E "s/--partition[ =][^ ]*/-q $new_partition/")
+            [[ -n $ACCOUNT ]] && line=$(echo "$line" | sed -E "s/--account[ =][^ ]*/-A $ACCOUNT/")
             ;;
         custom)
-            ;;  # No changes
+            line="$line"  # No changes for custom
+            ;;
     esac
 
-    # Only emit modified line with header if anything was changed
-    echo "$HEADER_PREFIX $line_no_prefix"
+    echo "$line"
 }
 
 # === MODIFY FILES ===
