@@ -102,11 +102,15 @@ for DIR in "${SCRIPT_LOCATIONS[@]}"; do
         head -n 10 "$FILE" > tmp_head.txt
         tail -n +11 "$FILE" > tmp_tail.txt
 
-        if grep -q -- "--partition io" tmp_head.txt; then
-            script_contains_download_io="true"
-        else
-            script_contains_download_io="false"
-        fi
+if [[ "$DOWNLOAD_PARTITION" != "none" ]]; then
+    if grep -q -- "--partition io" tmp_head.txt; then
+        script_contains_download_io="true"
+    else
+        script_contains_download_io="false"
+    fi
+else
+    script_contains_download_io="false"
+fi
 
         > tmp_head_fixed.txt
         while read -r line; do
