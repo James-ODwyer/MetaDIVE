@@ -60,36 +60,77 @@ replace_param_names() {
         new_partition="$PARTITION"
     fi
 
-    # Rewrite resource parameter names, keeping values
     case $BATCH_STYLE in
         slurm)
-            line=$(echo "$line" | sed -E "s/--partition=.*/--partition=$new_partition/")
-            [[ -n $ACCOUNT ]] && line=$(echo "$line" | sed -E "s/--account=.*/--account=$ACCOUNT/")
+            # Replace or append --partition
+            if [[ "$line" =~ --partition= ]]; then
+                line=$(echo "$line" | sed -E "s/--partition=[^ ]*/--partition=$new_partition/")
+            else
+                line="$line --partition=$new_partition"
+            fi
+            # Replace or append --account
+            if [[ -n $ACCOUNT ]]; then
+                if [[ "$line" =~ --account= ]]; then
+                    line=$(echo "$line" | sed -E "s/--account=[^ ]*/--account=$ACCOUNT/")
+                else
+                    line="$line --account=$ACCOUNT"
+                fi
+            fi
             ;;
         pbs)
             line=$(echo "$line" | sed -E "s/--cpus-per-task=([0-9]+)/-l nodes=1:ppn=\1/")
             line=$(echo "$line" | sed -E "s/--mem=([0-9A-Za-z]+)/-l mem=\1/")
-            line=$(echo "$line" | sed -E "s/--partition=.*/-q $new_partition/")
-            [[ -n $ACCOUNT ]] && line=$(echo "$line" | sed -E "s/--account=.*/-A $ACCOUNT/")
+            if [[ "$line" =~ -q ]]; then
+                line=$(echo "$line" | sed -E "s/-q\s+[A-Za-z0-9_-]+/-q $new_partition/")
+            else
+                line="$line -q $new_partition"
+            fi
+            if [[ -n $ACCOUNT ]]; then
+                if [[ "$line" =~ -A ]]; then
+                    line=$(echo "$line" | sed -E "s/-A\s+[A-Za-z0-9_-]+/-A $ACCOUNT/")
+                else
+                    line="$line -A $ACCOUNT"
+                fi
+            fi
             ;;
         lsf)
             line=$(echo "$line" | sed -E "s/--cpus-per-task=([0-9]+)/-n \1/")
             line=$(echo "$line" | sed -E "s/--mem=([0-9A-Za-z]+)/-R \"rusage[mem=\1]\"/")
-            line=$(echo "$line" | sed -E "s/--partition=.*/-q $new_partition/")
-            [[ -n $ACCOUNT ]] && line=$(echo "$line" | sed -E "s/--account=.*/-P $ACCOUNT/")
+            if [[ "$line" =~ -q ]]; then
+                line=$(echo "$line" | sed -E "s/-q\s+[A-Za-z0-9_-]+/-q $new_partition/")
+            else
+                line="$line -q $new_partition"
+            fi
+            if [[ -n $ACCOUNT ]]; then
+                if [[ "$line" =~ -P ]]; then
+                    line=$(echo "$line" | sed -E "s/-P\s+[A-Za-z0-9_-]+/-P $ACCOUNT/")
+                else
+                    line="$line -P $ACCOUNT"
+                fi
+            fi
             ;;
         sge)
             line=$(echo "$line" | sed -E "s/--cpus-per-task=([0-9]+)/-pe smp \1/")
             line=$(echo "$line" | sed -E "s/--mem=([0-9A-Za-z]+)/-l mem_free=\1/")
-            line=$(echo "$line" | sed -E "s/--partition=.*/-q $new_partition/")
-            [[ -n $ACCOUNT ]] && line=$(echo "$line" | sed -E "s/--account=.*/-A $ACCOUNT/")
+            if [[ "$line" =~ -q ]]; then
+                line=$(echo "$line" | sed -E "s/-q\s+[A-Za-z0-9_-]+/-q $new_partition/")
+            else
+                line="$line -q $new_partition"
+            fi
+            if [[ -n $ACCOUNT ]]; then
+                if [[ "$line" =~ -A ]]; then
+                    line=$(echo "$line" | sed -E "s/-A\s+[A-Za-z0-9_-]+/-A $ACCOUNT/")
+                else
+                    line="$line -A $ACCOUNT"
+                fi
+            fi
             ;;
         custom)
             line="$line"
             ;;
     esac
 
-    echo "$line"
+    echo "$HEADER_PREFIX $line"
 }
 
 # === MODIFY FILES ===
