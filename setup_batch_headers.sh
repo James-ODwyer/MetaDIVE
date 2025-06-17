@@ -63,7 +63,7 @@ replace_param_names() {
     # Rewrite resource parameter names for each batch system
     case $BATCH_STYLE in
         slurm)
-            line=$(echo "$line" | sed -E "s/--partition[ =][^ ]*/--partition=$new_partition/")
+            line=$(echo "$line" | sed -E "s/--partition[ =][^ ]*/--partition $new_partition/")
             [[ -n $ACCOUNT ]] && line=$(echo "$line" | sed -E "s/--account[ =][^ ]*/--account=$ACCOUNT/")
             ;;
         pbs)
