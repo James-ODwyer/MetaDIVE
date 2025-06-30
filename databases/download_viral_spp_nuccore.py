@@ -5,7 +5,7 @@ import time
 import datetime
 
 #set email
-Entrez.email = "odw014@csiro.au"
+Entrez.email = "user@email.com"
 
 #list of species to exclude
 # All species have over 500 sequences on genbank and have complete genomes that are covered in refseq. They represent redundancy here and slow down the sorting/downloading process here
