@@ -16,6 +16,26 @@ conda activate snakemake7
 
 cd ./databases/
 
+
+# Create folder for accession taxonomy data (for Taxonkit plus taxonomizr)
+
+mkdir taxonomy
+
+mv nameNode.sqlite.gz taxonomy/
+
+cd taxonomy
+
+gunzip nameNode.sqlite.gz
+
+wget ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz -O taxdump.tar.gz
+
+tar -xzvf taxdump.tar.gz names.dmp nodes.dmp
+
+
+cd ..
+
+
+
 sbatch download_kraken_DBs.sh
 
 databasedir=$(pwd)
@@ -123,22 +143,7 @@ bowtie2-build "SSU_combined.fasta" SSU_reference_idx --threads ${SLURM_CPUS_PER_
 cd ../..
 
 
-# Create folder for accession taxonomy data (for Taxonkit plus taxonomizr)
 
-mkdir taxonomy
-
-mv nameNode.sqlite.gz taxonomy/
-
-cd taxonomy
-
-gunzip nameNode.sqlite.gz
-
-wget ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz -O taxdump.tar.gz
-
-tar -xzvf taxdump.tar.gz names.dmp nodes.dmp
-
-
-cd ..
 
 
 # Create folder for adapter sequences (provided as gzip file)
