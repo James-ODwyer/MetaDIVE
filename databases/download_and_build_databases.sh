@@ -17,6 +17,11 @@ conda activate snakemake7
 cd ./databases/
 
 
+sbatch download_kraken_DBs.sh
+
+databasedir=$(pwd)
+
+
 # Create folder for accession taxonomy data (for Taxonkit plus taxonomizr)
 
 mkdir taxonomy
@@ -34,11 +39,6 @@ tar -xzvf taxdump.tar.gz names.dmp nodes.dmp
 
 cd ..
 
-
-
-sbatch download_kraken_DBs.sh
-
-databasedir=$(pwd)
 
 
 mkdir -p bowtie2/LSU
