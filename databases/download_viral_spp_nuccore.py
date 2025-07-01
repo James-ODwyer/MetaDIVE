@@ -1,14 +1,51 @@
 import os
-from Bio import Entrez, SeqIO
-from collections import defaultdict
 import time
 import datetime
+from collections import defaultdict
+from Bio import Entrez, SeqIO
 
-#set email
-Entrez.email = "user@email.com"
+Entrez.email = "jamesodwyer2@gmail.com"
 
-#list of species to exclude
-# All species have over 500 sequences on genbank and have complete genomes that are covered in refseq. They represent redundancy here and slow down the sorting/downloading process here
+# ---------------------------
+# Step 1: Extract viral TaxIDs
+# ---------------------------
+
+def extract_viral_taxids(nodes_file, virus_root_taxid="10239"):
+    viral_taxids = set()
+    with open(nodes_file, 'r') as f:
+        for line in f:
+            parts = line.split("\t|\t")
+            taxid = parts[0].strip()
+            parent = parts[1].strip()
+            if parent == virus_root_taxid or parent in viral_taxids:
+                viral_taxids.add(taxid)
+    return viral_taxids
+
+working_directory = os.getcwd()
+taxonomy_dir = os.path.join(working_directory, "taxonomy")
+nodes_path = os.path.join(taxonomy_dir, "nodes.dmp")
+
+viral_taxids = extract_viral_taxids(nodes_path)
+print(f" Total viral TaxIDs found: {len(viral_taxids)}")
+
+# ---------------------------
+# Step 2a: Remove RefSeq TaxIDs
+# ---------------------------
+
+refseq_taxid_path = os.path.join(taxonomy_dir, "refseq_viral_taxids.txt")
+if os.path.exists(refseq_taxid_path):
+    with open(refseq_taxid_path) as f:
+        exclude_taxids = {line.strip() for line in f if line.strip().isdigit()}
+    before = len(viral_taxids)
+    viral_taxids = [taxid for taxid in viral_taxids if taxid not in exclude_taxids]
+    print(f" Removed {before - len(viral_taxids)} RefSeq TaxIDs. Remaining: {len(viral_taxids)}")
+else:
+    print(" RefSeq TaxID list not found. Proceeding without TaxID exclusion.")
+
+# ---------------------------
+# Step 2b: Species name exclusion (Entrez filter)
+# ---------------------------
+
 species_to_exclude = [
     "Protoparvovirus carnivoran1", "Human papillomavirus 16", "avian paramyxovirus 1",
     "Enterovirus A", "Avian coronavirus", "dengue virus type 1", "Bluetongue virus",
@@ -53,57 +90,11 @@ species_to_exclude = [
     "Human gammaherpesvirus 8", "Picornaviridae sp.", "Reoviridae sp.", "Infectious hematopoietic necrosis virus",
     "Staphylococcus phage SA 1298 Kay", "Feline immunodeficiency virus", "Pepino mosaic virus",
     "Human alphaherpesvirus 3", "uncultured marine virus", "Inoviridae sp.", "Southern rice black-streaked dwarf virus",
-    "Totiviridae sp.", "Beak and feather disease virus", "Infectious pancreatic necrosis virus",
-    "Respirovirus laryngotracheitidis", "Mogiana tick virus", "Parechovirus A", "Mumps orthorubulavirus",
-    "Genomoviridae sp.", "Amdoparvovirus carnivoran1", "Gallid alphaherpesvirus 1", "Chilli leaf curl virus",
-    "Protoparvovirus ungulate1", "Powassan virus", "Human adenovirus sp.", "Ambivirus sp.", "Hepatovirus A",
-    "Emaravirus rosae", "Human coronavirus 229E", "Ovine progressive pneumonia virus", "Erythroparvovirus primate1",
-    "Circular genetic element sp.", "Pestivirus suis", "Pestivirus bovis", "Grapevine Pinot gris virus",
-    "Narnaviridae sp.", "Bocaparvovirus primate1", "Begomovirus manihotis", "Primate T-lymphotropic virus 1",
-    "Feline parvovirus", "Iflaviridae sp.", "Alfamovirus AMV", "Human bocavirus", "Sindbis virus"]
+    "Totiviridae sp.", "Beak and feather disease virus",]
 
-
-# second smaller exclusion list for searching genomes db
-species_to_exclude2 = [
-    # Existing species (already in the script)
-    "Severe acute respiratory syndrome-related coronavirus",
-    "Alphainfluenzavirus influenzae",
-    "Human immunodeficiency virus 1",
-    "Betainfluenzavirus influenzae",
-    "Hepacivirus hominis",
-    "Rotavirus A",
-    "Simian immunodeficiency virus",
-    "Hepatitis B virus",
-    "Orthopneumovirus hominis",
-    "Simian-Human immunodeficiency virus",
-    "Human immunodeficiency virus",
-    "dengue virus type 1",
-    "Lyssavirus rabies",
-    "Norwalk virus",
-    "Bluetongue virus"]
-
-working_directory = os.getcwd()
-taxonomy_dir = os.path.join(working_directory, "taxonomy")
-nodes_path = os.path.join(taxonomy_dir, "nodes.dmp")
-virus_root_taxid = "10239"
-
-# Step 1: Extract viral TaxIDs from nodes.dmp
-def extract_viral_taxids(nodes_file, virus_root_taxid):
-    viral_taxids = set()
-    with open(nodes_file, 'r') as f:
-        for line in f:
-            parts = line.split("\t|\t")
-            taxid = parts[0].strip()
-            parent_taxid = parts[1].strip()
-            # Check if TaxID is a descendant of the virus root
-            if parent_taxid == virus_root_taxid or parent_taxid in viral_taxids:
-                viral_taxids.add(taxid)
-    return viral_taxids
-
-# Extract viral TaxIDs
-viral_taxids = extract_viral_taxids(nodes_path, virus_root_taxid)
-print(f"Total viral TaxIDs found: {len(viral_taxids)}")
-
+species_exclusion_query = (
+    "NOT (" + " OR ".join([f'"{name}"[Organism]' for name in species_to_exclude]) + ")"
+)
 
 viral_taxids = list(viral_taxids)
 
@@ -123,7 +114,7 @@ species_exclusion_query = "NOT (" + " OR ".join([f'"{species}"[Organism]' for sp
 def download_nucleotide_viruses(viral_taxids):
     all_seq_ids = set()  # Use set to store unique sequence IDs
     taxid_count = 0  # Counter for tracking TaxIDs processed
-    max_retries = 3  # Maximum number of retries for errors
+    max_retries = 2  # Maximum number of retries for errors
 
     # Convert viral_taxids to a set initially for efficient removal
     viral_taxids_set = set(viral_taxids)
@@ -133,7 +124,7 @@ def download_nucleotide_viruses(viral_taxids):
     Retmax2 = 3000
     Retmax3 = 1200
     Retmax4 = 300
-    Retmax5 = 60
+    Retmax5 = 30
 
     while viral_taxids_set:
         taxid_batch = list(viral_taxids_set)[:120]
@@ -220,10 +211,10 @@ def download_nucleotide_viruses(viral_taxids):
 
     return all_seq_ids
 
-# Secondary function for a general search excluding specific TaxIDs
+# Secondary function for a general search excluding specific TaxIDs up to 10000 added
 def general_search_excluding_taxids(excluded_taxids):
     nuccore_search_query = f'(viruses[filter] AND ("1300"[SLEN] : "500000"[SLEN])) {species_exclusion_query}'
-    handle = Entrez.esearch(db="nuccore", term=nuccore_search_query, retmax=500000)
+    handle = Entrez.esearch(db="nuccore", term=nuccore_search_query, retmax=10000)
     record = Entrez.read(handle)
     handle.close()
     
