@@ -22,6 +22,36 @@ sbatch download_kraken_DBs.sh
 databasedir=$(pwd)
 
 
+# Set db parameters.
+# Extract the parent directory (one level up from $databasedir)
+parentdir=$(dirname "$databasedir")
+
+# Set the config file path
+configfile="$parentdir/pipeline/config.yaml"
+
+# Update the program_dir and Trinitytemppath paths based on the parent directory
+sed -i "s|program_dir: \"/.*\"|program_dir: \"$parentdir/pipeline/\"|g" $configfile
+sed -i "s|Trinitytemppath: \"/.*\"|Trinitytemppath: \"$parentdir/Trinity_temp/\"|g" $configfile
+
+# Update file paths in the config.yaml file based on the $databasedir, using wildcards for flexibility
+sed -i "s|Illumina_adapters: \"/.*\"|Illumina_adapters: \"$databasedir/adapters/trueseq_PE_adaptors_shortlist.fa\"|g" $configfile
+sed -i "s|PhiX_genome_index: \"/.*\"|PhiX_genome_index: \"$databasedir/Phix_reference/Phix_reference_idx\"|g" $configfile
+sed -i "s|CO1_genome_index: \"/.*\"|CO1_genome_index: \"$databasedir/bowtie2/CO1/CO1_reference_idx\"|g" $configfile
+sed -i "s|CO1_genome_index_mmseq: \"/.*\"|CO1_genome_index_mmseq: \"$databasedir/CO1/CO1_DB\"|g" $configfile
+sed -i "s|LSU_genome_index: \"/.*\"|LSU_genome_index: \"$databasedir/bowtie2/LSU/LSU_reference_idx\"|g" $configfile
+sed -i "s|LSU_genome_index_mmseq: \"/.*\"|LSU_genome_index_mmseq: \"$databasedir/LSU/LSU_DB\"|g" $configfile
+sed -i "s|SSU_genome_index: \"/.*\"|SSU_genome_index: \"$databasedir/bowtie2/SSU/SSU_reference_idx\"|g" $configfile
+sed -i "s|SSU_genome_index_mmseq: \"/.*\"|SSU_genome_index_mmseq: \"$databasedir/SSU/SSU_DB\"|g" $configfile
+
+# Additional paths to update
+sed -i "s|Accession_allnamenode: \"/.*\"|Accession_allnamenode: \"$databasedir/taxonomy/nameNode.sqlite\"|g" $configfile
+sed -i "s|NCBI_reference_dir: \"/.*\"|NCBI_reference_dir: \"$databasedir/taxonomy\"|g" $configfile
+sed -i "s|Genomaddb: \"/.*\"|Genomaddb: \"$databasedir/genomad/genomad_db\"|g" $configfile
+sed -i "s|Kraken_database: \"/.*\"|Kraken_database: \"$databasedir/krakendb/\"|g" $configfile
+
+echo "Config file paths have been updated with the current database directory: $databasedir and parent directory: $parentdir"
+
+
 # Create folder for accession taxonomy data (for Taxonkit plus taxonomizr)
 
 mkdir taxonomy
@@ -230,31 +260,4 @@ Rscript install_d3Tree.R
 
 conda deactivate
 
-# Set db parameters.
-# Extract the parent directory (one level up from $databasedir)
-parentdir=$(dirname "$databasedir")
 
-# Set the config file path
-configfile="$parentdir/pipeline/config.yaml"
-
-# Update the program_dir and Trinitytemppath paths based on the parent directory
-sed -i "s|program_dir: \"/.*\"|program_dir: \"$parentdir/pipeline/\"|g" $configfile
-sed -i "s|Trinitytemppath: \"/.*\"|Trinitytemppath: \"$parentdir/Trinity_temp/\"|g" $configfile
-
-# Update file paths in the config.yaml file based on the $databasedir, using wildcards for flexibility
-sed -i "s|Illumina_adapters: \"/.*\"|Illumina_adapters: \"$databasedir/adapters/trueseq_PE_adaptors_shortlist.fa\"|g" $configfile
-sed -i "s|PhiX_genome_index: \"/.*\"|PhiX_genome_index: \"$databasedir/Phix_reference/Phix_reference_idx\"|g" $configfile
-sed -i "s|CO1_genome_index: \"/.*\"|CO1_genome_index: \"$databasedir/bowtie2/CO1/CO1_reference_idx\"|g" $configfile
-sed -i "s|CO1_genome_index_mmseq: \"/.*\"|CO1_genome_index_mmseq: \"$databasedir/CO1/CO1_DB\"|g" $configfile
-sed -i "s|LSU_genome_index: \"/.*\"|LSU_genome_index: \"$databasedir/bowtie2/LSU/LSU_reference_idx\"|g" $configfile
-sed -i "s|LSU_genome_index_mmseq: \"/.*\"|LSU_genome_index_mmseq: \"$databasedir/LSU/LSU_DB\"|g" $configfile
-sed -i "s|SSU_genome_index: \"/.*\"|SSU_genome_index: \"$databasedir/bowtie2/SSU/SSU_reference_idx\"|g" $configfile
-sed -i "s|SSU_genome_index_mmseq: \"/.*\"|SSU_genome_index_mmseq: \"$databasedir/SSU/SSU_DB\"|g" $configfile
-
-# Additional paths to update
-sed -i "s|Accession_allnamenode: \"/.*\"|Accession_allnamenode: \"$databasedir/taxonomy/nameNode.sqlite\"|g" $configfile
-sed -i "s|NCBI_reference_dir: \"/.*\"|NCBI_reference_dir: \"$databasedir/taxonomy\"|g" $configfile
-sed -i "s|Genomaddb: \"/.*\"|Genomaddb: \"$databasedir/genomad/genomad_db\"|g" $configfile
-sed -i "s|Kraken_database: \"/.*\"|Kraken_database: \"$databasedir/krakendb/\"|g" $configfile
-
-echo "Config file paths have been updated with the current database directory: $databasedir and parent directory: $parentdir"
