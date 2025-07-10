@@ -9,9 +9,13 @@ BATCH_STYLE=""
 PARTITION=""
 ACCOUNT=""
 DOWNLOAD_PARTITION="none"
+NODES_SUPPORTED="yes"
+NTASKS_SUPPORTED="yes"
+CPUS_SUPPORTED="yes"
 
 print_usage() {
     echo "Usage: $0 --batch-system SYSTEM --partition NAME [--account NAME] [--download_partition NAME]"
+    echo "             [--nodes-supported yes|no] [--ntasks-per-node-supported yes|no] [--cpus-per-task-supported yes|no]"
     echo ""
     echo "Supported batch systems: SLURM, PBS, QSUB, LSF, SGE, CUSTOM"
 }
@@ -33,6 +37,9 @@ while [[ $# -gt 0 ]]; do
         --partition) PARTITION="$2"; shift 2;;
         --account) ACCOUNT="$2"; shift 2;;
         --download_partition) DOWNLOAD_PARTITION="$2"; shift 2;;
+        --nodes-supported) NODES_SUPPORTED="$2"; shift 2;;
+        --ntasks-per-node-supported) NTASKS_SUPPORTED="$2"; shift 2;;
+        --cpus-per-task-supported) CPUS_SUPPORTED="$2"; shift 2;;
         -h|--help) print_usage; exit 0;;
         *) echo "Unknown option: $1"; print_usage; exit 1;;
     esac
@@ -52,6 +59,17 @@ replace_param_names() {
 
     # Strip any known prefix (e.g., #SBATCH, #PBS)
     line=$(echo "$line" | sed -E 's/^#(SBATCH|PBS|BSUB|\$|CUSTOM)[[:space:]]+//')
+
+    # Check for unsupported directives and return 1 if matched
+    if [[ "$NODES_SUPPORTED" == "no" && "$line" =~ --nodes[[:space:]=] ]]; then
+        return 1
+    fi
+    if [[ "$NTASKS_SUPPORTED" == "no" && "$line" =~ --ntasks-per-node[[:space:]=] ]]; then
+        return 1
+    fi
+    if [[ "$CPUS_SUPPORTED" == "no" && "$line" =~ --cpus-per-task[[:space:]=] ]]; then
+        return 1
+    fi
 
     # Decide which partition to use
     if [[ "$DOWNLOAD_PARTITION" != "none" && "$is_download_script" == "true" ]]; then
@@ -89,6 +107,12 @@ replace_param_names() {
             ;;
     esac
 
+    # If PARTITION is empty or 'none', delete the line entirely
+    if [[ "$PARTITION" == "none" || -z "$PARTITION" ]]; then
+        if [[ "$line" =~ (--partition[ =]|-q[[:space:]]) ]]; then
+            return 1
+        fi
+    fi
     echo "$line"
 }
 
@@ -102,21 +126,24 @@ for DIR in "${SCRIPT_LOCATIONS[@]}"; do
         head -n 10 "$FILE" > tmp_head.txt
         tail -n +11 "$FILE" > tmp_tail.txt
 
-if [[ "$DOWNLOAD_PARTITION" != "none" ]]; then
-    if grep -q -- "--partition io" tmp_head.txt; then
-        script_contains_download_io="true"
-    else
-        script_contains_download_io="false"
-    fi
-else
-    script_contains_download_io="false"
-fi
+        if [[ "$DOWNLOAD_PARTITION" != "none" ]]; then
+            if grep -q -- "--partition io" tmp_head.txt; then
+                script_contains_download_io="true"
+            else
+                script_contains_download_io="false"
+            fi
+        else
+            script_contains_download_io="false"
+        fi
 
         > tmp_head_fixed.txt
         while read -r line; do
-            if [[ "$line" =~ ^#(SBATCH|PBS|BSUB|\$|CUSTOM)\  ]]; then
-                fixed_line=$(replace_param_names "$line" "$script_contains_download_io")
-                echo "$HEADER_PREFIX $fixed_line" >> tmp_head_fixed.txt
+            if [[ "$line" =~ ^#(SBATCH|PBS|BSUB|\$|CUSTOM)[[:space:]]+ ]]; then
+                if fixed_line=$(replace_param_names "$line" "$script_contains_download_io"); then
+                    echo "$HEADER_PREFIX $fixed_line" >> tmp_head_fixed.txt
+                else
+                    echo "Removed unsupported line in $FILE: $line"
+                fi
             else
                 echo "$line" >> tmp_head_fixed.txt
             fi
