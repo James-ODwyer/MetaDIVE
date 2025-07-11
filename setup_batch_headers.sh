@@ -60,14 +60,14 @@ replace_param_names() {
     # Strip any known prefix (e.g., #SBATCH, #PBS)
     line=$(echo "$line" | sed -E 's/^#(SBATCH|PBS|BSUB|\$|CUSTOM)[[:space:]]+//')
 
-    # Check for unsupported directives and return 1 if matched
-    if [[ "$NODES_SUPPORTED" == "no" && "$line" =~ --nodes[[:space:]=] ]]; then
+    # Check if line should be removed due to unsupported resource flag
+    if [[ "$line" =~ --nodes[[:space:]=] ]] && [[ "$NODES_SUPPORTED" == "no" ]]; then
         return 1
     fi
-    if [[ "$NTASKS_SUPPORTED" == "no" && "$line" =~ --ntasks-per-node[[:space:]=] ]]; then
+    if [[ "$line" =~ --ntasks-per-node[[:space:]=] ]] && [[ "$NTASKS_SUPPORTED" == "no" ]]; then
         return 1
     fi
-    if [[ "$CPUS_SUPPORTED" == "no" && "$line" =~ --cpus-per-task[[:space:]=] ]]; then
+    if [[ "$line" =~ --cpus-per-task[[:space:]=] ]] && [[ "$CPUS_SUPPORTED" == "no" ]]; then
         return 1
     fi
 
@@ -107,12 +107,15 @@ replace_param_names() {
             ;;
     esac
 
-    # If PARTITION is empty or 'none', delete the line entirely
-    if [[ "$PARTITION" == "none" || -z "$PARTITION" ]]; then
-        if [[ "$line" =~ (--partition[ =]|-q[[:space:]]) ]]; then
+    # Final check: conditionally remove partition line
+    if [[ "$line" =~ --partition[[:space:]=] || "$line" =~ -q[[:space:]] ]]; then
+        if [[ "$is_download_script" == "true" && "$DOWNLOAD_PARTITION" != "none" ]]; then
+            :
+        elif [[ "$PARTITION" == "none" || -z "$PARTITION" ]]; then
             return 1
         fi
     fi
+
     echo "$line"
 }
 
