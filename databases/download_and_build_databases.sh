@@ -3,8 +3,8 @@
 #SBATCH --job-name Build_databases_MetaDIVE      # named whatever you would like  
 #SBATCH --nodes 1                        # nodes to use. 
 #SBATCH --ntasks-per-node 1              # ntasks per node 
-#SBATCH --cpus-per-task 4               # total number of CPUs to allocate.   
-#SBATCH --mem 6G                       # Total memory. 
+#SBATCH --cpus-per-task 1               # total number of CPUs to allocate.   
+#SBATCH --mem 9G                       # Total memory. 
 #SBATCH --time 6:00:00                 # Time requirements hh/mm/ss would recommend around 100 hours for large datasets. if it doesn't complete you can always launch the script again
 #SBATCH --partition io
 
