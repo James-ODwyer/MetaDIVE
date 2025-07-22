@@ -236,7 +236,7 @@ Divergent_reads_and_contigs_search: 'yes'
 # sensitivity settings for the viral species specific diamond blastx. If you want to potentially return more contigs set to more sensitive than the earlier diamond sensitivity
 # Recommend you use anything as sensitive or more sensitive than the option 'sensitive' e.g., 'sensitive', 'more-sensitive', 'very-sensitive', 'ultra-sensitive'
 # values are  'fast' 'mid-sensitive', 'sensitive', 'more-sensitive', 'very-sensitive', 'ultra-sensitive'
-Divergent_reads_and_contigs_sensitivity: 'ultra-sensitive'
+Divergent_reads_and_contigs_sensitivity: 'more-sensitive'
 
 
 
