@@ -22,7 +22,7 @@ mkdir -p "$conda_path"/envs/snakemake7
 env_path="$conda_path"/envs/snakemake7
 
 # Create the Conda environment from the YAML file at the specified location
-conda env create --file snakemake7.yaml --prefix $env_path
+conda env create --file snakemake7.yaml --prefix $env_path --yes
 
 echo "Conda environment created at: $env_path"
 echo "Conda environment Snakemake7 fully installed"
@@ -38,7 +38,7 @@ mkdir -p "$conda_path"/envs/trinity
 env_path="$conda_path"/envs/trinity
 
 # Create the Conda environment from the YAML file at the specified location
-conda env create --file trinity.yaml --prefix $env_path
+conda env create --file trinity.yaml --prefix $env_path --yes
 
 echo "Conda environment created at: $env_path"
 echo "Conda environment trinity fully installed"
@@ -51,7 +51,7 @@ mkdir -p "$conda_path"/envs/spades
 env_path="$conda_path"/envs/spades
 
 # Create the Conda environment from the YAML file at the specified location
-conda env create --file spades.yaml --prefix $env_path
+conda env create --file spades.yaml --prefix $env_path --yes
 
 echo "Conda environment created at: $env_path"
 echo "Conda environment spades fully installed"
@@ -62,7 +62,7 @@ mkdir -p "$conda_path"/envs/R4_2_dada
 env_path="$conda_path"/envs/R4_2_dada
 
 # Create the Conda environment from the YAML file at the specified location
-conda env create --file R4_2_dada.yaml --prefix $env_path
+conda env create --file R4_2_dada.yaml --prefix $env_path --yes
 
 echo "Conda environment created at: $env_path"
 echo "Conda environment R4_2_dada fully installed"
@@ -72,7 +72,7 @@ mkdir -p "$conda_path"/envs/kraken2
 env_path="$conda_path"/envs/kraken2
 
 # Create the Conda environment from the YAML file at the specified location
-conda env create --file kraken2.yaml --prefix $env_path
+conda env create --file kraken2.yaml --prefix $env_path --yes
 
 echo "Conda environment created at: $env_path"
 echo "Conda environment kraken2 fully installed"
@@ -111,7 +111,7 @@ mkdir -p "$conda_path"/envs/Rdataplotting
 env_path="$conda_path"/envs/Rdataplotting
 
 # Create the Conda environment from the YAML file at the specified location
-conda env create --file Rdataplotting.yaml --prefix $env_path
+conda env create --file Rdataplotting.yaml --prefix $env_path --yes
 
 echo "Conda environment created at: $env_path"
 echo "Conda environment Rdataplotting fully installed"
@@ -122,7 +122,7 @@ mkdir -p "$conda_path"/envs/genomad
 env_path="$conda_path"/envs/genomad
 
 # Create the Conda environment from the YAML file at the specified location
-conda env create --file genomad.yaml --prefix $env_path
+conda env create --file genomad.yaml --prefix $env_path --yes
 
 echo "Conda environment created at: $env_path"
 echo "Conda environment genomad fully installed"
