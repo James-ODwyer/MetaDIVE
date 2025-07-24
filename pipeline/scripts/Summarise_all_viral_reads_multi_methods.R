@@ -604,8 +604,19 @@ if (BOTHMISSING =="NO") {
   # species where average idents are below 95% as working with something about that suggests that the detected species is a species/strain match to the reference and therefore
   # introducing divergent reads analysis is disproportionately likely to generate false positives.   
   virus_all2 <- subset(virus_all,virus_all$total_reads_assigned>10 & (virus_all$average_percent_ident <95 | virus_all$mean_identity_of_raw_reads <95))
+  # currently if there are no spp which meet these requirements the downstream taxID report produces zero which leads to the DiamondDB not being subset which leads to hanging in these cases
+  # optimal solution is to carry forward NAs as hidden files for every step downstream if divergent is selected in the config but will require some serious testing. 
+  # Implementing temporary fix here for reducing the requirements of subsetting so that something is carried forward. 
+  #Added temp fix 24/07/25 
+  if (nrow(virus_all2)==0) {
+      virus_all2 <- subset(virus_all, (virus_all$average_percent_ident <95 | virus_all$mean_identity_of_raw_reads <95))
+	  }
+  if (nrow(virus_all2)==0) {
+      virus_all2 <- virus_all
+	  }
 
-  
+
+	
   coloured_data <- coloured_data %>%
     select(
       reads_assigned_through_contigs, superkingdom, phylum, class, order, family, genus, species, subspecies, 
