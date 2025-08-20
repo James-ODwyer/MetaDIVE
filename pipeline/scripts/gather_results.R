@@ -1546,7 +1546,7 @@ if (!(is.null(CO1microbiome))) {
     strings <- lapply(strings, gsub,pattern="s_",replacement="")
     topCO1hits$Species <- unlist(strings)
     
-    topCO1hits$read_hits <- topspeciestop10$taxonreads
+    topCO1hits$read_hits <- topspeciestop10$taxonReads
     topCO1hits$percentage_of_CO1_reads <- topspeciestop10$percentage
     
   }
@@ -1623,7 +1623,7 @@ if (!(is.null(LSUmicrobiome))) {
     strings <- lapply(strings, gsub,pattern="s_",replacement="")
     topLSUhits$Species <- unlist(strings)
     
-    topLSUhits$read_hits <- topspeciestop10$taxonreads
+    topLSUhits$read_hits <- topspeciestop10$taxonReads
     topLSUhits$percentage_of_LSU_reads <- topspeciestop10$percentage
     
   }
@@ -1668,7 +1668,7 @@ SSUmicrobiome <- pavian::read_report(xargs$SSUmicrobiome)
 
 if (!(is.null(SSUmicrobiome))) {
   
-  topspecies <- subset(SSUmicrobiome, LSUmicrobiome$taxRank=="S")
+  topspecies <- subset(SSUmicrobiome, SSUmicrobiome$taxRank=="S")
   
   topspeciesordered <- topspecies[order(-topspecies$taxonReads),]
   
@@ -1699,7 +1699,7 @@ if (!(is.null(SSUmicrobiome))) {
     strings <- lapply(strings, gsub,pattern="s_",replacement="")
     topSSUhits$Species <- unlist(strings)
     
-    topSSUhits$read_hits <- topspeciestop10$taxonreads
+    topSSUhits$read_hits <- topspeciestop10$taxonReads
     topSSUhits$percentage_of_SSU_reads <- topspeciestop10$percentage
     
   }
