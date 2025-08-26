@@ -163,79 +163,83 @@ for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
   ResultstableVirus <- subset(Resultstable,(Resultstable$superkingdom=="Viruses" | Resultstable$blastn_alternate_superkingdom_id=="Viruses"))
   
   uniquespecies <- unique(ResultstableVirus$subspecies)
-  speciescounts <- as.data.frame(matrix(nrow = length(uniquespecies), ncol=12))
-  colnames(speciescounts) <- c("Species", "subspecies", "Reads assigned", "mean percent identity to hit","max percent identity to hit","min percent identity to hit","Blastn alternate kingdom identified","Blastn alternate species identified","Blastn alternate subspecies identified","Blastn alternate hit average pairwise identity","Blastn alternate hit average alignment length","Sample")
   
-  if (nrow(ResultstableVirus)>=1) { 
-  for ( j in c(1:length(uniquespecies))) {
-    
-    resultstablesubset <- subset(ResultstableVirus,ResultstableVirus$subspecies==uniquespecies[j])
-    
-    speciescounts[j,1] <- resultstablesubset$species[1]
-    speciescounts[j,2] <- resultstablesubset$subspecies[1]
-    speciescounts[j,3] <- sum(resultstablesubset$freq)
-    speciescounts[j,4] <- mean(resultstablesubset$percentident)
-    speciescounts[j,5] <- max(resultstablesubset$percentident)
-    speciescounts[j,6] <- min(resultstablesubset$percentident)
-
-
-    if (sum(resultstablesubset$blastn_alternate_superkingdom_id != "Viruses", na.rm = TRUE) >=1) {
-	resultstablesubsetalts <- subset(resultstablesubset,resultstablesubset$blastn_alternate_superkingdom_id != "Viruses")
-
-    speciescounts[j,7] <- resultstablesubsetalts$blastn_alternate_superkingdom[1]
-    speciescounts[j,8] <- resultstablesubsetalts$blastn_alternate_species[1]
-    speciescounts[j,9] <- resultstablesubsetalts$blastn_alternate_subspecies[1]
-
-
-	}
-    if (sum(resultstablesubset$blastn_alternate_superkingdom != "Viruses", na.rm = TRUE) <1) {
-
-		if (sum(resultstablesubset$blastn_false_positive_check =="Yes",na.rm=TRUE)>=1) {
-
-		    speciescounts[j,7] <- "Viral species returned from Blastn"
-		    speciescounts[j,8] <- resultstablesubset$blastn_alternate_species[1]
-		    speciescounts[j,9] <- resultstablesubset$blastn_alternate_subspecies[1]
-		}
-
-		if (sum(resultstablesubset$blastn_false_positive_check =="Yes",na.rm=TRUE)<1) {
-
-		    speciescounts[j,7] <- "Blastn returned no species"
-		    speciescounts[j,8] <- "None"
-		    speciescounts[j,9] <- "None"
-		}
-
-	}
-
-    speciescounts[j,10] <- mean(as.numeric(resultstablesubset$`blastn_alternate_percentident`))
-    speciescounts[j,11] <- mean(as.numeric(resultstablesubset$`blastn_alternate_alignment_length`))
-    speciescounts[j,12] <- sampname
-    
+  # 19 cols: add 'genus' and the existing alternate_*1..3, then Blastn summary, Sample last
+  speciescounts <- as.data.frame(matrix(nrow = length(uniquespecies), ncol = 19))
+  colnames(speciescounts) <- c("Species","subspecies","genus",
+                               "Reads assigned","mean percent identity to hit","max percent identity to hit","min percent identity to hit",
+                               "alternate_genus1","alternate_species1",
+                               "alternate_genus2","alternate_species2",
+                               "alternate_genus3","alternate_species3",
+                               "Blastn alternate kingdom identified","Blastn alternate species identified","Blastn alternate subspecies identified",
+                               "Blastn alternate hit average pairwise identity","Blastn alternate hit average alignment length",
+                               "Sample")
+  
+  mode_nonempty <- function(v){
+    v <- v[!is.na(v) & v != "" & v != "NA"]
+    if(length(v)==0) return(NA_character_)
+    names(sort(table(v),decreasing=TRUE))[1]
   }
-    speciescounts <- speciescounts[order(-speciescounts$`Reads assigned`),]
-    if(nrow(speciescounts)>10) {
-      speciescounts <- speciescounts[1:10,]
+  
+  if (nrow(ResultstableVirus)>=1) {
+    for ( j in seq_along(uniquespecies) ) {
+      
+      resultstablesubset <- subset(ResultstableVirus, ResultstableVirus$subspecies == uniquespecies[j])
+      
+      speciescounts[j,"Species"]    <- resultstablesubset$species[1]
+      speciescounts[j,"subspecies"] <- resultstablesubset$subspecies[1]
+      speciescounts[j,"genus"]      <- resultstablesubset$genus[1]
+      
+      speciescounts[j,"Reads assigned"]               <- sum(resultstablesubset$freq)
+      speciescounts[j,"mean percent identity to hit"] <- mean(resultstablesubset$percentident, na.rm=TRUE)
+      speciescounts[j,"max percent identity to hit"]  <- max(resultstablesubset$percentident, na.rm=TRUE)
+      speciescounts[j,"min percent identity to hit"]  <- min(resultstablesubset$percentident, na.rm=TRUE)
+      
+      # existing alternates (pick most frequent across contigs of this subspecies)
+      speciescounts[j,"alternate_genus1"]   <- mode_nonempty(resultstablesubset$alternate_genus1)
+      speciescounts[j,"alternate_species1"] <- mode_nonempty(resultstablesubset$alternate_species1)
+      speciescounts[j,"alternate_genus2"]   <- mode_nonempty(resultstablesubset$alternate_genus2)
+      speciescounts[j,"alternate_species2"] <- mode_nonempty(resultstablesubset$alternate_species2)
+      speciescounts[j,"alternate_genus3"]   <- mode_nonempty(resultstablesubset$alternate_genus3)
+      speciescounts[j,"alternate_species3"] <- mode_nonempty(resultstablesubset$alternate_species3)
+      
+      # Blastn alternates (summary info stays separate)
+      if (sum(resultstablesubset$blastn_alternate_superkingdom_id != "Viruses", na.rm = TRUE) >= 1) {
+        alts <- subset(resultstablesubset, resultstablesubset$blastn_alternate_superkingdom_id != "Viruses")
+        speciescounts[j,"Blastn alternate kingdom identified"]   <- alts$blastn_alternate_superkingdom_id[1]
+        speciescounts[j,"Blastn alternate species identified"]    <- alts$blastn_alternate_species[1]
+        speciescounts[j,"Blastn alternate subspecies identified"] <- alts$blastn_alternate_subspecies[1]
+      } else {
+        if (sum(resultstablesubset$blastn_false_positive_check == "Yes", na.rm = TRUE) >= 1) {
+          speciescounts[j,"Blastn alternate kingdom identified"]   <- "Viruses"
+          speciescounts[j,"Blastn alternate species identified"]    <- resultstablesubset$blastn_alternate_species[1]
+          speciescounts[j,"Blastn alternate subspecies identified"] <- resultstablesubset$blastn_alternate_subspecies[1]
+        } else {
+          speciescounts[j,"Blastn alternate kingdom identified"]   <- "None"
+          speciescounts[j,"Blastn alternate species identified"]    <- "None"
+          speciescounts[j,"Blastn alternate subspecies identified"] <- "None"
+        }
+      }
+      
+      speciescounts[j,"Blastn alternate hit average pairwise identity"] <- mean(suppressWarnings(as.numeric(resultstablesubset$blastn_alternate_percentident)), na.rm=TRUE)
+      speciescounts[j,"Blastn alternate hit average alignment length"]   <- mean(suppressWarnings(as.numeric(resultstablesubset$blastn_alternate_alignment_length)), na.rm=TRUE)
+      
+      speciescounts[j,"Sample"] <- sampname
     }
-
-  virlist[[i]] <- speciescounts
-
-  }
-  
-  if (nrow(ResultstableVirus)==0) {
     
-    speciescounts[1,1]  <- "NA"
-    speciescounts[1,2]  <- "NA"
-    speciescounts[1,3]  <- 0
-    speciescounts[1,4]  <- 0
-    speciescounts[1,5]  <- 0
-    speciescounts[1,6]  <- 0
-    speciescounts[1,7]  <- "None"
-    speciescounts[1,8]  <- "None"
-    speciescounts[1,9]  <- "None"
-    speciescounts[1,10]  <- 0
-    speciescounts[1,11]  <- 0
-    speciescounts[1,12] <- sampname
-
+    speciescounts <- speciescounts[order(-speciescounts$`Reads assigned`), ]
+    if (nrow(speciescounts) > 10) speciescounts <- speciescounts[1:10, ]
+    virlist[[i]] <- speciescounts
     
+  } else {
+    speciescounts[1,] <- NA
+    speciescounts[1,c("Reads assigned",
+                      "mean percent identity to hit","max percent identity to hit","min percent identity to hit",
+                      "Blastn alternate hit average pairwise identity","Blastn alternate hit average alignment length")] <- 0
+    speciescounts[1,"Blastn alternate kingdom identified"] <- "None"
+    speciescounts[1,"Blastn alternate species identified"] <- "None"
+    speciescounts[1,"Blastn alternate subspecies identified"] <- "None"
+    speciescounts[1,"Sample"] <- sampname
     virlist[[i]] <- speciescounts
   }
   
@@ -364,7 +368,7 @@ for (a in c(1:nrow(Viruses_top10))) {
 
 if (Viruses_top10$`Blastn alternate kingdom identified`[a] !="Viral species returned from Blastn") {
 
-Viruses_top10$Species2[a] <- paste0(Viruses_top10$finalassignmentsubsp[a],"*")
+Viruses_top10$Species2[a] <- paste0(Viruses_top10$finalassignmentsubsp[a],"+")
 
 }
 
@@ -381,7 +385,7 @@ for (a in c(1:nrow(Viruses_top100))) {
 
 if (Viruses_top100$`Blastn alternate kingdom identified`[a] !="Viral species returned from Blastn") {
 
-Viruses_top100$Species2[a] <- paste0(Viruses_top100$finalassignmentsubsp[a],"*")
+Viruses_top100$Species2[a] <- paste0(Viruses_top100$finalassignmentsubsp[a],"+")
 
 }
 
@@ -493,7 +497,30 @@ pairwise_matrixVir <- as.data.frame(pairwise_matrixVir)
 pairwise_matrixVir$avg_pairwiseident <- aggtable2table$x
 pairwise_matrixVir$avg_aligned_length <- aggtable3table$x
 
+mode_nonempty <- function(v){
+  v <- v[!is.na(v) & v != "" & v != "NA"]
+  if(length(v)==0) return(NA_character_)
+  names(sort(table(v),decreasing=TRUE))[1]
+}
+first_word <- function(x){
+  ifelse(is.na(x) | x=="" | x=="NA", NA_character_, sub("\\s+.*","", x))
+}
 
+# compute per-species top alternate using *_species1 (already the highest-likelihood)
+alts_by_species <- AllsampleVirsummaryfilesdf100top %>%
+  group_by(finalassignmentsubsp) %>%
+  summarise(
+    top_alt_species = mode_nonempty(alternate_species1),
+    .groups = "drop"
+  )
+alts_by_species$top_alt_genus <- first_word(alts_by_species$top_alt_species)
+
+# align to pairwise row order
+alts_by_species <- as.data.frame(alts_by_species)
+alts_by_species <- alts_by_species[match(rownames(pairwise_matrixVir), alts_by_species$finalassignmentsubsp), ]
+
+pairwise_matrixVir$top_alt_genus   <- alts_by_species$top_alt_genus
+pairwise_matrixVir$top_alt_species <- alts_by_species$top_alt_species
 
 
 
@@ -589,6 +616,14 @@ names(Viruses_top100red)[names(Viruses_top100red) == "subspecies"] <- "Diamond_a
 # Delete column
 Viruses_top100red$Species2 <- NULL
 
+# Unified top alternate from existing *_1 fields
+Viruses_top100red$top_alt_species <- Viruses_top100red$alternate_species1
+Viruses_top100red$top_alt_genus   <- ifelse(is.na(Viruses_top100red$top_alt_species) |
+                                              Viruses_top100red$top_alt_species %in% c("NA",""),
+                                            NA_character_,
+                                            sub("\\s+.*","", Viruses_top100red$top_alt_species))
+
+# ensure Sample is the very last column
 Viruses_top100red <- Viruses_top100red[c(setdiff(names(Viruses_top100red), "Sample"), "Sample")]
 
 

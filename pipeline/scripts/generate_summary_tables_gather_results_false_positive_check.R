@@ -45,8 +45,31 @@ if (length(blastnfalsepospresence) ==0) {
   paste0(NAMES," Blastnhits returned no findings")
 }
 
-colnames(Blastnfalseposhits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp", "multiplesp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species","subspecies")
+# --- standardize to 25-col schema (adds alternate_* columns if missing) ---
+contig_cols25 <- c(
+  "qseqid","sseqid","pident","length","evalue","bitscore",
+  "staxids","stitle","qcovhsp","multiplesp","staxidreduced",
+  "superkingdom","phylum","class","order","family","genus","species","subspecies",
+  "alternate_genus1","alternate_species1",
+  "alternate_genus2","alternate_species2",
+  "alternate_genus3","alternate_species3"
+)
 
+std_to_25 <- function(df) {
+  miss <- setdiff(contig_cols25, names(df))
+  for (m in miss) df[[m]] <- NA
+  df <- df[, contig_cols25, drop = FALSE]
+  df
+}
+
+Blastnfalseposhits <- std_to_25(Blastnfalseposhits)
+
+# Coerce numeric fields we use later
+suppressWarnings({
+  Blastnfalseposhits$pident  <- as.numeric(Blastnfalseposhits$pident)
+  Blastnfalseposhits$length  <- as.numeric(Blastnfalseposhits$length)
+  Blastnfalseposhits$qcovhsp <- as.numeric(Blastnfalseposhits$qcovhsp)
+})
 # This needs to be below the definition of the parser arguments pushed from this rule otherwise the parser args from gather_results_env just override these ones. Also saved
 # args as xargs2 which should fix the issue to
 Renv <- xargs2$inputRenv
@@ -97,8 +120,8 @@ if (nrow(Blastnfalseposhits) >=1) {
 allassignedfreqs2 <- subset(allassignedfreqs, !(is.na(allassignedfreqs$contigassignment) & (allassignedfreqs$blastn_alternate_superkingdom_id=="NA")))
 allassignedfreqs <- allassignedfreqs2 
 
-
-
+# Reorder the df so that the data has the secondary hits last!!! Still TODO
+allassignedfreqs
 
 
 # I also want to output a new version for the output 20 and 100 viruses 
@@ -111,6 +134,14 @@ write.table(allassignedfreqs,file=(paste0(outtablespath,NAMES,"_summarycontighit
 
 # Need to prep the viral species counts to 
 # Start with freq summary results
+
+alt_cols <- c("alternate_genus1","alternate_species1",
+              "alternate_genus2","alternate_species2",
+              "alternate_genus3","alternate_species3")
+for (cc in alt_cols) {
+  if (!cc %in% names(freqsummarynona)) freqsummarynona[[cc]] <- NA
+}
+
 
 freqsummarynona$blastn_false_positive_check <- "No"
 freqsummarynona$blastn_alternate_superkingdom_id <- "NA"
@@ -143,6 +174,20 @@ if (nrow(Blastnfalseposhits ) >=1) {
   }
 }
 
+alt_cols_cs <- c("alternate_genus1","alternate_species1",
+                 "alternate_genus2","alternate_species2",
+                 "alternate_genus3","alternate_species3")
+for (cc in alt_cols_cs) {
+  if (!cc %in% names(contigsspecies)) contigsspecies[[cc]] <- NA
+}
+
+# most frequent non-NA/non-blank value, default to "NONE"
+mode_nonempty <- function(v) {
+  v <- v[!is.na(v) & v != ""]
+  if (length(v) == 0) return("NONE")
+  names(sort(table(v), decreasing = TRUE))[1]
+}
+
 contigsspecies$contigs_assigned_to_species <- 0
 contigsspecies$false_positive_blastn_test_undertaken <- "No"
 contigsspecies$alternately_assigned_contigs <- "0"
@@ -165,66 +210,65 @@ if (nrow(Blastnfalseposhits ) >=1) {
     contigsspecies[i,1] <- sum(contigssubset$freq)
     
     if (!is.na(contigssubset$percentident[1])) {
-      contigsspecies[i,10] <- mean(contigssubset$percentident)
-      contigsspecies[i,11] <- min(contigssubset$percentident)
-      contigsspecies[i,12] <- max(contigssubset$percentident)
-      contigsspecies[i,13] <- mean(contigssubset$contigalignlength)
-      contigsspecies[i,14] <- nrow(contigssubset)
+      # write to named base columns
+      contigsspecies[i, "average_percent_ident"] <- mean(contigssubset$percentident)
+      contigsspecies[i, "min_percent_ident"]     <- min(contigssubset$percentident)
+      contigsspecies[i, "max_percent_ident"]     <- max(contigssubset$percentident)
+      contigsspecies[i, "length"]                <- mean(contigssubset$contigalignlength)
     }
     
-    if (sum(contigssubset$blastn_false_positive_check == "Yes")>=1){
+    # how many contigs contributed to this species
+    contigsspecies[i, "contigs_assigned_to_species"] <- nrow(contigssubset)
+    
+    # fill alternates for this species by most frequent across its contigs
+    contigsspecies[i, "alternate_genus1"]   <- mode_nonempty(contigssubset$alternate_genus1)
+    contigsspecies[i, "alternate_species1"] <- mode_nonempty(contigssubset$alternate_species1)
+    contigsspecies[i, "alternate_genus2"]   <- mode_nonempty(contigssubset$alternate_genus2)
+    contigsspecies[i, "alternate_species2"] <- mode_nonempty(contigssubset$alternate_species2)
+    contigsspecies[i, "alternate_genus3"]   <- mode_nonempty(contigssubset$alternate_genus3)
+    contigsspecies[i, "alternate_species3"] <- mode_nonempty(contigssubset$alternate_species3)
+    
+    # summarize Blastn FP alternates
+    if (sum(contigssubset$blastn_false_positive_check == "Yes") >= 1) {
+      contigsspecies[i, "false_positive_blastn_test_undertaken"] <- "Yes"
+      contigsspecies[i, "alternately_assigned_contigs"] <- sum(contigssubset$blastn_false_positive_check == "Yes")
       
-      contigsspecies[i,15] <- "Yes"
-      contigsspecies[i,16] <-(sum(contigssubset$blastn_false_positive_check == "Yes"))
-      
-      
+      # top alternate superkingdom
       counts <- contigssubset %>%
-        filter(!(blastn_alternate_superkingdom_id=="NA")) %>%
+        filter(!(blastn_alternate_superkingdom_id == "NA")) %>%
         count(blastn_alternate_superkingdom_id, sort = TRUE)
-      top_countsuperkingdom <- counts[1,1]
+      top_countsuperkingdom <- if (nrow(counts) >= 1) counts$blastn_alternate_superkingdom_id[1] else "NA"
       
-      
-      
+      # top alternate species
       counts <- contigssubset %>%
-        filter(!(blastn_alternate_species=="NA")) %>%
+        filter(!(blastn_alternate_species == "NA")) %>%
         count(blastn_alternate_species, sort = TRUE)
-      top_countspecies <- counts[1,1]
+      top_countspecies <- if (nrow(counts) >= 1) counts$blastn_alternate_species[1] else "NA"
       
+      # top alternate subspecies
       counts <- contigssubset %>%
-        filter(!(blastn_alternate_subspecies=="NA")) %>%
+        filter(!(blastn_alternate_subspecies == "NA")) %>%
         count(blastn_alternate_subspecies, sort = TRUE)
-      top_countsubspecies <- counts[1,1]
+      top_countsubspecies <- if (nrow(counts) >= 1) counts$blastn_alternate_subspecies[1] else "NA"
       
+      # averages for FP alternates
+      avg_identity_alt <- contigssubset %>%
+        filter(!(blastn_alternate_percentident == "NA")) %>%
+        mutate(bapi = as.numeric(blastn_alternate_percentident)) %>%
+        { if (nrow(.) > 0) mean(.$bapi, na.rm = TRUE) else NA_real_ }
       
+      avg_length_alt <- contigssubset %>%
+        filter(!(blastn_alternate_alignment_length == "NA")) %>%
+        mutate(bal = as.numeric(blastn_alternate_alignment_length)) %>%
+        { if (nrow(.) > 0) mean(.$bal, na.rm = TRUE) else NA_real_ }
       
-      avg_idents <- contigssubset %>%
-        filter(!(blastn_alternate_percentident=="NA"))
-      
-      avg_identity_alt <- mean(as.numeric(avg_idents$blastn_alternate_percentident))
-      
-      
-      
-      
-      avg_lengths <- contigssubset %>%
-        filter(!(blastn_alternate_alignment_length=="NA"))
-      
-      avg_length_alt <- mean(as.numeric(avg_lengths$blastn_alternate_alignment_length))
-      
-      
-      
-      contigsspecies[i,17] <- top_countsuperkingdom
-      contigsspecies[i,18] <- top_countspecies
-      contigsspecies[i,19] <- top_countsubspecies
-      contigsspecies[i,20] <- avg_identity_alt
-      contigsspecies[i,21] <- avg_length_alt
-      
-      
-      
+      contigsspecies[i, "top_alternate_assigned_superkingdom"]        <- top_countsuperkingdom
+      contigsspecies[i, "top_alternate_assigned_species"]             <- top_countspecies
+      contigsspecies[i, "top_alternate_assigned_subspecies"]          <- top_countsubspecies
+      contigsspecies[i, "alternate_assigned_average_percent_ident"]   <- avg_identity_alt
+      contigsspecies[i, "alternate_assigned_average_alignment_length"]<- avg_length_alt
     }
-    
   }
-  
-  
 }
 
 Viralspecies <- subset(contigsspecies,contigsspecies$superkingdom=="Viruses")

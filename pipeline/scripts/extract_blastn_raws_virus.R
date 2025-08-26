@@ -142,6 +142,76 @@ cat(paste0("Succesfully read in Diamond file for sample", NAMES,"\n"))
 cat("Head 10 \n ")
 print(Diamond_output[1:10,])
 
+Diamond_output$bitscore <- as.numeric(Diamond_output$bitscore)
+Diamond_output$length   <- as.numeric(Diamond_output$length)
+Diamond_output$pident   <- as.numeric(Diamond_output$pident)
+
+# --- Coalesce multiple hits per qseqid into: primary + top-3 alternates (genus/species), same code as original diamond contigs
+#take first taxid if semicolon-delimited
+reduce_taxid <- function(x) {
+  if (is.na(x) || x == "") return(NA_character_)
+  sub(";.*", "", x, perl = TRUE)
+}
+
+# Resolve genus/species for a taxid (for alternates only)
+get_genus_species_from_taxid <- function(taxid, sql) {
+  if (is.na(taxid) || taxid == "") return(c(genus = "NONE", species = "NONE"))
+  suppressWarnings({
+    tx <- try(taxonomizr::getTaxonomy(taxid, sqlFile = sql), silent = TRUE)
+  })
+  if (inherits(tx, "try-error") || is.null(tx)) return(c(genus = "NONE", species = "NONE"))
+  g <- if (!is.null(tx[,"genus"])   && !is.na(tx[,"genus"]))   tx[,"genus"]   else "NONE"
+  s <- if (!is.null(tx[,"species"]) && !is.na(tx[,"species"])) tx[,"species"] else "NONE"
+  c(genus = as.character(g), species = as.character(s))
+}
+
+ALT_WITHIN <- 0.90  # consider alternates within 90% of top bitscore
+
+# Stable order: by read then by best hits
+Diamond_output <- Diamond_output[order(Diamond_output$qseqid, -Diamond_output$bitscore, Diamond_output$evalue), ]
+qids <- unique(Diamond_output$qseqid)
+
+# Result: one-row-per-read with 6 new columns at the end
+coalesced <- as.data.frame(matrix(nrow = length(qids), ncol = ncol(Diamond_output) + 6))
+colnames(coalesced) <- c(colnames(Diamond_output),
+                         "alternate_genus1","alternate_species1",
+                         "alternate_genus2","alternate_species2",
+                         "alternate_genus3","alternate_species3")
+
+for (i in seq_along(qids)) {
+  wc <- Diamond_output[Diamond_output$qseqid == qids[i], , drop = FALSE]
+  if (nrow(wc) == 0) next
+  primary <- wc[1, , drop = FALSE]
+  
+  # candidates within the threshold (incl. primary), dedupe alternates by reduced taxid
+  keep_idx <- which(wc$bitscore >= ALT_WITHIN * primary$bitscore[1])
+  cand <- wc[keep_idx, , drop = FALSE]
+  
+  primary_taxid <- reduce_taxid(primary$staxids[1])
+  cand$taxid_reduced <- vapply(cand$staxids, reduce_taxid, character(1))
+  alt_cand <- cand[!is.na(cand$taxid_reduced) & cand$taxid_reduced != primary_taxid, , drop = FALSE]
+  alt_cand <- alt_cand[!duplicated(alt_cand$taxid_reduced), , drop = FALSE]
+  alt_taxids <- head(alt_cand$taxid_reduced, 3)
+  
+  # resolve genus/species for up to 3 alternates (cheap: 0–3 calls per read)
+  alt_gs <- lapply(alt_taxids, function(tid) get_genus_species_from_taxid(tid, AccessionNamenode))
+  while (length(alt_gs) < 3L) alt_gs <- c(alt_gs, list(c(genus = "NONE", species = "NONE")))
+  
+  outrow <- primary
+  outrow$alternate_genus1    <- alt_gs[[1]]["genus"]
+  outrow$alternate_species1  <- alt_gs[[1]]["species"]
+  outrow$alternate_genus2    <- alt_gs[[2]]["genus"]
+  outrow$alternate_species2  <- alt_gs[[2]]["species"]
+  outrow$alternate_genus3    <- alt_gs[[3]]["genus"]
+  outrow$alternate_species3  <- alt_gs[[3]]["species"]
+  
+  coalesced[i, ] <- outrow[1, colnames(coalesced)]
+}
+
+# 3) rename new coalesced table back to Diamond_output (downstream expects this name)
+Diamond_output <- coalesced
+rm(coalesced)
+
 #Extract distinct contigs which generated hits
 
 b <- Sys.time()
@@ -168,127 +238,48 @@ c <- Sys.time()
 # to minimise the number of instances where taxonomizr has to search the data base
 cat(paste0(" Identification of taxonomy from tax ids  ", "\n"))
 cat(paste0(Sys.time(), "\n"))
-Diamond_output$staxidreduced<- gsub(pattern = ";.*",replacement = "",x = Diamond_output$staxids)
-Diamond_output$sp <- gsub(pattern = ".*\\[",replacement = "",x = Diamond_output$stitle)
-Diamond_output$sp <- gsub(pattern = "\\]",replacement = "",x = Diamond_output$sp)
 
-cat(paste0(" Finished extracting species names ", "\n"))
+# Primary-only table now; still recover missing taxids from stitle
+Diamond_output$staxidreduced <- sub(";.*", "", Diamond_output$staxids)
+Diamond_output$sp <- sub("\\]", "", sub(".*\\[", "", Diamond_output$stitle))
 
-missingidx <- grep("^$",Diamond_output$staxidreduced)
+missingidx <- which(is.na(Diamond_output$staxidreduced) | Diamond_output$staxidreduced == "")
+Diamond_outputmissingonly <- Diamond_output[missingidx, , drop = FALSE]
 
-cat(paste0(" Finished generating the missing tax id list ", "\n"))
-
-Diamond_outputmissingonly <- Diamond_output[missingidx,]
-
-
-
-uniquespmissing<- dplyr::distinct(Diamond_outputmissingonly, sp, .keep_all = TRUE)
-
-cat(paste0(" Finished subsetting by unique species ", "\n"))
-
-if (nrow(uniquespmissing) >=1) {
-
-taxids <- as.data.frame(matrix(nrow=nrow(Diamond_outputmissingonly),ncol=2))
-taxidsunique <- as.data.frame(matrix(nrow=nrow(uniquespmissing),ncol=2))
-taxids[,1] <-Diamond_outputmissingonly$sp
-taxidsunique[,1] <-uniquespmissing$sp
-
-for ( i in c(1:nrow(taxidsunique))) {
+if (nrow(Diamond_outputmissingonly) >= 1) {
+  uniquespmissing <- dplyr::distinct(Diamond_outputmissingonly, sp, .keep_all = FALSE)
   
-  taxidsunique[i,2] <- taxonomizr::getId(uniquespmissing$sp[i], sqlFile=AccessionNamenode)
+  taxids <- data.frame(Vorig = Diamond_outputmissingonly$sp, V1 = Diamond_outputmissingonly$sp,
+                       V2 = NA_character_, stringsAsFactors = FALSE)
+  taxidsunique <- data.frame(Vorig = uniquespmissing$sp, V1 = uniquespmissing$sp,
+                             V2 = NA_character_, stringsAsFactors = FALSE)
   
-}
-
-
-cat(paste0(" Finished getID taxonomizr ", "\n"))
-
-
-cat(paste0(" Dimensions for taxids  ", "\n"))
-dim(taxids)
-
-cat(paste0(" Dimensions for taxidsunique ", "\n"))
-dim(taxidsunique) 
-
-
-# slight error in the class assignment in the second column of taxidsunique.
-taxidsunique$V2 <- as.character(taxidsunique$V2)
-
-# The grep failed because of regex strings within the text, specifically the . and () 
-# I would change the grep to fixed but I need to start/finish characters to minimise 
-# returning multiple indexes when for example there are multiple specific strains e.g., E coli
-# S1(2020) and just E coli.
-# Solution is to remove the characters with gsub before the large grep and recombine
-
-taxids$V1 <- gsub(pattern = ".",replacement = "",x = taxids$V1,fixed = TRUE)
-taxidsunique$V1 <- gsub(pattern = ".",replacement = "",x = taxidsunique$V1,fixed = TRUE)
-taxids$V1 <- gsub(pattern = "(",replacement = "",x = taxids$V1,fixed = TRUE)
-taxidsunique$V1 <- gsub(pattern = "(",replacement = "",x = taxidsunique$V1,fixed = TRUE)
-taxids$V1 <- gsub(pattern = ")",replacement = "",x = taxids$V1,fixed = TRUE)
-taxidsunique$V1 <- gsub(pattern = ")",replacement = "",x = taxidsunique$V1,fixed = TRUE)
-taxids$V1 <- gsub(pattern = "+",replacement = "",x = taxids$V1,fixed = TRUE)
-taxidsunique$V1 <- gsub(pattern = "+",replacement = "",x = taxidsunique$V1,fixed = TRUE)
-taxids$V1 <- gsub(pattern = ":",replacement = "",x = taxids$V1,fixed = TRUE)
-taxidsunique$V1 <- gsub(pattern = ":",replacement = "",x = taxidsunique$V1,fixed = TRUE)
-
-for (i in c(1:nrow(taxids))) {
+  # sanitize ONLY the join keys (V1) for anchored grep
+  scrub <- function(x) {
+    x <- gsub("\\.", "", x, fixed = TRUE)
+    x <- gsub("\\(", "", x, fixed = TRUE)
+    x <- gsub("\\)", "", x, fixed = TRUE)
+    x <- gsub("\\+", "", x, fixed = TRUE)
+    x <- gsub(":",  "", x, fixed = TRUE)
+    x
+  }
+  taxids$V1       <- scrub(taxids$V1)
+  taxidsunique$V1 <- scrub(taxidsunique$V1)
   
-  grep(paste0("^",taxids[i,1],"$"),taxidsunique$V1) -> idxval
-  taxids[i,2] <-taxidsunique[idxval,2]
-}
-cat(paste0(" Finished grep converting unique species back to full taxid list ", "\n"))
-cat(paste0(Sys.time(), "\n"))
-
-cat(paste0(" Dimensions for diamond output missing only ", "\n"))
-dim(Diamond_outputmissingonly) 
-
-cat(paste0(" number of values in missingidx ", "\n"))
-length(missingidx) 
-
-cat(paste0(" Dimensions for diamond output ", "\n"))
-dim(Diamond_output) 
-
-
-Diamond_outputmissingonly$staxidreduced <- taxids[,2]
-
-Diamond_output[missingidx,10] <- Diamond_outputmissingonly$staxidreduced
-
-
-}
-
-
-Diamond_output$staxidreduced <- as.numeric(Diamond_output$staxidreduced)
-
-Diamond_output <- Diamond_output[order(Diamond_output$staxidreduced),]
-
-Diamond_output$staxidreduced <- as.character(Diamond_output$staxidreduced)
-
-row.names(Diamond_output) <- 1:nrow(Diamond_output)
-
-contigsassignedunique <- Diamond_output[!duplicated(Diamond_output$staxidreduced), ]
-
-contigsassignedindexes <- as.data.frame(matrix(nrow=nrow(contigsassignedunique),ncol=3))
-
-contigsassignedindexes$V1 <- contigsassignedunique$staxidreduced
-contigsassignedindexes$V2 <- row.names(contigsassignedunique)
-
-
-for ( i in c(1:nrow(contigsassignedindexes))) {
-  
-  if ( i < nrow(contigsassignedindexes)) {
-    
-    contigsassignedindexes$V3[i] <- ( as.numeric(contigsassignedindexes$V2[i+1]) - 1 )
-    
+  # getId on the ORIGINAL (unscrubbed) names
+  for (i in seq_len(nrow(taxidsunique))) {
+    val <- try(taxonomizr::getId(taxidsunique$Vorig[i], sqlFile = AccessionNamenode), silent = TRUE)
+    if (!inherits(val, "try-error") && length(val) > 0) taxidsunique$V2[i] <- as.character(val[1])
   }
   
-  if ( i == nrow(contigsassignedindexes)) {
-    
-    contigsassignedindexes$V3[i] <- (as.numeric(nrow(Diamond_output)))
-    
+  # map back scrubbed->id
+  for (i in seq_len(nrow(taxids))) {
+    idxval <- grep(paste0("^", taxids$V1[i], "$"), taxidsunique$V1)
+    if (length(idxval) == 1) taxids$V2[i] <- taxidsunique$V2[idxval]
   }
-  
+  Diamond_output$staxidreduced[missingidx] <- taxids$V2
 }
 
-colnames(contigsassignedindexes) <- c("staxidreduced", "startingrow","endingrow")
 
 #
 #
@@ -298,110 +289,70 @@ cat(paste0(" Completed identifying the taxid of unassigned samples using their s
 cat(paste0(" Completed identifying the taxid of unassigned samples using their species names  ", "\n"))
 cat(paste0(" Starting taxonomy identification from all known taxids ", "\n"))
 
-taxids <- as.data.frame(matrix(nrow=nrow(Diamond_output),ncol=9))
-taxidsunique <- as.data.frame(matrix(nrow=nrow(contigsassignedunique),ncol=9))
+# One row per read now → one taxonomy lookup each
+taxids <- data.frame(staxidreduced = Diamond_output$staxidreduced,
+                     sseqid = Diamond_output$sseqid,
+                     stringsAsFactors = FALSE)
 
-taxids$V1 <- Diamond_output$staxidreduced
-taxidsunique$V1 <- contigsassignedunique$staxidreduced
-taxids$V2 <- Diamond_output$sseqid
-taxidsunique$V2 <- contigsassignedunique$sseqid
+taxmap <- matrix(NA_character_, nrow = nrow(Diamond_output), ncol = 8)
+colnames(taxmap) <- c("superkingdom","phylum","class","order","family","genus","species","subspecies")
 
-cat(paste0(" Starting taxonomizr getTaxonomy known taxids ", "\n"))
-
-
-if (nrow(taxidsunique)>0) {
-for (i in c(1:nrow(contigsassignedunique))) {
-  
-  taxidsunique[i,2:8] <- taxonomizr::getTaxonomy(contigsassignedunique$staxidreduced[i], sqlFile=AccessionNamenode)
-  
-  values <- taxonomizr::getRawTaxonomy(contigsassignedunique$staxidreduced[i], sqlFile=AccessionNamenode)
-  
-  if (!is.null(values[[1]][1])) {
-    values[[1]][1] -> taxidsunique[i,9]
+for (i in seq_len(nrow(Diamond_output))) {
+  tid <- Diamond_output$staxidreduced[i]
+  if (!is.na(tid) && tid != "") {
+    tx <- try(taxonomizr::getTaxonomy(tid, sqlFile = AccessionNamenode), silent = TRUE)
+    if (!inherits(tx, "try-error") && !is.null(tx)) {
+      taxmap[i, ] <- c(ifelse(is.na(tx[,"superkingdom"]), NA, as.character(tx[,"superkingdom"])),
+                       ifelse(is.na(tx[,"phylum"]),       NA, as.character(tx[,"phylum"])),
+                       ifelse(is.na(tx[,"class"]),        NA, as.character(tx[,"class"])),
+                       ifelse(is.na(tx[,"order"]),        NA, as.character(tx[,"order"])),
+                       ifelse(is.na(tx[,"family"]),       NA, as.character(tx[,"family"])),
+                       ifelse(is.na(tx[,"genus"]),        NA, as.character(tx[,"genus"])),
+                       ifelse(is.na(tx[,"species"]),      NA, as.character(tx[,"species"])),
+                       ifelse(is.na(tx[,"subspecies"]),   NA, as.character(tx[,"subspecies"])))
+    } else {
+      # fallback: try species name from stitle
+      spname <- sub("\\]", "", sub(".*\\[", "", Diamond_output$stitle[i]))
+      val <- try(taxonomizr::getId(spname, sqlFile = AccessionNamenode), silent = TRUE)
+      if (!inherits(val, "try-error") && length(val) > 0) {
+        tx2 <- try(taxonomizr::getTaxonomy(val[1], sqlFile = AccessionNamenode), silent = TRUE)
+        if (!inherits(tx2, "try-error") && !is.null(tx2)) {
+          taxmap[i, ] <- c(ifelse(is.na(tx2[,"superkingdom"]), NA, as.character(tx2[,"superkingdom"])),
+                           ifelse(is.na(tx2[,"phylum"]),       NA, as.character(tx2[,"phylum"])),
+                           ifelse(is.na(tx2[,"class"]),        NA, as.character(tx2[,"class"])),
+                           ifelse(is.na(tx2[,"order"]),        NA, as.character(tx2[,"order"])),
+                           ifelse(is.na(tx2[,"family"]),       NA, as.character(tx2[,"family"])),
+                           ifelse(is.na(tx2[,"genus"]),        NA, as.character(tx2[,"genus"])),
+                           ifelse(is.na(tx2[,"species"]),      NA, as.character(tx2[,"species"])),
+                           ifelse(is.na(tx2[,"subspecies"]),   NA, as.character(tx2[,"subspecies"])))
+        }
+      }
+    }
   }
-  if (is.null(values[[1]][1])) {
-    taxidsunique[i,8] -> taxidsunique[i,9]
-  }
-      
-  }
-  
-  if (is.na(taxidsunique[i,8])) {
-    
-    spname <- str_extract_all(contigsassignedunique$stitle[i], "\\[(.*?)\\]")[[1]]
-    spname2 <- str_replace_all(spname, "\\[|\\]", "")
-    value <- taxonomizr::getId(spname2, sqlFile=AccessionNamenode)
-    if (length(value) > 0) {
-    taxidsunique[i,2:8] <- taxonomizr::getTaxonomy(value, sqlFile=AccessionNamenode)
-    
-    
-    values <- taxonomizr::getRawTaxonomy(value, sqlFile=AccessionNamenode)
-    
-  if (!is.null(values[[1]][1])) {
-    values[[1]][1] -> taxidsunique[i,9]
-  }
-  if (is.null(values[[1]][1])) {
-    taxidsunique[i,8] -> taxidsunique[i,9]
-  }
-    
-    
-  }
-  }
-  
-  
 }
 
+# project taxonomy back to Diamond_output
+Diamond_output$superkingdom <- taxmap[, "superkingdom"]
+Diamond_output$phylum       <- taxmap[, "phylum"]
+Diamond_output$class        <- taxmap[, "class"]
+Diamond_output$order        <- taxmap[, "order"]
+Diamond_output$family       <- taxmap[, "family"]
+Diamond_output$genus        <- taxmap[, "genus"]
+Diamond_output$species      <- taxmap[, "species"]
+Diamond_output$subspecies   <- taxmap[, "subspecies"]
+rm(taxmap)
 
-d <- Sys.time()
-
-cat(paste0(NAMES," Finished taxid conversion to taxonomy ", "\n"))
-cat(paste0(Sys.time(), "\n"))
-
-taxidsunique<- as.data.frame(taxidsunique, ncol=9)
-colnames(taxidsunique) =c("staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species","subspecies") 
-
-
-taxidsunique$startrow <- as.numeric(contigsassignedindexes$startingrow)
-taxidsunique$endrow <- as.numeric(contigsassignedindexes$endingrow)
-
-
-e <- Sys.time()
-
-
-
-for ( i in c(1:nrow(taxidsunique))) {
-  
-  
-  taxidsunique$startrow[i] ->start
-  taxidsunique$endrow[i] ->fin
-  
-  
-  taxids[start:fin,2:9] <- taxidsunique[i,2:9]
-  
-}
-
-f <- Sys.time()
-
-cat(paste0(" Finished grep converting unique taxids back to diamond output ", "\n"))
-cat(paste0(Sys.time(), "\n"))
-
-colnames(taxids) =c("staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species","subspecies") 
 
 Diamond_output$sp <- NULL
-
-Diamond_output$superkingdom <- taxids$superkingdom
-Diamond_output$phylum<- taxids$phylum
-Diamond_output$class<- taxids$class
-Diamond_output$order<- taxids$order
-Diamond_output$family<- taxids$family
-Diamond_output$genus<- taxids$genus
-Diamond_output$species<- taxids$species
-Diamond_output$subspecies<- taxids$subspecies
+# Ensure alternate_* columns sit after all other columns
+alt_cols <- c("alternate_genus1","alternate_species1",
+              "alternate_genus2","alternate_species2",
+              "alternate_genus3","alternate_species3")
+ord <- c(setdiff(colnames(Diamond_output), alt_cols), alt_cols)
+Diamond_output <- Diamond_output[, ord, drop = FALSE]
 
 
-
-
-
-rm(taxids,taxidsunique,uniquespmissing)
+#rm(taxids,taxidsunique,uniquespmissing)
 
 contigsassigned <- Diamond_output
 
@@ -458,7 +409,7 @@ for (i in seq_len(nrow(contigsassigned))) {
     colnames(blastn_readsubset) <- colnames(contigsassigned)
     
     blastn_readsubset[, 1] <- clusters_dfsubset$read_id
-    blastn_readsubset[, 2:18] <- contigsassigned[i, 2:18]
+blastn_readsubset[, 2:ncol(contigsassigned)] <- contigsassigned[i, 2:ncol(contigsassigned)]
     
     # Store the result in the list
     results_list[[i]] <- blastn_readsubset
@@ -479,15 +430,13 @@ for (i in seq_len(nrow(contigsassigned))) {
   }
 }
 
-# Combine all results once after the loop
-contigsassigned_extended <- do.call(rbind, results_list)
-
-# Remove NULL elements from the list (if any)
-contigsassigned_extended <- contigsassigned_extended[!sapply(contigsassigned_extended, is.null), ]
-
-# Convert the list to a data frame
-contigsassigned_extended <- bind_rows(contigsassigned_extended)
-
+# Combine all results once after the loop (robust to NULLs now)
+results_list <- Filter(Negate(is.null), results_list)
+if (length(results_list)) {
+  contigsassigned_extended <- bind_rows(results_list)
+} else {
+  contigsassigned_extended <- contigsassigned[0, ]  # empty, same cols
+}
 
 
 

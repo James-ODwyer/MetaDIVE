@@ -48,6 +48,28 @@ dohostdetect <- xargs$dohostdetect
 dodiamondraws <- xargs$dodiamondraws
 
 
+read_or_empty <- function(path, ...) {
+  if (file.exists(path)) read.table(path, header=TRUE, sep="\t", ...) else {
+    data.frame()
+  }
+}
+safe_first <- function(x) ifelse(length(x)>=1, x[1], NA)
+alt_pair <- function(g, s) {
+  g <- ifelse(is.na(g) | g=="", "NONE", g)
+  s <- ifelse(is.na(s) | s=="", "NONE", s)
+  paste0(g, " ", s)
+}
+
+mode_nonempty <- function(v) {
+  v <- v[!is.na(v) & v != ""]
+  if (length(v) == 0) return("NONE")
+  vt <- table(v)
+  names(vt)[which.max(vt)]
+}
+
+
+
+
 samplereadssummaryfiles <- list.files(path = intablespath, pattern = "assignment_reads_for_plot_generation", all.files = FALSE,
                       full.names = TRUE, recursive = FALSE,
                       ignore.case = FALSE, include.dirs = FALSE)
@@ -290,40 +312,56 @@ for (i in c(1:length(summaryreturnedhitsfromcontigs))) {
   ResultstableVirus <- subset(Resultstable,Resultstable$superkingdom=="Viruses")
   
   uniquespecies <- unique(ResultstableVirus$subspecies)
-  speciescounts <- as.data.frame(matrix(nrow = length(uniquespecies), ncol=7))
-  colnames(speciescounts) <- c("Species", "subspecies", "Reads assigned", "mean percent identity to hit","max percent identity to hit","min percent identity to hit","Sample")
   
-  if (nrow(ResultstableVirus)>=1) { 
-  for ( j in c(1:length(uniquespecies))) {
-    
-    resultstablesubset <- subset(ResultstableVirus,ResultstableVirus$subspecies==uniquespecies[j])
-    
-    speciescounts[j,1] <- resultstablesubset$species[1]
-    speciescounts[j,2] <- resultstablesubset$subspecies[1]
-    speciescounts[j,3] <- sum(resultstablesubset$freq)
-    speciescounts[j,4] <- mean(resultstablesubset$percentident)
-    speciescounts[j,5] <- max(resultstablesubset$percentident)
-    speciescounts[j,6] <- min(resultstablesubset$percentident)
-    speciescounts[j,7] <- resultstablesubset$Sample[1]
-    
-  }
-    speciescounts <- speciescounts[order(-speciescounts$`Reads assigned`),]
-    if(nrow(speciescounts)>10) {
-      speciescounts <- speciescounts[1:10,]
+  # 14 columns now updated for secondary alignment tracking: add 'genus' and the 6 alternate columns, keep 'Sample' last
+  speciescounts <- as.data.frame(matrix(nrow = length(uniquespecies), ncol = 14))
+  colnames(speciescounts) <- c("Species", "subspecies", "genus",
+                               "Reads assigned",
+                               "mean percent identity to hit",
+                               "max percent identity to hit",
+                               "min percent identity to hit",
+                               "alternate_genus1","alternate_species1",
+                               "alternate_genus2","alternate_species2",
+                               "alternate_genus3","alternate_species3",
+                               "Sample")  
+  if (nrow(ResultstableVirus) >= 1) {
+    for (j in seq_along(uniquespecies)) {
+      resultstablesubset <- subset(ResultstableVirus, ResultstableVirus$subspecies == uniquespecies[j])
+      
+      speciescounts[j, "Species"] <- resultstablesubset$species[1]
+      speciescounts[j, "subspecies"] <- resultstablesubset$subspecies[1]
+      speciescounts[j, "genus"] <- resultstablesubset$genus[1]
+      
+      speciescounts[j, "Reads assigned"] <- sum(resultstablesubset$freq)
+      speciescounts[j, "mean percent identity to hit"] <- mean(resultstablesubset$percentident)
+      speciescounts[j, "max percent identity to hit"]  <- max(resultstablesubset$percentident)
+      speciescounts[j, "min percent identity to hit"]  <- min(resultstablesubset$percentident)
+      
+      # pick most common alt for each column; preserve "NONE" if nothing present
+      speciescounts[j, "alternate_genus1"]   <- mode_nonempty(resultstablesubset$alternate_genus1)
+      speciescounts[j, "alternate_species1"] <- mode_nonempty(resultstablesubset$alternate_species1)
+      speciescounts[j, "alternate_genus2"]   <- mode_nonempty(resultstablesubset$alternate_genus2)
+      speciescounts[j, "alternate_species2"] <- mode_nonempty(resultstablesubset$alternate_species2)
+      speciescounts[j, "alternate_genus3"]   <- mode_nonempty(resultstablesubset$alternate_genus3)
+      speciescounts[j, "alternate_species3"] <- mode_nonempty(resultstablesubset$alternate_species3)
+      
+      speciescounts[j, "Sample"] <- resultstablesubset$Sample[1]
     }
-  virlist[[i]] <- speciescounts
-  }
-  
-  if (nrow(ResultstableVirus)==0) {
     
-    speciescounts[1,1]  <- ""
-    speciescounts[1,2]  <- ""
-    speciescounts[1,3]  <- 0
-    speciescounts[1,4]  <- 0
-    speciescounts[1,5]  <- 0
-    speciescounts[1,6]  <- 0
-    speciescounts[1,7]  <- sampname
+    # Order and trim to top 10 by reads
+    speciescounts <- speciescounts[order(-speciescounts$`Reads assigned`), ]
+    if (nrow(speciescounts) > 10) {
+      speciescounts <- speciescounts[1:10, ]
+    }
+    virlist[[i]] <- speciescounts
     
+  } else {
+    # empty fallback row
+    speciescounts[1, ] <- list(
+      "", "", "", 0, 0, 0, 0,
+      "NONE","NONE","NONE","NONE","NONE","NONE",
+      sampname
+    )
     virlist[[i]] <- speciescounts
   }
   
@@ -411,29 +449,53 @@ Viruses_top10$`Reads assigned` <- as.numeric(as.character(Viruses_top10$`Reads a
 Bacteria_top10$`Reads assigned` <- as.numeric(as.character(Bacteria_top10$`Reads assigned`))
 Eukaryotes_top10$`Reads assigned` <- as.numeric(as.character(Eukaryotes_top10$`Reads assigned`))
 
+# Generate flags alternate alignments. 
+
+alt_flags <- Viruses %>%
+  group_by(subspecies) %>%
+  summarise(
+    asterisk = any(alternate_species1 != "NONE" &
+                     alternate_species1 != subspecies &
+                     alternate_species1 != Species, na.rm = TRUE),
+    dagger   = any(alternate_genus1   != "NONE" &
+                     alternate_genus1   != genus,   na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Create legend label = subspecies plus symbols
+label_map <- alt_flags %>%
+  mutate(symbols = paste0(ifelse(asterisk, "*", ""), ifelse(dagger, "\u2020", ""))) %>%
+  transmute(subspecies, legend_label = ifelse(symbols=="", subspecies, paste0(subspecies, " ", symbols)))
+
+# Join labels into Viruses_top10
+Viruses_top10 <- Viruses_top10 %>%
+  left_join(label_map, by = "subspecies")
+Viruses_top10$legend_label[is.na(Viruses_top10$legend_label)] <- Viruses_top10$subspecies
 
 # ggplot graphs 
 
 
-plot <- ggplot(Viruses_top10, aes(x=Sample, y=`Reads assigned`, fill=subspecies)) +
-  geom_bar(position="stack", stat="identity") +
-  #scale_fill_viridis(discrete = T,name= "Reads assigned as:") +
-  #scale_fill_brewer(palette = "Set3") +
-  #scale_fill_viridis(discrete = T,name= "Reads assigned as:") +
-  ggtitle("Top 10 virus species reads/contigs \n  were assigned to") +
-  #theme_ipsum() +
-  theme(axis.title.x = element_text(hjust = 0.5,size = 18)) +
-  theme(axis.title.x = element_text(hjust = 0.5,size = 16),axis.text.x = element_text(size=14)) +
-  theme(legend.title = element_text(size=12), legend.text = element_text(size=4.0)) +
-  theme(legend.key.size = unit(0.32,"line")) +
+plot <- ggplot(Viruses_top10, aes(x = Sample, y = `Reads assigned`, fill = legend_label)) +
+  geom_bar(position = "stack", stat = "identity") +
+  ggtitle("Top 10 virus species reads/contigs \nwere assigned to") +
+  theme(axis.title.x = element_text(hjust = 0.5, size = 18)) +
+  theme(axis.title.x = element_text(hjust = 0.5, size = 16), axis.text.x = element_text(size = 14)) +
+  theme(legend.title = element_text(size = 10), legend.text = element_text(size = 3.5)) +
+  theme(legend.key.size = unit(0.30, "line")) +
   theme(legend.position = "bottom") +
-  theme(axis.title.y = element_blank(), axis.text.y =  element_text(size=16.5)) +
-  theme(plot.title =  element_text(size=19,hjust = 0.4)) +
+  theme(axis.title.y = element_blank(), axis.text.y = element_text(size = 16.5)) +
+  theme(plot.title = element_text(size = 19, hjust = 0.4)) +
   coord_flip() +
   guides(fill = guide_legend(nrow = 4)) +
   scale_y_continuous(labels = scales::number_format()) +
-  theme(plot.margin = margin(1,1,1.5,1.2, "cm")) +
-  labs(fill = "Virus spp") 
+  theme(plot.margin = margin(1, 1, 1.5, 1.2, "cm")) +
+  labs(
+    fill = "Virus spp",
+    caption = paste0(
+      "* One or more samples shows high pairwise identity to a different species of the same genus\n",
+      "\u2020 One or more samples shows high pairwise identity to a species in a different genus"
+    )
+  )
 
 plot
 
@@ -872,6 +934,40 @@ AllsampleVirsummaryfilesdf10top <- AllsampleVirsummaryfilesdf %>%
   filter(subspecies %in% Viruses_top10$subspecies)
 
 
+alts_long <- rbind(
+  data.frame(subspecies = AllsampleVirsummaryfilesdf10top$subspecies,
+             alt_genus  = AllsampleVirsummaryfilesdf10top$alternate_genus1,
+             alt_species= AllsampleVirsummaryfilesdf10top$alternate_species1,
+             stringsAsFactors = FALSE),
+  data.frame(subspecies = AllsampleVirsummaryfilesdf10top$subspecies,
+             alt_genus  = AllsampleVirsummaryfilesdf10top$alternate_genus2,
+             alt_species= AllsampleVirsummaryfilesdf10top$alternate_species2,
+             stringsAsFactors = FALSE),
+  data.frame(subspecies = AllsampleVirsummaryfilesdf10top$subspecies,
+             alt_genus  = AllsampleVirsummaryfilesdf10top$alternate_genus3,
+             alt_species= AllsampleVirsummaryfilesdf10top$alternate_species3,
+             stringsAsFactors = FALSE)
+)
+
+# Keep even "NONE" (by request), just drop rows where both are NA/blank
+alts_long <- alts_long[!(is.na(alts_long$alt_genus) & is.na(alts_long$alt_species)), ]
+alts_long$alt_genus  <- ifelse(is.na(alts_long$alt_genus),  "NONE", alts_long$alt_genus)
+alts_long$alt_species<- ifelse(is.na(alts_long$alt_species),"NONE", alts_long$alt_species)
+
+# Count occurrences per subspecies/alt pair
+alt_counts <- alts_long %>%
+  group_by(subspecies, alt_genus, alt_species) %>%
+  summarise(n = n(), .groups = "drop")
+
+# For each subspecies pick top by n; tie‑break: prefer non-"NONE" over "NONE"
+alt_top <- alt_counts %>%
+  arrange(subspecies, desc(n),
+          grepl("^NONE$", toupper(alt_species)),
+          grepl("^NONE$", toupper(alt_genus))) %>%
+  group_by(subspecies) %>%
+  slice(1) %>%
+  ungroup()
+
 
 aggtable <- aggregate((AllsampleVirsummaryfilesdf10top$Frequency),by=list(AllsampleVirsummaryfilesdf10top$subspecies,AllsampleVirsummaryfilesdf10top$Sample),sum)
 aggtable2table <- aggregate((AllsampleVirsummaryfilesdf10top$average_percent_ident),by=list(AllsampleVirsummaryfilesdf10top$subspecies),mean)
@@ -888,6 +984,13 @@ pairwise_matrixVir <- as.data.frame(pairwise_matrixVir)
 pairwise_matrixVir$avg_pairwiseident <- aggtable2table$x
 pairwise_matrixVir$avg_aligned_length <- aggtable3table$x
 
+
+pairwise_matrixVir$top_alternate_genus   <- alt_top$alt_genus[match(rownames(pairwise_matrixVir), alt_top$subspecies)]
+pairwise_matrixVir$top_alternate_species <- alt_top$alt_species[match(rownames(pairwise_matrixVir), alt_top$subspecies)]
+
+# Fill any unmatched with "NONE"
+pairwise_matrixVir$top_alternate_genus  [is.na(pairwise_matrixVir$top_alternate_genus)]   <- "NONE"
+pairwise_matrixVir$top_alternate_species[is.na(pairwise_matrixVir$top_alternate_species)] <- "NONE"
 
 
 write.table(pairwise_matrixVir,file=(paste0(outtablespath,"Combined_samples_top_hits_to_Viral_species.txt")),sep="\t",row.names=rownames(pairwise_matrixVir),col.names=colnames(pairwise_matrixVir))

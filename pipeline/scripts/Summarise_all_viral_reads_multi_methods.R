@@ -8,6 +8,10 @@ library(DT)
 library(htmlTable)
 library(htmltools)
 library(rmarkdown)
+library(purrr)
+library(tidyr)
+library(htmlwidgets)
+library(rlang)
 
 parser <- ArgumentParser(description= 'Collecting_all_viral_results')
 
@@ -104,10 +108,56 @@ if ( dofalsepossubset == "confirmed") {
 
 Combined_assigned_contigs_viruses_only$qseqid <- sub(" .*", "", Combined_assigned_contigs_viruses_only$qseqid)
 
+
+
+.top3_pairs <- function(alt_spp, alt_gns) {
+  ok <- !(is.na(alt_spp) | alt_spp == "" | toupper(alt_spp) == "NONE")
+  alt_spp <- alt_spp[ok]; alt_gns <- alt_gns[ok]
+  if (!length(alt_spp)) return(list(S = c(NA, NA, NA), G = c(NA, NA, NA)))
+  tb <- sort(table(alt_spp), decreasing = TRUE)
+  top_spp <- names(tb)[seq_len(min(3L, length(tb)))]
+  pick_g <- function(s) {
+    g <- alt_gns[alt_spp == s]
+    if (!length(g)) return(NA_character_)
+    gtab <- sort(table(g), decreasing = TRUE)
+    names(gtab)[1]
+  }
+  S <- c(top_spp, rep(NA, 3L - length(top_spp)))
+  G <- c(vapply(top_spp, pick_g, character(1)), rep(NA, 3L - length(top_spp)))
+  list(S = S, G = G)
+}
+
+# --- NEW: simple, dependency-light build of contig_alt_by_subsp
+contig_alt_by_subsp <- Combined_assigned_contigs_viruses_only %>%
+  dplyr::group_by(subspecies) %>%
+  dplyr::group_split() %>%
+  lapply(function(df) {
+    # pool all alternates across rows within this subspecies
+    alt_spp <- c(df$alternate_species1, df$alternate_species2, df$alternate_species3)
+    alt_gns <- c(df$alternate_genus1,   df$alternate_genus2,   df$alternate_genus3)
+    z <- .top3_pairs(alt_spp, alt_gns)
+    data.frame(
+      subspecies = df$subspecies[1],
+      contig_alt_species1 = z$S[1],
+      contig_alt_genus1   = z$G[1],
+      contig_alt_species2 = z$S[2],
+      contig_alt_genus2   = z$G[2],
+      contig_alt_species3 = z$S[3],
+      contig_alt_genus3   = z$G[3],
+      stringsAsFactors = FALSE
+    )
+  }) %>%
+  dplyr::bind_rows()
+
 seqscores_viruses <- seqs_plus_scores[seqs_plus_scores$sequencenames %in% Combined_assigned_contigs_viruses_only$qseqid, ]
 
 
 # Start of large if loop for checking of contigs are empty
+
+
+read_alt_cols <- c("alt_species_top1","alt_genus_top1",
+                  "alt_species_top2","alt_genus_top2",
+                  "alt_species_top3","alt_genus_top3")
 
 if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
   Combined_assigned_contigs_viruses_only$complexity_score <- NA
@@ -136,6 +186,45 @@ if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
   Viraltop100$mean_complexity_of_contigs <- NA
   Viraltop100$contigs_assigned <- "yes"
   
+  read_alt_cols <- c("alt_species_top1","alt_genus_top1",
+                     "alt_species_top2","alt_genus_top2",
+                     "alt_species_top3","alt_genus_top3")
+  
+  # Merge contig alternates into Viraltop100 (if it exists); otherwise we’ll attach later to virus_all
+  if (exists("Viraltop100")) {
+    Viraltop100 <- Viraltop100 %>%
+      left_join(contig_alt_by_subsp, by = "subspecies") %>%
+      left_join(
+        viral_raws_complexity_summary %>%
+          select(subspecies, any_of(read_alt_cols)),
+        by = "subspecies"
+      )
+  }
+  
+  # --- Helper: merge top-3 (contigs preferred, then reads, no duplicate species)
+  .merge_top3 <- function(cS, cG, rS, rG) {
+    outS <- character(0); outG <- character(0)
+    push <- function(S, G) {
+      for (i in seq_along(S)) {
+        s <- S[i]; g <- if (i <= length(G)) G[i] else NA_character_
+        if (!is.na(s) && s != "" && !(s %in% outS)) {
+          outS <- c(outS, s); outG <- c(outG, g)
+          if (length(outS) == 3L) break
+        }
+      }
+      list(S = outS, G = outG)
+    }
+    tmp <- push(cS, cG)
+    if (length(tmp$S) < 3L) {
+      tmp2 <- push(rS, rG)
+      outS <- c(tmp$S, tmp2$S); outG <- c(tmp$G, tmp2$G)
+    } else { outS <- tmp$S; outG <- tmp$G }
+    outS <- c(outS, rep(NA, 3L - length(outS)))
+    outG <- c(outG, rep(NA, 3L - length(outG)))
+    list(S = outS, G = outG)
+  }
+  
+  
   Combined_assigned_contigs_viruses_only$complexity_score <- as.numeric(Combined_assigned_contigs_viruses_only$complexity_score)
 
 
@@ -150,7 +239,7 @@ if(nrow(Combined_assigned_contigs_viruses_only) >=1) {
     subsetspecies <- Combined_assigned_contigs_viruses_only[idx,]
     
     Viraltop100$number_contigs_assigned[i] <- Combined_assigned_contigs_viruses_species_summary$count[idx2]
-    Viraltop100$mean_complexity_of_contigs[i] <- mean(subsetspecies$complexity_score)
+    Viraltop100$mean_complexity_of_contigs[i] <- mean(subsetspecies$complexity_score, na.rm = TRUE)
     
     
     
@@ -333,9 +422,12 @@ if (BOTHMISSING =="NO") {
     mutate(taxid = as.character(NA))
 
   # Make sure everything is the same object class
-  remaining_raws <- remaining_raws %>%
-    mutate(taxid = as.character(taxid))
-
+  if (!exists("remaining_raws")) {
+    remaining_raws <- tibble(subspecies = character(), taxid = character())
+  } else {
+    remaining_raws <- remaining_raws %>% mutate(taxid = as.character(taxid))
+  }
+  
   # left joins grab the taxids from both the contig and the raws dfs
   virus_all <- virus_all %>%
     left_join(Combined_assigned_contigs_viruses_only %>% select(subspecies, taxid), by = "subspecies", suffix = c("", "_contigs")) %>%
@@ -354,6 +446,69 @@ if (BOTHMISSING =="NO") {
     arrange(desc(total_reads_assigned))
 
 
+  # Attach both sources of alternates to virus_all
+  virus_all <- virus_all %>%
+    left_join(contig_alt_by_subsp, by = "subspecies") %>%
+    left_join(
+      viral_raws_complexity_summary %>% select(subspecies, any_of(read_alt_cols)),
+      by = "subspecies"
+    )
+  
+  
+  needed_alt_cols <- c(
+    "contig_alt_species1","contig_alt_genus1",
+    "contig_alt_species2","contig_alt_genus2",
+    "contig_alt_species3","contig_alt_genus3",
+    "alt_species_top1","alt_genus_top1",
+    "alt_species_top2","alt_genus_top2",
+    "alt_species_top3","alt_genus_top3"
+  )
+  for (nm in setdiff(needed_alt_cols, names(virus_all))) virus_all[[nm]] <- NA_character_
+  
+  # Build final alternates with contig preference
+  merged_alt <- pmap(
+    list(virus_all$contig_alt_species1, virus_all$contig_alt_genus1,
+         virus_all$contig_alt_species2, virus_all$contig_alt_genus2,
+         virus_all$contig_alt_species3, virus_all$contig_alt_genus3,
+         virus_all$alt_species_top1,    virus_all$alt_genus_top1,
+         virus_all$alt_species_top2,    virus_all$alt_genus_top2,
+         virus_all$alt_species_top3,    virus_all$alt_genus_top3),
+    function(cS1, cG1, cS2, cG2, cS3, cG3, rS1, rG1, rS2, rG2, rS3, rG3) {
+      .merge_top3(
+        cS = c(cS1, cS2, cS3),
+        cG = c(cG1, cG2, cG3),
+        rS = c(rS1, rS2, rS3),
+        rG = c(rG1, rG2, rG3)
+      )
+    }
+  )
+  
+  # Unpack into columns
+  virus_all$final_alt_species1 <- vapply(merged_alt, function(x) x$S[1], character(1))
+  virus_all$final_alt_genus1   <- vapply(merged_alt, function(x) x$G[1], character(1))
+  virus_all$final_alt_species2 <- vapply(merged_alt, function(x) x$S[2], character(1))
+  virus_all$final_alt_genus2   <- vapply(merged_alt, function(x) x$G[2], character(1))
+  virus_all$final_alt_species3 <- vapply(merged_alt, function(x) x$S[3], character(1))
+  virus_all$final_alt_genus3   <- vapply(merged_alt, function(x) x$G[3], character(1))
+  
+  # We’ll keep *only* the final_* in the output (sources remain useful internally but shouldn’t clutter)
+  alt_src_cols <- c("contig_alt_species1","contig_alt_genus1",
+                    "contig_alt_species2","contig_alt_genus2",
+                    "contig_alt_species3","contig_alt_genus3",
+                    "alt_species_top1","alt_genus_top1",
+                    "alt_species_top2","alt_genus_top2",
+                    "alt_species_top3","alt_genus_top3")
+  
+  # Reorder so final_* are at the very end
+  final_alt_cols <- c("final_alt_species1","final_alt_genus1",
+                      "final_alt_species2","final_alt_genus2",
+                      "final_alt_species3","final_alt_genus3")
+  
+  virus_all <- virus_all %>%
+    relocate(any_of(final_alt_cols), .after = last_col())
+  
+  # Drop the intermediate source columns from virus_all (kept in memory until now)
+  virus_all <- virus_all %>% select(-any_of(alt_src_cols))
 
 
 
@@ -439,17 +594,30 @@ if (BOTHMISSING =="NO") {
     }    
   }
   
-  coloured_data <- sapply(names(virus_all), function(col) {
+  plain_tail_cols <- intersect(
+    c("final_alt_species1","final_alt_genus1",
+      "final_alt_species2","final_alt_genus2",
+      "final_alt_species3","final_alt_genus3"),
+    names(virus_all)
+  )
+  
+  # All other columns keep their original order and (if applicable) get coloured
+  score_cols <- setdiff(names(virus_all), plain_tail_cols)
+  
+  # Colour only score_cols; append plain tail as-is (no colouring)
+  coloured_data_scored <- sapply(score_cols, function(col) {
     sapply(virus_all[[col]], function(x) {
-      paste0("<span style='color:", colourise(x, col), "'>", x, "</span>")
+      # If 'colourise' doesn't know this column, leave it uncoloured
+      colcode <- try(colourise(x, col), silent = TRUE)
+      if (inherits(colcode, "try-error") || is.null(colcode) || is.na(colcode)) {
+        return(as.character(x))
+      }
+      paste0("<span style='color:", colcode, "'>", x, "</span>")
     })
-  }, simplify = FALSE)
+  }, simplify = FALSE) %>% bind_cols()
   
-  
-  coloured_data <- bind_cols(coloured_data)
-  
-  #coloured_data <- as.data.frame(coloured_data)
-  
+  coloured_data <- bind_cols(coloured_data_scored,
+                             virus_all[, plain_tail_cols, drop = FALSE])
   
   for (i in c(1:nrow(coloured_data))) {
     

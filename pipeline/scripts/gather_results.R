@@ -5,7 +5,6 @@ library(ggplot2)
 library(htmlwidgets)
 library(magrittr)
 library(argparse)
-library(hrbrthemes)
 library(htmltools)
 library(hrbrthemes)
 library(sankeyD3)
@@ -13,17 +12,12 @@ library(pavian)
 library(phylotools)
 library("taxonomizr")
 
-
-
 if (!require("d3treeR", character.only = TRUE)) {
   devtools::install_github("timelyportfolio/d3treeR",upgrade="never",dependencies=FALSE)
   library("d3treeR")
 } else {
   library("d3treeR")
 }
-
-
-
 
 parser <- ArgumentParser(description= 'Summarising results filtering and assembly')
 
@@ -83,8 +77,6 @@ docontigfalsepos <- xargs$dofalseposcontigschoice
 docontigfalseposrenamespecies <- xargs$doblastnassignmentsonly
 Assemblyused <- xargs$Assemblyused
 Hostgenomefound <- xargs$hostgenomefailed
-
-
 AccessionNamenode <- xargs$Accnode
 
 
@@ -105,15 +97,34 @@ paste0(NAMES,"length bowtie SSU ", length(bowtieSSUfile))
 
 
 # Function for reading in blast results tables which prevents errors associated with special characters in the species name
-	replace_newline_within_quotes <- function(line) {
-	  parts <- strsplit(line, "\"")[[1]]
-	  for (i in seq_along(parts)) {
-	    if (i %% 2 == 0) {
-	      parts[[i]] <- gsub("\n", " ", parts[[i]])
-	    }
-	  }
-	  paste(parts, collapse = "\"")
-	}
+replace_newline_within_quotes <- function(line) {
+  parts <- strsplit(line, "\"")[[1]]
+  for (i in seq_along(parts)) {
+    if (i %% 2 == 0) {
+      parts[[i]] <- gsub("\n", " ", parts[[i]])
+    }
+  }
+  paste(parts, collapse = "\"")
+}
+
+# Unified 25-column schema for contig-level tables (with alternates)
+contig_cols25 <- c(
+  "qseqid","sseqid","pident","length","evalue","bitscore",
+  "staxids","stitle","qcovhsp","multiplesp","staxidreduced",
+  "superkingdom","phylum","class","order","family","genus","species","subspecies",
+  "alternate_genus1","alternate_species1",
+  "alternate_genus2","alternate_species2",
+  "alternate_genus3","alternate_species3"
+)
+
+# Helper to coerce any contig table to the 25-col schema
+std_to_25 <- function(df) {
+  miss <- setdiff(contig_cols25, names(df))
+  for (m in miss) df[[m]] <- NA
+  df <- df[, contig_cols25, drop = FALSE]
+  df
+}
+
 
 
 
@@ -260,7 +271,7 @@ readsfilteredLSU <- (total_reads_preLSUfilter-total_reads_preSSUfilter)
 readsfilteredSSU <- (readsalignedSSU)
 readsfilteredSSU  <- round(readsfilteredSSU)
 Percentage_CO1 <- ((readsfilteredCO1 / total_reads_preCO1filter)*100)
-Percentage_LSU <- ((readsfilteredCO1 / total_reads_preCO1filter)*100)
+Percentage_LSU <- ((readsfilteredLSU / total_reads_preLSUfilter)*100)
 Percentage_SSU <- alignment_rate
 
 remainingreads <- readsunalignedSSU
@@ -332,142 +343,89 @@ if(dohostdetect =="no") {
 
 rm(bowtieCO1file,bowtieLSUfile,bowtieSSUfile,fastpfile)
 
-Diamondpresence <-readLines(xargs$Diamondtab)
-if (length(Diamondpresence) >=1) {
-
-	modified_lines <- lapply(Diamondpresence, replace_newline_within_quotes)
-	modified_lines  <- unlist(modified_lines)
-	modified_lines <- modified_lines[sapply(modified_lines, function(x) length(strsplit(x, "\t")[[1]]) > 1)]
-	# Read the modified lines using read.table
-	Diamondhits <- read.table(text = modified_lines, sep = "\t", header = TRUE, stringsAsFactors = FALSE, quote = "\"", comment.char = "")
-
-	# Replace the unique character sequence back to '\n' within the dataframe
-	Diamondhits[] <- lapply(Diamondhits, function(col) gsub("###NEWLINE###", "\n", col))
-
-	rm(modified_lines)
-
-#Diamondhits <- read.table(file=xargs$Diamondtab, sep="\t",header=TRUE,row.names=NULL, fill=TRUE,quote="")
-
-  paste0(NAMES," dim Diamondhits ", dim(Diamondhits))
-
-colnames(Diamondhits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp", "multiplesp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species", "subspecies")
-
-Diamondhits$pident <- as.numeric(Diamondhits$pident)
-Diamondhits$length<- as.numeric(Diamondhits$length)
-Diamondhits$qcovhsp<- as.numeric(Diamondhits$qcovhsp)
-
-
-# Diamond returns values as aa smiliarity, convert alignment lengths to nt
-Diamondhits<- Diamondhits%>% 
-  mutate(length = length * 3)
-
-
-
-}
-if (length(Diamondpresence) ==0) {
-  Diamondhits <- as.data.frame(matrix(nrow=0,ncol=19))
+Diamondpresence <- readLines(xargs$Diamondtab)
+if (length(Diamondpresence) >= 1) {
+  modified_lines <- lapply(Diamondpresence, replace_newline_within_quotes)
+  modified_lines  <- unlist(modified_lines)
+  modified_lines <- modified_lines[sapply(modified_lines, function(x) length(strsplit(x, "\t")[[1]]) > 1)]
+  Diamondhits <- read.table(text = modified_lines, sep = "\t", header = TRUE, stringsAsFactors = FALSE, quote = "\"", comment.char = "")
+  Diamondhits[] <- lapply(Diamondhits, function(col) gsub("###NEWLINE###", "\n", col))
+  rm(modified_lines)
+  Diamondhits$pident  <- as.numeric(Diamondhits$pident)
+  Diamondhits$length  <- as.numeric(Diamondhits$length)
+  Diamondhits$qcovhsp <- as.numeric(Diamondhits$qcovhsp)
+  Diamondhits <- Diamondhits %>% mutate(length = length * 3)
+  Diamondhits <- std_to_25(Diamondhits)
+} else {
+  Diamondhits <- setNames(as.data.frame(matrix(nrow=0,ncol=length(contig_cols25))), contig_cols25)
   paste0(NAMES," Diamondx returned no findings")
 }
 
-blastnpresence <-readLines(xargs$Blastntab)
-if (length(blastnpresence) >=1) {
-
-	modified_lines <- lapply(blastnpresence, replace_newline_within_quotes)
-	modified_lines  <- unlist(modified_lines)
-	modified_lines <- modified_lines[sapply(modified_lines, function(x) length(strsplit(x, "\t")[[1]]) > 1)]
-	# Read the modified lines using read.table
-	Blastnhits <- read.table(text = modified_lines, sep = "\t", header = TRUE, stringsAsFactors = FALSE, quote = "\"", comment.char = "")
-
-	# Replace the unique character sequence back to '\n' within the dataframe
-	Blastnhits[] <- lapply(Blastnhits, function(col) gsub("###NEWLINE###", "\n", col))
-
-	rm(modified_lines)
-
-
-  #Blastnhits <- read.table(file=xargs$Blastntab, sep="\t",header=TRUE,row.names=NULL, fill=TRUE,quote="")
-  paste0(NAMES," dim Blastnhits ", dim(Blastnhits))
-}
-if (length(blastnpresence) ==0) {
-  Blastnhits <- as.data.frame(matrix(nrow=0,ncol=19))
+# ---- Read Blastn contig assignments (25-col standard) ----
+blastnpresence <- readLines(xargs$Blastntab)
+if (length(blastnpresence) >= 1) {
+  modified_lines <- lapply(blastnpresence, replace_newline_within_quotes)
+  modified_lines  <- unlist(modified_lines)
+  modified_lines <- modified_lines[sapply(modified_lines, function(x) length(strsplit(x, "\t")[[1]]) > 1)]
+  Blastnhits <- read.table(text = modified_lines, sep = "\t", header = TRUE, stringsAsFactors = FALSE, quote = "\"", comment.char = "")
+  Blastnhits[] <- lapply(Blastnhits, function(col) gsub("###NEWLINE###", "\n", col))
+  rm(modified_lines)
+  Blastnhits$pident  <- as.numeric(Blastnhits$pident)
+  Blastnhits$length  <- as.numeric(Blastnhits$length)
+  Blastnhits$qcovhsp <- as.numeric(Blastnhits$qcovhsp)
+  Blastnhits <- std_to_25(Blastnhits)
+} else {
+  Blastnhits <- setNames(as.data.frame(matrix(nrow=0,ncol=length(contig_cols25))), contig_cols25)
   paste0(NAMES," Blastnhits returned no findings")
 }
-
-colnames(Blastnhits) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp", "multiplesp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species", "subspecies")
-
-Blastnhits$pident <- as.numeric(Blastnhits$pident)
-Blastnhits$length<- as.numeric(Blastnhits$length)
-Blastnhits$qcovhsp<- as.numeric(Blastnhits$qcovhsp)
 
 
 
 # adding in check for if any viral contigs were returned after false positive check. This will get it to point where it can be read in to summarise all reads and raws. (Combined_assigned_contigsfp)
-
-if ( docontigfalsepos == 'yes') {
-  Diamondpresencefp <-readLines(xargs$falseposcontigsrem)
-  if (length(Diamondpresencefp) >=1) {
-
-	modified_lines <- lapply(Diamondpresencefp, replace_newline_within_quotes)
-	modified_lines  <- unlist(modified_lines)
-	modified_lines <- modified_lines[sapply(modified_lines, function(x) length(strsplit(x, "\t")[[1]]) > 1)]
-	# Read the modified lines using read.table
-	Diamondhitsfp <- read.table(text = modified_lines, sep = "\t", header = TRUE, stringsAsFactors = FALSE, quote = "\"", comment.char = "")
-
-	# Replace the unique character sequence back to '\n' within the dataframe
-	Diamondhitsfp[] <- lapply(Diamondhitsfp, function(col) gsub("###NEWLINE###", "\n", col))
-
-	rm(modified_lines)
-
-
-    #Diamondhitsfp <- read.table(file=xargs$falseposcontigsrem, sep="\t",header=TRUE,row.names=NULL, fill=TRUE,quote="")
-    paste0(NAMES," dim Diamondhits after false positive check ", dim(Diamondhitsfp))
-    
-    colnames(Diamondhitsfp) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp", "multiplesp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species","subspecies")
-	Diamondhitsfp$pident <- as.numeric(Diamondhitsfp$pident)
-	Diamondhitsfp$length<- as.numeric(Diamondhitsfp$length)
-	Diamondhitsfp$qcovhsp<- as.numeric(Diamondhitsfp$qcovhsp)
-       
-    
-  }
-  if (length(Diamondpresencefp) ==0) {
-    Diamondhitsfp <- as.data.frame(matrix(nrow=0,ncol=19))
+if (docontigfalsepos == 'yes') {
+  Diamondpresencefp <- readLines(xargs$falseposcontigsrem)
+  if (length(Diamondpresencefp) >= 1) {
+    modified_lines <- lapply(Diamondpresencefp, replace_newline_within_quotes)
+    modified_lines  <- unlist(modified_lines)
+    modified_lines <- modified_lines[sapply(modified_lines, function(x) length(strsplit(x, "\t")[[1]]) > 1)]
+    Diamondhitsfp <- read.table(text = modified_lines, sep = "\t", header = TRUE, stringsAsFactors = FALSE, quote = "\"", comment.char = "")
+    Diamondhitsfp[] <- lapply(Diamondhitsfp, function(col) gsub("###NEWLINE###", "\n", col))
+    rm(modified_lines)
+    Diamondhitsfp$pident  <- as.numeric(Diamondhitsfp$pident)
+    Diamondhitsfp$length  <- as.numeric(Diamondhitsfp$length)
+    Diamondhitsfp$qcovhsp <- as.numeric(Diamondhitsfp$qcovhsp)
+    Diamondhitsfp <- std_to_25(Diamondhitsfp)
+  } else {
+    Diamondhitsfp <- setNames(as.data.frame(matrix(nrow=0,ncol=length(contig_cols25))), contig_cols25)
     paste0(NAMES," Diamondx after false positive check returned no findings")
-    colnames(Diamondhitsfp) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp", "multiplesp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species", "subspecies")
   }
-  
-
-  
-  Combined_assigned_contigsfp <- rbind(Diamondhitsfp,Blastnhits)
-  
+  Combined_assigned_contigsfp <- rbind(Diamondhitsfp, Blastnhits)
 }
 
-Combined_assigned_contigs <- rbind(Diamondhits,Blastnhits)
-Combined_assigned_contigspreblastnupdates <- rbind(Diamondhits,Blastnhits)
-i=1
-if (docontigfalseposrenamespecies == 'confirmed') {
+Combined_assigned_contigs <- rbind(Diamondhits, Blastnhits)
+Combined_assigned_contigspreblastnupdates <- rbind(Diamondhits, Blastnhits)
 
-	for (i in c(1:nrow(Diamondhitsfp))) {
-		grep(paste0("^",Diamondhitsfp$qseqid[i],"$"),Combined_assigned_contigs$qseqid) -> idxval2
-		
-		if(length(idxval2) >=1) {
-
-		Combined_assigned_contigs[idxval2,] <- Diamondhitsfp[i,]
-		}
-		# Adding new double check for if no idx values returned. This occurs only when
-		# blastx identified nothing and kraken identified virus and blastn confirmed virus. Very uncommon but needed!
-		# just rbind the new row in
-		if(length(idxval2) ==0) {
-			Combined_assigned_contigs <- rbind(Combined_assigned_contigs,Diamondhitsfp[i,])
-
-		}
-
-	}
-
+if (docontigfalseposrenamespecies == 'confirmed' && exists("Diamondhitsfp")) {
+  if (nrow(Diamondhitsfp) >= 1) {
+    for (i in seq_len(nrow(Diamondhitsfp))) {
+      idxval2 <- grep(paste0("^", Diamondhitsfp$qseqid[i], "$"), Combined_assigned_contigs$qseqid)
+      if (length(idxval2) >= 1) {
+        Combined_assigned_contigs[idxval2, ] <- Diamondhitsfp[i, ]
+      } else {
+        Combined_assigned_contigs <- rbind(Combined_assigned_contigs, Diamondhitsfp[i, ])
+      }
+    }
+  }
 }
 
 summary_contigs_table <- as.data.frame(matrix(nrow=1, ncol=15))
-
-colnames(summary_contigs_table) <- c("Number_contigs","Maximum_sized_contig", "N50_contigs", "Contigs_assigned_to_host", "Assigned_contigs_Diamond", "Assigned_contigs_Blastn","Percentage_of_contigs_assigned_total", "raw_reads_assigned_to_classified_contigs","Non_host_reads_assigned_via_protein_search","Non_host_reads_assigned_via_nucleotide_search", "Raw_reads_assigned_to_host_genome", "Raw_reads_assigned_to_host_aligned_contigs","Raw_reads_assigned_to_host_blastn_diamondx", "Raw_reads_assigned_raw_diamond", "raw_reads_not_assigned")
-
+colnames(summary_contigs_table) <- c(
+  "Number_contigs","Maximum_sized_contig", "N50_contigs", "Contigs_assigned_to_host",
+  "Assigned_contigs_Diamond", "Assigned_contigs_Blastn","Percentage_of_contigs_assigned_total",
+  "raw_reads_assigned_to_classified_contigs","Non_host_reads_assigned_via_protein_search",
+  "Non_host_reads_assigned_via_nucleotide_search", "Raw_reads_assigned_to_host_genome",
+  "Raw_reads_assigned_to_host_aligned_contigs","Raw_reads_assigned_to_host_blastn_diamondx",
+  "Raw_reads_assigned_raw_diamond", "raw_reads_not_assigned")
 # Trinity doesn't produce a log file for assembly like Megahit does. Need to separate them here and gnerate the sum stats differently 
 if ( Assemblyused =='Megahit') {
   
@@ -559,6 +517,12 @@ freqsummary$species<- NA
 freqsummary$subspecies<- NA
 freqsummary$percentident <- NA
 freqsummary$contigalignlength <- NA
+freqsummary$alternate_genus1<- NA
+freqsummary$alternate_species1 <- NA
+freqsummary$alternate_genus2 <- NA
+freqsummary$alternate_species2 <- NA
+freqsummary$alternate_genus3 <- NA
+freqsummary$alternate_species3 <- NA
 
 for (i in c(1:nrow(freqsummary))) {
   
@@ -570,7 +534,7 @@ for (i in c(1:nrow(freqsummary))) {
     freqsummary[i,12] <- Diamondhits[idxval,3]
     freqsummary[i,13] <- Diamondhits[idxval,4]
     freqsummary[i,4:11] <- Diamondhits[idxval,12:19]
-    
+    freqsummary[i,14:19] <- Diamondhits[idxval,20:25]
     
   }
   
@@ -582,7 +546,7 @@ for (i in c(1:nrow(freqsummary))) {
     freqsummary[i,12] <- Blastnhits[idxval,3]
     freqsummary[i,13] <- Blastnhits[idxval,4]
     freqsummary[i,4:11] <- Blastnhits[idxval,12:19]
-    
+    freqsummary[i,14:19] <- Blastnhits[idxval,20:25]
   }
   
   
@@ -614,7 +578,8 @@ if (docontigfalseposrenamespecies == 'confirmed') {
         }
         
         # Update freqsummary only if idxval2 is valid
-        freqsummary[idxval2, 4:11] <- Diamondhitsfp[i, 12:19]
+        freqsummary[idxval2,4:11] <- Diamondhitsfp[i,12:19]
+        freqsummary[idxval2,14:19] <- Diamondhitsfp[i,20:25]
         freqsummary[idxval2, 12:13] <- Diamondhitsfp[i, 3:4]
         freqsummary[idxval2, 3] <- "Blastn"
       }
@@ -892,13 +857,18 @@ cat(paste0("putting all summary table values together worked", "\t"))
 
 
 
-
 #generate top hits and average identity for contigs
 species_idvec <- unique(allassignedfreqsnohost$species)
 
-contigsspecies <- as.data.frame(matrix(nrow=length(species_idvec), ncol=13))
-colnames(contigsspecies) <- c("Frequency","superkingdom","phylum","class","order","family","genus","species","subspecies","average_percent_ident","min_percent_ident","max_percent_ident","length")
-
+# base columns (13), then add 6 columns for the top-3 alternate genus/species pairs
+contigsspecies <- as.data.frame(matrix(nrow = length(species_idvec), ncol = 19))
+colnames(contigsspecies) <- c(
+  "Frequency","superkingdom","phylum","class","order","family","genus","species","subspecies",
+  "average_percent_ident","min_percent_ident","max_percent_ident","length",
+  "alternate_genus1","alternate_species1",
+  "alternate_genus2","alternate_species2",
+  "alternate_genus3","alternate_species3"
+)
 
 cat(paste0("creating species idvec worked", "\t"))
 
@@ -907,23 +877,130 @@ readsfromunassignedcontigs <- sum(freqsummaryonlyna$freq)
 
 freqsummarynona <- subset(freqsummary, !is.na(freqsummary$percentident))
 freqsummarynona$percentident <- as.numeric(freqsummarynona$percentident)
-for (i in c(1:length(species_idvec))) {
+
+
+# So generating the alternative genus and species lists once compiled to species specific counts is a lot trickier than initially considered
+# Here we implement a weighting scheme which collects the genus-species pairs for all alternate assignments for every contig (subset by each species)
+# where we generate a weight for each based on the length of the alignment, the number of reads which matched to each contig and finally the identity of the alignment
+# Then all of these are ordered by final weight and the top 3 pairs of highest weight (this includes possible "NONE" values) are taken forward as
+# the representatives of each species for the alternative assignments.
+
+# short helper  functions for alternate ranking (mostly NA error checking)
+is_blank <- function(x) is.na(x) | x == ""
+
+safe0 <- function(x) ifelse(is.na(x) | !is.finite(x), 0, x)
+# ---------------------------------------------------
+
+species_idvec <- unique(allassignedfreqsnohost$species)
+
+contigsspecies <- as.data.frame(matrix(nrow = length(species_idvec), ncol = 19))
+colnames(contigsspecies) <- c(
+  "Frequency", "superkingdom", "phylum", "class", "order", "family", "genus", "species",
+  "subspecies", "average_percent_ident", "min_percent_ident", "max_percent_ident", "length",
+  "alternate_genus1", "alternate_species1",
+  "alternate_genus2", "alternate_species2",
+  "alternate_genus3", "alternate_species3"
+)
+
+cat(paste0("creating species idvec worked", "\t"))
+
+freqsummaryonlyna <- subset(freqsummary, is.na(freqsummary$percentident))
+readsfromunassignedcontigs <- sum(freqsummaryonlyna$freq)
+
+freqsummarynona <- subset(freqsummary, !is.na(freqsummary$percentident))
+freqsummarynona$percentident <- as.numeric(freqsummarynona$percentident)
+
+for (i in seq_along(species_idvec)) {
   
-  contigssubset<- subset(freqsummarynona,freqsummarynona$species == species_idvec[i])
+  contigssubset <- subset(freqsummarynona, freqsummarynona$species == species_idvec[i])
   
-  contigsspecies[i,2:9] <- contigssubset[1,4:11]
-  contigsspecies[i,1] <- sum(contigssubset$freq)
+  contigsspecies[i, 2:9] <- contigssubset[1, 4:11]
+  contigsspecies[i, 1] <- sum(contigssubset$freq)
   
   if (!is.na(contigssubset$percentident[1])) {
-    contigsspecies[i,10] <- mean(contigssubset$percentident)
-    contigsspecies[i,11] <- min(contigssubset$percentident)
-    contigsspecies[i,12] <- max(contigssubset$percentident)
-    contigsspecies[i,13] <- mean(contigssubset$contigalignlength)
+    contigsspecies[i, 10] <- mean(contigssubset$percentident)
+    contigsspecies[i, 11] <- min(contigssubset$percentident)
+    contigsspecies[i, 12] <- max(contigssubset$percentident)
+    contigsspecies[i, 13] <- mean(contigssubset$contigalignlength)
   }
+  
+  # ---------- new alternate ranking with weighting ----------
+  alt_cols <- c("alternate_genus1", "alternate_species1",
+                "alternate_genus2", "alternate_species2",
+                "alternate_genus3", "alternate_species3")
+  
+  alt_data <- data.frame()
+  
+  # Build candidate list from all contigs for this species
+  for (row_idx in seq_len(nrow(contigssubset))) {
+    for (alt_num in 1:3) {
+      genus_col <- contigssubset[[paste0("alternate_genus", alt_num)]][row_idx]
+      species_col <- contigssubset[[paste0("alternate_species", alt_num)]][row_idx]
+      freq_val <- contigssubset$freq[row_idx]
+      len_val <- contigssubset$contigalignlength[row_idx]
+      pid_val <- contigssubset$percentident[row_idx]
+      
+      alt_data <- rbind(alt_data, data.frame(
+        genus = genus_col,
+        species = species_col,
+        freq = freq_val,
+        contigalignlength = len_val,
+        percentident = pid_val,
+        stringsAsFactors = FALSE
+      ))
+    }
+  }
+  
+  # Remove rows where both genus and species are NA
+  alt_data <- alt_data[!(is.na(alt_data$genus) & is.na(alt_data$species)), ]
+  
+  if (nrow(alt_data) > 0) {
+    # Normalise contig length and percent ident within this species
+    eps <- 1e-9
+    len_min <- min(alt_data$contigalignlength, na.rm = TRUE)
+    len_max <- max(alt_data$contigalignlength, na.rm = TRUE)
+    pid_min <- min(alt_data$percentident, na.rm = TRUE)
+    pid_max <- max(alt_data$percentident, na.rm = TRUE)
+    
+    alt_data$len_norm <- ifelse(len_max > len_min,
+                                (alt_data$contigalignlength - len_min) / (len_max - len_min + eps),
+                                0)
+    alt_data$pid_norm <- ifelse(pid_max > pid_min,
+                                (alt_data$percentident - pid_min) / (pid_max - pid_min + eps),
+                                0)
+    
+    # Compute weight = freq × normalized length × normalized percent ident
+    alt_data$weight <- alt_data$freq * alt_data$len_norm * alt_data$pid_norm
+    
+    # Collapse by genus-species combination, summing weight
+    alt_summary <- aggregate(weight ~ genus + species, data = alt_data, sum, na.rm = TRUE)
+    
+    # Tie-breaker: prefer non-"NONE" over "NONE" if weights are equal
+    alt_summary <- alt_summary[order(-alt_summary$weight,
+                                     grepl("^NONE$", toupper(alt_summary$species))), ]
+    
+    # Take top 3
+    top_alts <- head(alt_summary, 3)
+    
+    # Fill into contigsspecies (pad with "NONE" if fewer than 3 found)
+    for (alt_idx in 1:3) {
+      if (alt_idx <= nrow(top_alts)) {
+        contigsspecies[i, 13 + (alt_idx * 2 - 1)] <- top_alts$genus[alt_idx]
+        contigsspecies[i, 13 + (alt_idx * 2)]     <- top_alts$species[alt_idx]
+      } else {
+        contigsspecies[i, 13 + (alt_idx * 2 - 1)] <- "NONE"
+        contigsspecies[i, 13 + (alt_idx * 2)]     <- "NONE"
+      }
+    }
+  } else {
+    # No alternates at all
+    contigsspecies[i, c(14:19)] <- "NONE"
+  }
+  
+  # Replace any NA alt fields with "NONE"
+  contigsspecies[i, c(14:19)][is.na(contigsspecies[i, c(14:19)])] <- "NONE"
+  # ---------- end new alternate ranking ----------
 }
-
-
-
 
 cat(paste0("creating contig subsets worked", "\t"))
 
@@ -1201,7 +1278,7 @@ colnames (summary_raw_reads_assignments) <- c("Number_of_raw_reads_assigned_thro
 if (dodiamondraws == 'yes') {
   
   Diamondrawpresence <-readLines(xargs$diamondrawskingdoms)
-  if (length(Diamondrawpresence >=1)) {
+  if (length(Diamondrawpresence) >=1) {
     
 	modified_lines <- lapply(Diamondrawpresence, replace_newline_within_quotes)
 	modified_lines  <- unlist(modified_lines)
@@ -1546,7 +1623,7 @@ if (!(is.null(CO1microbiome))) {
     strings <- lapply(strings, gsub,pattern="s_",replacement="")
     topCO1hits$Species <- unlist(strings)
     
-    topCO1hits$read_hits <- topspeciestop10$taxonreads
+    topCO1hits$read_hits <- topspeciestop10$taxonReads
     topCO1hits$percentage_of_CO1_reads <- topspeciestop10$percentage
     
   }
@@ -1623,7 +1700,7 @@ if (!(is.null(LSUmicrobiome))) {
     strings <- lapply(strings, gsub,pattern="s_",replacement="")
     topLSUhits$Species <- unlist(strings)
     
-    topLSUhits$read_hits <- topspeciestop10$taxonreads
+    topLSUhits$read_hits <- topspeciestop10$taxonReads
     topLSUhits$percentage_of_LSU_reads <- topspeciestop10$percentage
     
   }
@@ -1668,7 +1745,7 @@ SSUmicrobiome <- pavian::read_report(xargs$SSUmicrobiome)
 
 if (!(is.null(SSUmicrobiome))) {
   
-  topspecies <- subset(SSUmicrobiome, LSUmicrobiome$taxRank=="S")
+  topspecies <- subset(SSUmicrobiome, SSUmicrobiome$taxRank=="S")
   
   topspeciesordered <- topspecies[order(-topspecies$taxonReads),]
   
@@ -1699,7 +1776,7 @@ if (!(is.null(SSUmicrobiome))) {
     strings <- lapply(strings, gsub,pattern="s_",replacement="")
     topSSUhits$Species <- unlist(strings)
     
-    topSSUhits$read_hits <- topspeciestop10$taxonreads
+    topSSUhits$read_hits <- topspeciestop10$taxonReads
     topSSUhits$percentage_of_SSU_reads <- topspeciestop10$percentage
     
   }

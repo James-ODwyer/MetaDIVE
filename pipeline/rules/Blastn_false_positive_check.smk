@@ -74,7 +74,7 @@ rule false_positive_check_blastn:
         blastn -query {input.virus_contigs} \
             -db {params.blastdb} \
             -evalue 0.00001 \
-            -max_target_seqs 4 \
+            -max_target_seqs 10 \
             -max_hsps 1 \
             -outfmt '6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp' \
             -num_threads {threads} \

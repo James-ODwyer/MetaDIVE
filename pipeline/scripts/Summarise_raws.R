@@ -33,9 +33,32 @@ outtablespath <- paste0(outtablespath1,outtablespath2)
 NAMES <- xargs$name
 n.cores <- xargs$threads
 
-virus_input_table <- read.table(file=xargs$inputvirusdetails, sep="\t",header=TRUE,row.names=NULL, fill=TRUE,quote="")
+virus_input_table <- read.table(file = xargs$inputvirusdetails,
+                                sep = "\t", header = FALSE, row.names = NULL,
+                                fill = TRUE, quote = "")
 
-colnames(virus_input_table) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore","staxids", "stitle", "qcovhsp","staxidreduced", "superkingdom", "phylum", "class", "order", "family", "genus", "species","subspecies")
+# expected columns: 24 (original 18 + 6 alternates)
+expected_cols <- c("qseqid","sseqid","pident","length","evalue","bitscore",
+                   "staxids","stitle","qcovhsp","staxidreduced",
+                   "superkingdom","phylum","class","order","family","genus","species","subspecies",
+                   "alternate_genus1","alternate_species1",
+                   "alternate_genus2","alternate_species2",
+                   "alternate_genus3","alternate_species3")
+
+# if fewer than expected, pad with NA; if more, keep first 24
+if (ncol(virus_input_table) < length(expected_cols)) {
+  for (k in (ncol(virus_input_table)+1):length(expected_cols)) {
+    virus_input_table[[k]] <- NA
+  }
+}
+virus_input_table <- virus_input_table[, seq_len(length(expected_cols))]
+colnames(virus_input_table) <- expected_cols
+
+num_cols <- c("pident","length","evalue","bitscore","qcovhsp")
+for (cc in num_cols) {
+  suppressWarnings(virus_input_table[[cc]] <- as.numeric(virus_input_table[[cc]]))
+}
+
 
 
 virus_names <- read.table(file=xargs$viral_readnames, sep="\t",header=FALSE,row.names=NULL,quote="")
@@ -152,6 +175,14 @@ viruses_input_confirmed_freqs$mean_identity <- NA
 viruses_input_confirmed_freqs$mean_complexity <- NA
 viruses_input_confirmed_freqs$max_complexity <- NA
 
+viruses_input_confirmed_freqs$alt_species_top1 <- NA
+viruses_input_confirmed_freqs$alt_genus_top1   <- NA
+viruses_input_confirmed_freqs$alt_species_top2 <- NA
+viruses_input_confirmed_freqs$alt_genus_top2   <- NA
+viruses_input_confirmed_freqs$alt_species_top3 <- NA
+viruses_input_confirmed_freqs$alt_genus_top3   <- NA
+
+
 viruses_input_confirmed_freqs$min_aligned_length <- as.numeric(viruses_input_confirmed_freqs$min_aligned_length)
 viruses_input_confirmed_freqs$max_aligned_length <- as.numeric(viruses_input_confirmed_freqs$max_aligned_length)
 viruses_input_confirmed_freqs$mean_aligned_length <- as.numeric(viruses_input_confirmed_freqs$mean_aligned_length)
@@ -162,31 +193,73 @@ viruses_input_confirmed_freqs$mean_complexity <- as.numeric(viruses_input_confir
 viruses_input_confirmed_freqs$max_complexity <- as.numeric(viruses_input_confirmed_freqs$max_complexity)
 
 
-
-for (l in c(1:nrow(viruses_input_confirmed_freqs) )) {
-  
+for (l in c(1:nrow(viruses_input_confirmed_freqs))) {
+  # subset all reads for this subspecies
   viruses_input_confirmed_freqssubset <- viruses_input_confirmed %>%
-    filter(grepl(viruses_input_confirmed_freqs[l,1], viruses_input_confirmed$subspecies))
+    filter(subspecies == viruses_input_confirmed_freqs$subspecies[l])
   
+  # existing summaries
+  viruses_input_confirmed_freqs$superkingdom[l]       <- viruses_input_confirmed_freqssubset$superkingdom[1]
+  viruses_input_confirmed_freqs$phylum[l]             <- viruses_input_confirmed_freqssubset$phylum[1]
+  viruses_input_confirmed_freqs$class[l]              <- viruses_input_confirmed_freqssubset$class[1]
+  viruses_input_confirmed_freqs$order[l]              <- viruses_input_confirmed_freqssubset$order[1]
+  viruses_input_confirmed_freqs$family[l]             <- viruses_input_confirmed_freqssubset$family[1]
+  viruses_input_confirmed_freqs$genus[l]              <- viruses_input_confirmed_freqssubset$genus[1]
+  viruses_input_confirmed_freqs$species[l]            <- viruses_input_confirmed_freqssubset$species[1]
+  viruses_input_confirmed_freqs$taxid[l]              <- viruses_input_confirmed_freqssubset$staxids[1]
+  viruses_input_confirmed_freqs$min_aligned_length[l] <- min(viruses_input_confirmed_freqssubset$length, na.rm = TRUE)
+  viruses_input_confirmed_freqs$max_aligned_length[l] <- max(viruses_input_confirmed_freqssubset$length, na.rm = TRUE)
+  viruses_input_confirmed_freqs$mean_aligned_length[l]<- mean(viruses_input_confirmed_freqssubset$length, na.rm = TRUE)
+  viruses_input_confirmed_freqs$min_identity[l]       <- min(viruses_input_confirmed_freqssubset$pident, na.rm = TRUE)
+  viruses_input_confirmed_freqs$max_identity[l]       <- max(viruses_input_confirmed_freqssubset$pident, na.rm = TRUE)
+  viruses_input_confirmed_freqs$mean_identity[l]      <- mean(viruses_input_confirmed_freqssubset$pident, na.rm = TRUE)
+  viruses_input_confirmed_freqs$mean_complexity[l]    <- mean(viruses_input_confirmed_freqssubset$complexityscore, na.rm = TRUE)
+  viruses_input_confirmed_freqs$max_complexity[l]     <- max(viruses_input_confirmed_freqssubset$complexityscore, na.rm = TRUE)
   
+  ## --- NEW: compute top-3 alternate species/genus across alt_*1..3 for this subspecies
+  alt_spp <- c(viruses_input_confirmed_freqssubset$alternate_species1,
+               viruses_input_confirmed_freqssubset$alternate_species2,
+               viruses_input_confirmed_freqssubset$alternate_species3)
+  alt_gns <- c(viruses_input_confirmed_freqssubset$alternate_genus1,
+               viruses_input_confirmed_freqssubset$alternate_genus2,
+               viruses_input_confirmed_freqssubset$alternate_genus3)
   
-  viruses_input_confirmed_freqs$superkingdom[l] <- viruses_input_confirmed_freqssubset$superkingdom[1]
-  viruses_input_confirmed_freqs$phylum[l] <- viruses_input_confirmed_freqssubset$phylum[1]
-  viruses_input_confirmed_freqs$class[l] <- viruses_input_confirmed_freqssubset$class[1]
-  viruses_input_confirmed_freqs$order[l] <- viruses_input_confirmed_freqssubset$order[1]
-  viruses_input_confirmed_freqs$family[l] <- viruses_input_confirmed_freqssubset$family[1]
-  viruses_input_confirmed_freqs$genus[l] <- viruses_input_confirmed_freqssubset$genus[1]
-  viruses_input_confirmed_freqs$species[l] <- viruses_input_confirmed_freqssubset$species[1]
-  viruses_input_confirmed_freqs$taxid[l] <- viruses_input_confirmed_freqssubset$staxids[1]
-  viruses_input_confirmed_freqs$min_aligned_length[l] <- min(viruses_input_confirmed_freqssubset$length)
-  viruses_input_confirmed_freqs$max_aligned_length[l] <- max(viruses_input_confirmed_freqssubset$length)
-  viruses_input_confirmed_freqs$mean_aligned_length[l] <- mean(viruses_input_confirmed_freqssubset$length)
-  viruses_input_confirmed_freqs$min_identity[l] <- min(viruses_input_confirmed_freqssubset$pident)
-  viruses_input_confirmed_freqs$max_identity[l] <- max(viruses_input_confirmed_freqssubset$pident)
-  viruses_input_confirmed_freqs$mean_identity[l] <- mean(viruses_input_confirmed_freqssubset$pident)
-  viruses_input_confirmed_freqs$mean_complexity[l] <- mean(viruses_input_confirmed_freqssubset$complexityscore)
-  viruses_input_confirmed_freqs$max_complexity[l] <- max(viruses_input_confirmed_freqssubset$complexityscore)
+  # sanitize: drop NA, "", and "NONE"
+  keep <- !(is.na(alt_spp) | alt_spp == "" | toupper(alt_spp) == "NONE")
+  alt_spp <- alt_spp[keep]
+  alt_gns <- alt_gns[keep]
   
+  if (length(alt_spp) > 0) {
+    # rank species by frequency (ties broken arbitrarily but stably)
+    tb <- sort(table(alt_spp), decreasing = TRUE)
+    top_spp <- names(tb)[seq_len(min(3, length(tb)))]
+    
+    # for each top species, choose its most common paired genus from the same positions
+    pick_top_genus <- function(target_spp) {
+      g <- alt_gns[alt_spp == target_spp]
+      if (length(g) == 0) return(NA_character_)
+      gtab <- sort(table(g), decreasing = TRUE)
+      names(gtab)[1]
+    }
+    
+    top_g1 <- pick_top_genus(top_spp[1])
+    top_g2 <- if (length(top_spp) >= 2) pick_top_genus(top_spp[2]) else NA_character_
+    top_g3 <- if (length(top_spp) >= 3) pick_top_genus(top_spp[3]) else NA_character_
+    
+    viruses_input_confirmed_freqs$alt_species_top1[l] <- top_spp[1]
+    viruses_input_confirmed_freqs$alt_genus_top1[l]   <- top_g1
+    viruses_input_confirmed_freqs$alt_species_top2[l] <- ifelse(length(top_spp) >= 2, top_spp[2], NA)
+    viruses_input_confirmed_freqs$alt_genus_top2[l]   <- top_g2
+    viruses_input_confirmed_freqs$alt_species_top3[l] <- ifelse(length(top_spp) >= 3, top_spp[3], NA)
+    viruses_input_confirmed_freqs$alt_genus_top3[l]   <- top_g3
+  } else {
+    viruses_input_confirmed_freqs$alt_species_top1[l] <- NA
+    viruses_input_confirmed_freqs$alt_genus_top1[l]   <- NA
+    viruses_input_confirmed_freqs$alt_species_top2[l] <- NA
+    viruses_input_confirmed_freqs$alt_genus_top2[l]   <- NA
+    viruses_input_confirmed_freqs$alt_species_top3[l] <- NA
+    viruses_input_confirmed_freqs$alt_genus_top3[l]   <- NA
+  }
 }
 
 

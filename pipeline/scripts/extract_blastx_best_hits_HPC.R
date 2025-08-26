@@ -68,7 +68,6 @@ replace_newline_within_quotes <- function(line) {
   paste(parts, collapse = "\"")
 }
 
-
 # Apply the function to all lines
 modified_lines <- lapply(Diamond_lines, replace_newline_within_quotes)
 modified_lines  <- unlist(modified_lines)
@@ -126,8 +125,38 @@ namesorter <- matrix(nrow= 20,ncol = 1)
 namehits <- list()
 
 # generate data frame to hold finished contigs and assignments
-contigsassigned <- as.data.frame(matrix(nrow=length(contigs),ncol = ncol(Diamond_output)))
-colnames(contigsassigned) <- colnames(Diamond_output)
+contigsassigned <- as.data.frame(matrix(nrow = length(contigs), ncol = ncol(Diamond_output) + 6))
+colnames(contigsassigned) <- c(colnames(Diamond_output),
+                               "alternate_genus1","alternate_species1",
+                               "alternate_genus2","alternate_species2",
+                               "alternate_genus3","alternate_species3")
+
+# Helper: reduce semicolon-delimited taxids -> first taxid
+reduce_taxid <- function(x) {
+  if (is.na(x) || x == "") return(NA_character_)
+  sub(";.*", "", x, perl = TRUE)
+}
+
+get_genus_species_from_taxid <- function(taxid, sql) {
+  if (is.na(taxid) || taxid == "") return(c(genus = "NONE", species = "NONE"))
+  suppressWarnings({
+    tx <- try(taxonomizr::getTaxonomy(taxid, sqlFile = sql), silent = TRUE)
+  })
+  if (inherits(tx, "try-error") || is.null(tx)) return(c(genus = "NONE", species = "NONE"))
+  # Make sure we can index by column name
+  g <- if (!is.null(tx[,"genus"])   && !is.na(tx[,"genus"]))   tx[,"genus"]   else "NONE"
+  s <- if (!is.null(tx[,"species"]) && !is.na(tx[,"species"])) tx[,"species"] else "NONE"
+  c(genus = as.character(g), species = as.character(s))
+}
+
+# Numeric coercions (already done above, safe to repeat)
+Diamond_output$bitscore <- as.numeric(Diamond_output$bitscore)
+Diamond_output$pident   <- as.numeric(Diamond_output$pident)
+Diamond_output$length   <- as.numeric(Diamond_output$length)
+
+ALT_WITHIN <- 0.90  # keep hits with bitscore >= 90% of top hit
+
+
 
 # Loop serves the functions of 
 # 1. subsettting data to each contig (all X hits returned are subset into new df for each contig) 
@@ -139,103 +168,51 @@ Diamond_output$pident<- as.numeric(Diamond_output$pident)
 Diamond_output$length<- as.numeric(Diamond_output$length)
 a <- Sys.time()  
 
-for (i in (c(1:length(contigs)))) {
+for (i in seq_along(contigs)) {
   
-  workingcontigA <- subset(Diamond_output,Diamond_output$qseqid==contigs[i]) 
-  workingcontig <- workingcontigA[order(-workingcontigA$bitscore),]
-  namecounter=1
-  # If here required in case Diamond blastx only returns a single hit 
-
-  if (workingcontig$pident[1] == 100 & nrow(workingcontig)>=2) {
-
-  contigsassigned[i,] <- workingcontig[1,]
-  }
-
-  if (nrow(workingcontig)==1 ) {
-    
-    contigsassigned[i,] <- workingcontig[1,]
-  }
-  # else if here tests to see if the top hit is more than 2% higher bitscore than the next hit
-  # If it is, only the top hit information is taken. The 2% is arbitrary and should look further 
-  # into other thresholds. The idea is to compare whether multiple species are closely aligned vs
-  # One species hit returned is much closer
-  else if (workingcontig$bitscore[1] > 1.01*(workingcontig$bitscore[2]) & workingcontig$pident[1] < 100 ) {
-    
-    contigsassigned[i,] <- workingcontig[1,]
-    
-  }
-  # else if here is for when the bitscores are  <=2% different. This compares
-  # all of the different hits to the top hit and collects the taxids of all that are <5% different
-  # It tallys the total taxids for the contig (e.g., 5 hits are mosquito X, 2 are mosquito Y).
-  # It then extracts the highest bitscore hit for the most frequently occuring taxid e.g. Mosquito X
+  wcA <- subset(Diamond_output, Diamond_output$qseqid == contigs[i])
+  if (nrow(wcA) == 0) next
   
-  else if (workingcontig$bitscore[1] <= 1.01*(workingcontig$bitscore[2]) & workingcontig$pident[1] < 100) {
-    
-    
-    
-    for (j in (c(1:nrow(workingcontig)))) {
-      
-      
-      
-      if (workingcontig$bitscore[1] <=1.01*workingcontig$bitscore[j]) {
-        
-        
-        namesorter[namecounter] <- workingcontig$staxids[j]
-        
-        
-        namecounter=namecounter+1
-        
-        
-        
-      }
-    }
-    namesorter <- namesorter[1:(namecounter-1)]
-    namehits <- plyr::count(namesorter)
-    
-    namehitsidx <- order(namehits$freq,decreasing = TRUE,na.last = TRUE)
-    
-    
-    namehittaxid <- namehits[namehitsidx[1],1]
-    
-    stopval=0
-    
-    if(length(namehitsidx)==1) {
-      
-      contigsassigned[i,] <- workingcontig[1,]
-      
-      
-    }
-    
-    else if (length(namehitsidx)>=2) {
-      
-      for (b in (c(1:nrow(workingcontig)))) {
-        
-        if (namehits$freq[namehitsidx[1]]==namehits$freq[namehitsidx[2]]) {
-          
-          contigsassigned[i,] <- workingcontig[1,]
-          
-          
-        }
-        
-        else {
-          
-          contigsassigned[i,] <- workingcontig[b,]
-          
-          
-          stopval=1
-          
-        }
-        
-        
-        
-      }
-    }
-  }
+  # sort by bitscore desc (stable within equal bitscore)
+  wc <- wcA[order(-wcA$bitscore), ]
   
+  # Primary (top) hit row
+  primary <- wc[1, , drop = FALSE]
   
+  # Candidates within 10% of top bitscore (including the primary itself)
+  keep_idx <- which(wc$bitscore >= ALT_WITHIN * primary$bitscore[1])
+  cand <- wc[keep_idx, , drop = FALSE]
+  
+  # Primary reduced taxid
+  primary_taxid <- reduce_taxid(primary$Taxid2[1])
+  
+  # Deduplicate candidates by reduced taxid, preserve order by bitscore
+  cand$taxid_reduced <- vapply(cand$Taxid2, reduce_taxid, character(1))
+  # Exclude the primary taxid for alternates
+  alt_cand <- cand[!is.na(cand$taxid_reduced) & cand$taxid_reduced != primary_taxid, , drop = FALSE]
+  alt_cand <- alt_cand[!duplicated(alt_cand$taxid_reduced), , drop = FALSE]
+  
+  # Take up to 3 alternates (highest bitscore already by order)
+  alt_taxids <- head(alt_cand$taxid_reduced, 3)
+  
+  # Resolve genus/species for alternates
+  alt_gs <- lapply(alt_taxids, function(tid) get_genus_species_from_taxid(tid, AccessionNamenode))
+  # Pad to length 3 with NONEs if needed
+  while (length(alt_gs) < 3L) alt_gs <- c(alt_gs, list(c(genus = "NONE", species = "NONE")))
+  
+  # Fill output row = primary hit + 6 new columns
+  outrow <- primary
+  outrow$alternate_genus1  <- alt_gs[[1]]["genus"]
+  outrow$alternate_species1<- alt_gs[[1]]["species"]
+  outrow$alternate_genus2  <- alt_gs[[2]]["genus"]
+  outrow$alternate_species2<- alt_gs[[2]]["species"]
+  outrow$alternate_genus3  <- alt_gs[[3]]["genus"]
+  outrow$alternate_species3<- alt_gs[[3]]["species"]
+  
+  # Assign into master (one row per contig)
+  contigsassigned[i, ] <- outrow[1, colnames(contigsassigned)]
 }
 b <- Sys.time()
-
 
 # Total time <5min on personal computer therefore not benchmarked
 
@@ -298,26 +275,23 @@ for (i in c(1:nrow(contigsassignedunique))) {
   }
 
 
-if (is.na(taxidsunique[i,2])) {
-
-spname <- str_extract_all(contigsassignedunique$stitle[i], "\\[(.*?)\\]")[[1]]
-spname2 <- str_replace_all(spname, "\\[|\\]", "")
-value <- taxonomizr::getId(spname2, sqlFile=AccessionNamenode)
-
-taxidsunique[i,2:8] <- taxonomizr::getTaxonomy(value, sqlFile=AccessionNamenode)
-
-
-values <- taxonomizr::getRawTaxonomy(value, sqlFile=AccessionNamenode)
-
-  if (!is.null(values[[1]][1])) {
-    values[[1]][1] -> taxidsunique[i,9]
+  if (all(is.na(taxidsunique[i, 2:8]))) {
+    
+    spname <- str_extract_all(contigsassignedunique$stitle[i], "\\[(.*?)\\]")[[1]]
+    spname2 <- str_replace_all(spname, "\\[|\\]", "")
+    value <- taxonomizr::getId(spname2, sqlFile=AccessionNamenode)
+    
+    taxidsunique[i, 2:8] <- taxonomizr::getTaxonomy(value, sqlFile=AccessionNamenode)
+    
+    values <- taxonomizr::getRawTaxonomy(value, sqlFile=AccessionNamenode)
+    
+    if (!is.null(values[[1]][1])) {
+      values[[1]][1] -> taxidsunique[i, 9]
+    }
+    if (is.null(values[[1]][1])) {
+      taxidsunique[i, 8] -> taxidsunique[i, 9]
+    }
   }
-  if (is.null(values[[1]][1])) {
-    taxidsunique[i,8] -> taxidsunique[i,9]
-  }
-
-
-}
 
 
 
@@ -383,6 +357,21 @@ contigsassigned$stitle = substr(contigsassigned$stitle,1,50)
 
 cat(paste0(NAMES," Finished reindexing of taxa results ", "\n"))
 cat(paste0(Sys.time(), "\n"))
+
+
+# Move alternate_* columns to the end of contigsassigned
+alt_cols <- c("alternate_genus1", "alternate_species1",
+              "alternate_genus2", "alternate_species2",
+              "alternate_genus3", "alternate_species3")
+
+# Ensure these columns exist before reordering
+alt_cols <- alt_cols[alt_cols %in% colnames(contigsassigned)]
+
+# Reorder: all other columns first, then the alternates
+contigsassigned <- contigsassigned[, c(setdiff(colnames(contigsassigned), alt_cols), alt_cols)]
+
+
+
 
 
 # generate summary stats for blast

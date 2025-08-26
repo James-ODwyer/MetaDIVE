@@ -90,8 +90,11 @@ if (!file.exists(outtablespath)){
 }
 
 
+
+
 # give proper column names
-colnames(Diamond_output) <- c("qseqid", "sseqid", "pident", "length", "evalue", "bitscore", "staxids", "stitle", "qcovhsp")
+base_cols <- c("qseqid","sseqid","pident","length","evalue","bitscore","staxids","stitle","qcovhsp")
+colnames(Diamond_output)[seq_along(base_cols)] <- base_cols
 
 cat("Head 10 \n ")
 print(Diamond_output[1:10,])
@@ -205,7 +208,8 @@ if ( nrow(uniquespmissing) >=1 ) {
   
   Diamond_outputmissingonly$staxidreduced <- taxids[,2]
   
-  Diamond_output[missingidx,10] <- Diamond_outputmissingonly$staxidreduced
+  Diamond_output$staxidreduced[missingidx] <- Diamond_outputmissingonly$staxidreduced
+  
 }
   
   
@@ -248,7 +252,6 @@ if ( nrow(uniquespmissing) >=1 ) {
   #
   cat(paste0(" Completed identifying the taxid of unassigned samples using their species names  ", "\n"))
   
-  cat(paste0(" Completed identifying the taxid of unassigned samples using their species names  ", "\n"))
   
 
 
@@ -296,7 +299,7 @@ process_row <- function(i) {
 taxidsunique <- future_lapply(1:nrow(contigsassignedunique), process_row)
 
 # Combine Results into Data Frame
-taxidsunique <- do.call(rbind, taxidsunique)
+taxidsunique <- do.call(rbind, taxidsunique, stringsAsFactors=FALSE)
 
 d <- Sys.time()
 
@@ -455,31 +458,27 @@ if (nrow(Virusessinglespspcounts) >0) {
   
 }
 
-
-virus_all <- read.csv(file = xargs$inputvirusall, header = TRUE, stringsAsFactors = FALSE)
-
-
-
+virus_all <- read.csv(xargs$inputvirusall, header = TRUE, stringsAsFactors = FALSE)
 virus_all$additional_diverged_reads <- 0
-virus_all$total_reads_assigned <- as.numeric(virus_all$total_reads_assigned)
+virus_all$total_reads_assigned <- suppressWarnings(as.numeric(virus_all$total_reads_assigned))
 
-Virusessinglespspcounts$Frequency <- as.numeric(Virusessinglespspcounts$Frequency)
-
-Virusessinglespspcounts$Species <- as.character(Virusessinglespspcounts$Species)
-
-# Perform a left join to bring in Frequency where species matches
-virus_all <- virus_all %>%
-  left_join(
-    Virusessinglespspcounts %>% select(Species, Frequency), 
-    by = c("species" = "Species")
-  ) %>%
-  mutate(additional_diverged_reads = coalesce(Frequency, additional_diverged_reads)) %>%  # Replace only if a match is found
-  select(-Frequency)  # Remove the extra Frequency column from the join
-
+if (nrow(Virusessinglespspcounts) > 0) {
+  Virusessinglespspcounts$Frequency <- as.numeric(Virusessinglespspcounts$Frequency)
+  Virusessinglespspcounts$Species   <- as.character(Virusessinglespspcounts$Species)
+  
+  virus_all <- virus_all %>%
+    left_join(
+      dplyr::select(Virusessinglespspcounts, Species, Frequency),
+      by = c("species" = "Species")
+    ) %>%
+    mutate(additional_diverged_reads = dplyr::coalesce(Frequency, additional_diverged_reads)) %>%
+    select(-Frequency)
+}
 
 virus_all <- virus_all %>%
   mutate(
-    total_reads_combined_diverged = coalesce(additional_diverged_reads, 0) + coalesce(total_reads_assigned, 0)
+    total_reads_combined_diverged = dplyr::coalesce(as.numeric(additional_diverged_reads), 0) +
+      dplyr::coalesce(as.numeric(total_reads_assigned), 0)
   )
 
 

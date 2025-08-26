@@ -291,7 +291,7 @@ rule check_results_in_blastn:
         blastn -query {output.fasta_clust_subset} \
             -db {params.blastdb} \
             -evalue 0.001 \
-            -max_target_seqs 1 \
+            -max_target_seqs 10 \
             -max_hsps 1 \
             -outfmt '6 qseqid sseqid pident length evalue bitscore staxids stitle qcovhsp' \
             -num_threads {threads} \
