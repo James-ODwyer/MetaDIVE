@@ -204,10 +204,10 @@ def download_nucleotide_viruses(viral_taxids):
 
         except Exception as e:
             print(f"Error retrieving batch: {e}")
-            time.sleep(10)
+            time.sleep(20)
 
         viral_taxids_set.difference_update(taxid_batch)
-        time.sleep(3)
+        time.sleep(4)
 
     return all_seq_ids
 
@@ -250,12 +250,12 @@ def fetch_summary_with_retries(seq_id_batch, retries=3):
             records = Entrez.read(handle)
             handle.close()
             return records
-            time.sleep(0.1)
+            time.sleep(0.3)
         except Exception as e:
             print(f"Attempt {attempt + 1} failed: {e}")
             if attempt < retries - 1:
                 print("Retrying...")
-                time.sleep(10)  # Delay before retrying
+                time.sleep(20)  # Delay before retrying
             else:
                 print("Max retries reached. Skipping this batch.")
                 return None
@@ -299,7 +299,7 @@ def download_sequences(seq_ids, filename, batch_size=500):
                 except Exception as e:
                     retries += 1
                     print(f"Error during download, retrying ({retries}/3): {e}")
-                    time.sleep(1)
+                    time.sleep(10)
             if retries == 3:
                 print("Max retries reached for this batch, skipping.")
 
